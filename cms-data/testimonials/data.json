@@ -1,0 +1,51 @@
+[
+  {
+    "id": "testimonial-001",
+    "name": "Carlos M.",
+    "country": "Mexico",
+    "countryCode": "MX",
+    "program": "International Business",
+    "university": "Universitat Pompeu Fabra",
+    "year": 2024,
+    "content": "Studying in Barcelona as an LGBTQ+ student from Mexico has been transformative. Study With Pride helped me navigate the visa process and connected me with an amazing community. I felt supported every step of the way.",
+    "contentEs": "Estudiar en Barcelona como estudiante LGBTQ+ de México ha sido transformador. Study With Pride me ayudó a navegar el proceso de visa y me conectó con una comunidad increíble. Me sentí apoyado en cada paso.",
+    "imageUrl": "/images/testimonials/carlos-m.jpg",
+    "approved": true,
+    "createdAt": "2024-09-15T10:00:00Z",
+    "updatedAt": "2024-09-15T10:00:00Z",
+    "approvedBy": "admin",
+    "approvedAt": "2024-09-15T11:00:00Z"
+  },
+  {
+    "id": "testimonial-002",
+    "name": "Sofia R.",
+    "country": "Argentina",
+    "countryCode": "AR",
+    "program": "LGBT+ Studies",
+    "university": "Universitat de Barcelona",
+    "year": 2023,
+    "content": "Barcelona welcomed me with open arms. The course on LGBT+ identities at UB changed my perspective, and the city's vibrant queer scene made me feel at home. Study With Pride's support was invaluable during my application.",
+    "contentEs": "Barcelona me recibió con los brazos abiertos. El curso sobre identidades LGBT+ en la UB cambió mi perspectiva, y la vibrante escena queer de la ciudad me hizo sentir como en casa. El apoyo de Study With Pride fue invaluable durante mi solicitud.",
+    "approved": true,
+    "createdAt": "2024-08-20T14:30:00Z",
+    "updatedAt": "2024-08-20T14:30:00Z",
+    "approvedBy": "admin",
+    "approvedAt": "2024-08-20T15:00:00Z"
+  },
+  {
+    "id": "testimonial-003",
+    "name": "Miguel A.",
+    "country": "Colombia",
+    "countryCode": "CO",
+    "program": "Computer Science",
+    "university": "Universitat Politècnica de Catalunya",
+    "year": 2024,
+    "content": "As a gay Colombian student, I was nervous about moving abroad. Study With Pride not only helped with my visa but also connected me with other LGBTQ+ students before I even arrived. The community here is incredible!",
+    "contentEs": "Como estudiante colombiano gay, estaba nervioso por mudarme al extranjero. Study With Pride no solo me ayudó con mi visa, sino que también me conectó con otros estudiantes LGBTQ+ antes de llegar. ¡La comunidad aquí es increíble!",
+    "approved": true,
+    "createdAt": "2024-10-01T09:15:00Z",
+    "updatedAt": "2024-10-01T09:15:00Z",
+    "approvedBy": "admin",
+    "approvedAt": "2024-10-01T10:00:00Z"
+  }
+]
