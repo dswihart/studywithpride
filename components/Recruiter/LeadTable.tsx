@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import BulkEditLeadModal from'./BulkEditLeadModal'
 
 interface Lead {
   id: string
@@ -57,11 +58,12 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   const [countries, setCountries] = useState<string[]>([])
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(50)
+  const [itemsPerPage, setItemsPerPage] = useState(50)
   const [allLeads, setAllLeads] = useState<Lead[]>([])
   const [selectAllPages, setSelectAllPages] = useState(false)
   const [sortColumn, setSortColumn] = useState<SortColumn>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false)
 
   useEffect(() => {
     fetchLeads()
@@ -113,6 +115,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     } finally {
       setLoading(false)
     }
+  }
+const handleBulkEditSuccess = () => {
+    fetchLeads()
+    setShowBulkEditModal(false)
   }
 
   const handleSort = (column: SortColumn) => {
@@ -382,6 +388,34 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
               ))}
             </select>
           </div>
+
+          {/* Items Per Page Selector */}
+          <div className="flex-1">
+            <label
+              htmlFor="items-per-page"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Leads per page
+            </label>
+            <select
+              id="items-per-page"
+              value={itemsPerPage}
+              onChange={(e) => {
+                const newValue = Number(e.target.value)
+                setCurrentPage(1)
+                setItemsPerPage(newValue)
+              }
+                setCurrentPage(1); setItemsPerPage(newValue)
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -474,6 +508,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                   {renderSortIcon('country')}
                 </div>
               </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Referral Destination
+          </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('contact_status')}
@@ -512,7 +549,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
           <tbody className="bg-white divide-y divide-gray-200">
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={11} className="px-6 py-8 text-center text-gray-500">
                   No leads found matching the selected filters
                 </td>
               </tr>
@@ -542,6 +579,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {lead.country}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {lead.referral_source || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={'px-3 py-1 rounded-full text-xs font-semibold ' + getStatusBadgeColor(lead.contact_status)}>
@@ -591,6 +631,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
       {leads.length > 0 && (
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
           <p className="text-sm text-gray-600">
+          {selectedLeads.size > 0 && (            <button              onClick={() => setShowBulkEditModal(true)}              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mb-2"            >              Edit Selected ({selectedLeads.size})            </button>          )}
             Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, getSortedLeads(allLeads).length)} of {getSortedLeads(allLeads).length} lead{getSortedLeads(allLeads).length !== 1 ? 's' : ''}
             {selectedLeads.size > 0 && ` (${selectedLeads.size} selected)`}
           </p>
@@ -619,6 +660,12 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
           </p>
         </div>
       )}
+      <BulkEditLeadModal
+        isOpen={showBulkEditModal}
+        onClose={() => setShowBulkEditModal(false)}
+        selectedLeadIds={Array.from(selectedLeads)}
+        onSuccess={handleBulkEditSuccess}
+      />
     </div>
   )
 }

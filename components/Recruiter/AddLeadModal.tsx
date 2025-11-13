@@ -265,6 +265,12 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'lead_score': 'lead_score',
       'leadscore': 'lead_score',
       'lead_quality': 'lead_quality',
+      'created_time': 'created_time',
+      'createdtime': 'created_time',
+      'date_acquired': 'created_time',
+      'dateacquired': 'created_time',
+      'acquisition_date': 'created_time',
+      'acquisitiondate': 'created_time',
       'leadquality': 'lead_quality'
     }
 
@@ -717,7 +723,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   ))}
                 </select>
             </div>
-              {formData.contact_status === 'referral' && (
+              <div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Referral Destination
@@ -730,7 +736,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                     placeholder="e.g., University Name, Program, Partner Organization"
                   />
                 </div>
-              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -741,6 +746,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Add any notes..."
                   placeholder="Add any notes..."
                 />
               </div>
@@ -756,9 +762,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Not Scored</option>
-                <option value="Hot">Hot</option>
-                <option value="Warm">Warm</option>
-                <option value="Cold">Cold</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+                <option value="Very Low">Very Low</option>
               </select>
             </div>
             <div>
