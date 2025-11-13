@@ -27,8 +27,10 @@ const CONTACT_STATUSES = [
 export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, onSuccess }: BulkEditLeadModalProps) {
   const [contactStatus, setContactStatus] = useState('')
   const [referralSource, setReferralSource] = useState('')
+  const [campaign, setCampaign] = useState('')
   const [updateStatus, setUpdateStatus] = useState(false)
   const [updateReferral, setUpdateReferral] = useState(false)
+  const [updateCampaign, setUpdateCampaign] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -37,7 +39,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!updateStatus && !updateReferral) {
+    if (!updateStatus && !updateReferral && !updateCampaign) {
       setError('Please select at least one field to update')
       return
     }
@@ -61,6 +63,9 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
         updates.contact_status = contactStatus
       }
       if (updateReferral && referralSource.trim()) {
+      if (updateCampaign && campaign.trim()) {
+        updates.campaign = campaign.trim()
+      }
         updates.referral_source = referralSource.trim()
       }
 
@@ -99,6 +104,8 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
     setReferralSource('')
     setUpdateStatus(false)
     setUpdateReferral(false)
+    setUpdateCampaign(false)
+    setCampaign('')
     setError('')
     onClose()
   }
@@ -177,6 +184,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
               />
             )}
           </div>
+          {/* Campaign */}          <div>            <div className="flex items-center gap-2 mb-2">              <input                type="checkbox"                id="updateCampaign"                checked={updateCampaign}                onChange={(e) => setUpdateCampaign(e.target.checked)}                className="w-4 h-4"              />              <label htmlFor="updateCampaign" className="font-medium">                Update Campaign              </label>            </div>            {updateCampaign && (              <input                type="text"                value={campaign}                onChange={(e) => setCampaign(e.target.value)}                placeholder="Enter campaign name"                required={updateCampaign}                className="w-full p-2 border rounded"              />            )}          </div>
 
           {error && (
             <div className="text-red-600 text-sm">{error}</div>

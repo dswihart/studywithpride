@@ -45,6 +45,10 @@ export async function POST(request: Request) {
     }
 
     if (updates.referral_source) {
+    }
+
+    if (updates.campaign) {
+      allowedUpdates.campaign = updates.campaign
       allowedUpdates.referral_source = updates.referral_source
     }
 

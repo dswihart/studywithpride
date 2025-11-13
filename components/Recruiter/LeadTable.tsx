@@ -20,6 +20,7 @@ interface Lead {
   prospect_name: string | null
   referral_source: string | null
   phone: string | null
+  campaign: string | null
   date_imported: string | null
   name_score: number | null
   email_score: number | null
@@ -46,7 +47,7 @@ const CONTACT_STATUSES = [
   { value: 'unqualified', label: 'Unqualified' }
 ]
 
-type SortColumn = 'prospect_name' | 'prospect_email' | 'country' | 'phone' | 'contact_status' | 'lead_quality' | 'last_contact_date' | null
+type SortColumn = 'prospect_name' | 'prospect_email' | 'country' | 'phone' | 'campaign' | 'contact_status' | 'lead_quality' | 'last_contact_date' | null
 type SortDirection = 'asc' | 'desc' | null
 
 export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange }: LeadTableProps) {
@@ -166,6 +167,10 @@ const handleBulkEditSuccess = () => {
         case 'phone':
           aValue = a.phone || ''
           bValue = b.phone || ''
+          break
+        case 'campaign':
+          aValue = a.campaign || '''
+          bValue = b.campaign || '''
           break
         case 'contact_status':
           aValue = a.contact_status.toLowerCase()
@@ -508,6 +513,15 @@ const handleBulkEditSuccess = () => {
                   {renderSortIcon('country')}
                 </div>
               </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                onClick={() => handleSort('campaign')}
+              >
+                <div className="flex items-center">
+                  Campaign
+                  {renderSortIcon('campaign')}
+                </div>
+              </th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Referral Destination
           </th>
@@ -578,6 +592,9 @@ const handleBulkEditSuccess = () => {
                     {lead.phone || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {lead.campaign || 'N/A'}
+                  </td>
                     {lead.country}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">

@@ -21,6 +21,7 @@ interface Lead {
   created_time: string | null
   referral_source: string | null
   phone: string | null
+  campaign: string | null
   date_imported: string | null
   name_score: number | null
   email_score: number | null
@@ -44,6 +45,7 @@ interface CsvRow {
     name: string
     email: string
     phone: string
+  campaign: string
     country: string
     status: string
     referral_destination: string
@@ -69,6 +71,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     id: '',
     name: '',
     email: '',
+    campaign: '',
     phone: '',
     country: '',
     contact_status: 'not_contacted',
@@ -116,6 +119,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         name: editLead.prospect_name || '',
         email: editLead.prospect_email || '',
         phone: editLead.phone || '',
+        campaign: editLead.campaign || '',
         country: editLead.country,
         contact_status: editLead.contact_status,
         referral_source: editLead.referral_source || '',
@@ -167,6 +171,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           prospect_name: formData.name,
           referral_source: formData.referral_source || null,
           phone: formData.phone || null,
+          campaign: formData.campaign || null,
           notes: formData.notes,
           lead_quality: formData.lead_quality || null,
           last_contact_date: formData.last_contact_date || null,
@@ -238,6 +243,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'prospect_email': 'email',
       'email_address': 'email',
       'phone': 'phone',
+      'campaign': 'campaign',
       'phone_number': 'phone',
       'mobile': 'phone',
       'telephone': 'phone',
@@ -693,6 +699,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 />
               </div>
 
+              <div>                <label className="block text-sm font-medium text-gray-700 mb-1">                  Campaign (Optional)                </label>                <input                  type="text"                  value={formData.campaign}                  onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"                  placeholder="e.g., Spring 2025, Facebook Ads"                />              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country

@@ -19,6 +19,7 @@ interface LeadWriteRequest {
   prospect_name?: string
   referral_source?: string
   phone?: string
+  campaign?: string
   created_time?: string
   lead_quality?: string
 }
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
           referral_source: body.referral_source || null,
           phone: body.phone || null,
           lead_quality: body.lead_quality || null,
+          campaign: body.campaign || null,
         })
         .eq('id', body.id)
         .select('id, created_at')
@@ -132,6 +134,7 @@ export async function POST(request: NextRequest) {
           referral_source: body.referral_source || null,
           phone: body.phone || null,
           lead_quality: body.lead_quality || null,
+          campaign: body.campaign || null,
         })
         .select('id, created_at')
         .single()
