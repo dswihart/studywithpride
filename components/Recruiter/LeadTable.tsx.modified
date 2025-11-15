@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import BulkEditLeadModal from'./BulkEditLeadModal'
 
 interface Lead {
@@ -36,6 +36,21 @@ interface LeadTableProps {
   onSelectionChange?: (selectedIds: string[]) => void
 }
 
+
+interface ColumnVisibility {
+  prospectName: boolean
+  prospectEmail: boolean
+  phone: boolean
+  country: boolean
+  campaign: boolean
+  referralDestination: boolean
+  contactStatus: boolean
+  leadQuality: boolean
+  lastContactDate: boolean
+  notes: boolean
+  actions: boolean
+}
+
 const CONTACT_STATUSES = [
   { value: 'all', label: 'All Statuses' },
   { value: 'not_contacted', label: 'Not Contacted' },
@@ -49,6 +64,21 @@ const CONTACT_STATUSES = [
 
 type SortColumn = 'prospect_name' | 'prospect_email' | 'country' | 'phone' | 'campaign' | 'contact_status' | 'lead_quality' | 'last_contact_date' | null
 type SortDirection = 'asc' | 'desc' | null
+
+
+const COLUMN_LABELS = {
+  prospectName: 'Prospect Name',
+  prospectEmail: 'Email',
+  phone: 'Phone',
+  country: 'Country',
+  campaign: 'Campaign',
+  referralDestination: 'Referral Destination',
+  contactStatus: 'Contact Status',
+  leadQuality: 'Lead Quality',
+  lastContactDate: 'Last Contact Date',
+  notes: 'Notes',
+  actions: 'Actions'
+}
 
 export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange }: LeadTableProps) {
   const [leads, setLeads] = useState<Lead[]>([])
@@ -65,6 +95,68 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   const [sortColumn, setSortColumn] = useState<SortColumn>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [showBulkEditModal, setShowBulkEditModal] = useState(false)
+  const [showColumnMenu, setShowColumnMenu] = useState(false)
+  const columnMenuRef = useRef<HTMLDivElement>(null)
+
+  // Column visibility state with localStorage
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('leadTableColumnVisibility')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          // If parsing fails, use default
+        }
+      }
+    }
+    // Default: all columns visible
+    return {
+      prospectName: true,
+      prospectEmail: true,
+      phone: true,
+      country: true,
+      campaign: true,
+      referralDestination: true,
+      contactStatus: true,
+      leadQuality: true,
+      lastContactDate: true,
+      notes: true,
+      actions: true
+    }
+  })
+
+  // Save column visibility to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('leadTableColumnVisibility', JSON.stringify(columnVisibility))
+    }
+  }, [columnVisibility])
+
+  // Close column menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+        setShowColumnMenu(false)
+      }
+    }
+
+    if (showColumnMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showColumnMenu])
+
+  const toggleColumnVisibility = (column: keyof ColumnVisibility) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [column]: !prev[column]
+    }))
+  }
+
+
 
   useEffect(() => {
     fetchLeads()
@@ -419,6 +511,52 @@ const handleBulkEditSuccess = () => {
               <option value="200">200</option>
             </select>
           </div>
+
+          {/* Column Visibility Toggle */}
+          <div className="flex-1 relative" ref={columnMenuRef}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Columns
+            </label>
+            <button
+              onClick={() => setShowColumnMenu(!showColumnMenu)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Show/Hide
+              </span>
+              <svg className={`w-4 h-4 transition-transform ${ showColumnMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showColumnMenu && (
+              <div className="absolute z-50 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+                <div className="p-3 border-b border-gray-200 bg-gray-50">
+                  <h3 className="text-sm font-semibold text-gray-700">Toggle Columns</h3>
+                </div>
+                <div className="p-2">
+                  {(Object.keys(columnVisibility) as Array<keyof ColumnVisibility>).map((column) => (
+                    <label
+                      key={column}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={columnVisibility[column]}
+                        onChange={() => toggleColumnVisibility(column)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{COLUMN_LABELS[column]}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         </div>
       </div>
 
