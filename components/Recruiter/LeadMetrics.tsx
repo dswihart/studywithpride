@@ -5,6 +5,8 @@
 
 'use client'
 
+import { useLanguage } from '@/components/LanguageContext'
+
 interface Lead {
   id: string
   country: string
@@ -19,6 +21,7 @@ interface LeadMetricsProps {
 }
 
 export default function LeadMetrics({ leads }: LeadMetricsProps) {
+  const { t } = useLanguage()
   // Calculate total leads
   const totalLeads = leads.length
 
@@ -28,10 +31,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
     return acc
   }, {} as Record<string, number>)
 
-  // Calculate total contacted (any status other than 'not_contacted')
-  const totalContacted = leads.filter(
-    lead => lead.contact_status !== 'not_contacted'
-  ).length
+  const totalContacted = leads.filter((lead) => lead.contact_status !== 'new').length
 
   return (
     <div className="mb-8 space-y-4">
@@ -40,7 +40,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
         {/* Total Leads Card */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
           <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-            Total Leads
+            {t('recruiter.metrics.totalLeads')}
           </h3>
           <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
             {totalLeads}
@@ -50,13 +50,13 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
         {/* Total Contacted Card */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
           <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-            Total Contacted
+            {t('recruiter.metrics.totalContacted')}
           </h3>
           <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
             {totalContacted}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {totalLeads > 0 ? Math.round((totalContacted / totalLeads) * 100) : 0}% of total
+            {totalLeads > 0 ? Math.round((totalContacted / totalLeads) * 100) : 0}% {t('recruiter.metrics.percentOfTotal')}
           </p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
       {/* Bottom Row: Leads by Country - Full Width */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-4">
-          Leads by Country
+          {t('recruiter.metrics.leadsByCountry')}
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           {Object.entries(leadsByCountry)
@@ -80,7 +80,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
               </div>
             ))}
           {Object.keys(leadsByCountry).length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full">No data</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full">{t('recruiter.metrics.noData')}</p>
           )}
         </div>
       </div>

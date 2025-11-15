@@ -71,7 +71,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     email: '',
     phone: '',
     country: '',
-    contact_status: 'not_contacted',
+    contact_status: 'new',
     referral_source: '',
     notes: '',
     lead_quality: '',
@@ -97,13 +97,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
   }, [editLead])
 
   const statuses = [
-    { value: 'not_contacted', label: 'Not Contacted' },
-    { value: 'referral', label: 'Referral' },
+    { value: 'new', label: 'New' },
     { value: 'contacted', label: 'Contacted' },
-    { value: 'interested', label: 'Interested' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'converted', label: 'Converted' },
-    { value: 'unqualified', label: 'Unqualified' }
+    { value: 'nurturing', label: 'Nurturing' },
+    { value: 'converted', label: 'Converted' }
   ]
 
   const validStatusValues = statuses.map(s => s.value)
@@ -132,7 +129,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         email: '',
         phone: '',
         country: '',
-        contact_status: 'not_contacted',
+        contact_status: 'new',
         referral_source: '',
         notes: '',
         lead_quality: '',
@@ -181,8 +178,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       }
 
       setSuccess(`Lead ${editLead ? 'updated' : 'added'} successfully!`)
-      setFormData({ id: '', name: '', email: '', phone: '', country: '', contact_status: 'not_contacted', referral_source: '', notes: '', lead_quality: '', last_contact_date: '',
-    created_time: '' })
+      setFormData({ id: '', name: '', email: '', phone: '', country: '', contact_status: 'new', referral_source: '', notes: '', lead_quality: '', last_contact_date: '', created_time: '' })
       setTimeout(() => {
         onSuccess()
         onClose()
@@ -286,26 +282,17 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
     // Fuzzy matching
     const statusMap: { [key: string]: string } = {
-      'not_contacted': 'not_contacted',
-      'notcontacted': 'not_contacted',
-      'new': 'not_contacted',
-      'referral': 'referral',
-      'referred': 'referral',
+      'new': 'new',
+      'not_contacted': 'new',
       'contacted': 'contacted',
       'reached': 'contacted',
-      'interested': 'interested',
-      'warm': 'interested',
-      'qualified': 'qualified',
-      'hot': 'qualified',
+      'nurturing': 'nurturing',
+      'follow_up': 'nurturing',
       'converted': 'converted',
-      'won': 'converted',
-      'enrolled': 'converted',
-      'unqualified': 'unqualified',
-      'lost': 'unqualified',
-      'rejected': 'unqualified'
+      'won': 'converted'
     }
 
-    return statusMap[normalized] || 'not_contacted'
+    return statusMap[normalized] || 'new'
   }
 
   const normalizeCountry = (country: string): string => {
@@ -717,20 +704,18 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   ))}
                 </select>
             </div>
-              {formData.contact_status === 'referral' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Referral Destination
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.referral_source}
-                    onChange={(e) => setFormData({ ...formData, referral_source: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., University Name, Program, Partner Organization"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Referral Destination
+                </label>
+                <input
+                  type="text"
+                  value={formData.referral_source}
+                  onChange={(e) => setFormData({ ...formData, referral_source: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., University Name, Program, Partner Organization"
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

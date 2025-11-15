@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import LeadTable from '@/components/Recruiter/LeadTable'
 import LeadMetrics from '@/components/Recruiter/LeadMetrics'
 import AddLeadModal from '@/components/Recruiter/AddLeadModal'
+import { useLanguage } from '@/components/LanguageContext'
 
 interface Lead {
   id: string
@@ -24,6 +25,7 @@ interface Lead {
   prospect_name: string | null
   referral_source: string | null
   phone: string | null
+  campaign: string | null
   name_score: number | null
   email_score: number | null
   phone_valid: boolean | null
@@ -35,6 +37,7 @@ interface Lead {
 }
 
 export default function RecruiterDashboardPage() {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -75,8 +78,8 @@ export default function RecruiterDashboardPage() {
     }
   }
 
-  const handleLeadsChange = (newLeads: Lead[]) => {
-    setLeads(newLeads)
+  const handleLeadsChange = (newLeads: any[]) => {
+    setLeads(newLeads as Lead[])
   }
 
   const handleLogout = async () => {
@@ -90,8 +93,8 @@ export default function RecruiterDashboardPage() {
     window.location.reload()
   }
 
-  const handleEditLead = (lead: Lead) => {
-    setEditingLead(lead)
+  const handleEditLead = (lead: any) => {
+    setEditingLead(lead as Lead)
     setIsAddLeadModalOpen(true)
   }
 
@@ -140,7 +143,7 @@ export default function RecruiterDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+        <div className="text-xl text-gray-600">{t('recruiter.table.loading')}</div>
       </div>
     )
   }
@@ -156,10 +159,10 @@ export default function RecruiterDashboardPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Recruitment Dashboard
+              {t('recruiter.dashboard.title')}
             </h1>
             <p className="text-gray-600">
-              Manage and track recruitment leads
+              {t('recruiter.dashboard.subtitle')}
             </p>
           </div>
           <div className="flex gap-3">
@@ -172,7 +175,7 @@ export default function RecruiterDashboardPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Delete Selected ({selectedLeadIds.length})
+                {t('recruiter.dashboard.deleteSelected')} ({selectedLeadIds.length})
               </button>
             )}
             <button
@@ -185,7 +188,7 @@ export default function RecruiterDashboardPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add Lead
+              {t('recruiter.dashboard.addLead')}
             </button>
             <Link
               href="/"
@@ -194,13 +197,13 @@ export default function RecruiterDashboardPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-              Main Site
+              {t('recruiter.dashboard.mainSite')}
             </Link>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition"
             >
-              Logout
+              {t('recruiter.dashboard.logout')}
             </button>
           </div>
         </div>
@@ -236,13 +239,15 @@ export default function RecruiterDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Leads</h3>
-                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('recruiter.dashboard.deleteModalTitle')}</h3>
+                  <p className="text-sm text-gray-600">{t('recruiter.dashboard.deleteModalSubtitle')}</p>
                 </div>
               </div>
 
               <p className="text-gray-700 mb-6">
-                Are you sure you want to delete {selectedLeadIds.length} lead{selectedLeadIds.length !== 1 ? 's' : ''}? This will permanently remove {selectedLeadIds.length === 1 ? 'this lead' : 'these leads'} from your database.
+                {selectedLeadIds.length === 1
+                  ? t('recruiter.dashboard.deleteModalMessageSingle')
+                  : t('recruiter.dashboard.deleteModalMessageMultiple')}
               </p>
 
               <div className="flex gap-3">
@@ -251,14 +256,14 @@ export default function RecruiterDashboardPage() {
                   disabled={deleting}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium disabled:opacity-50"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={confirmDelete}
                   disabled={deleting}
                   className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50"
                 >
-                  {deleting ? 'Deleting...' : 'Delete'}
+                  {deleting ? t('recruiter.dashboard.deleting') : t('common.delete')}
                 </button>
               </div>
             </div>
