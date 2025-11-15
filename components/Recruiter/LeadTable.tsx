@@ -612,7 +612,7 @@ const handleBulkEditSuccess = () => {
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
               </th>
-              <th
+              {columnVisibility.prospectName && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('prospect_name')}
               >
@@ -620,8 +620,8 @@ const handleBulkEditSuccess = () => {
                   Prospect Name
                   {renderSortIcon('prospect_name')}
                 </div>
-              </th>
-              <th
+              </th>}
+              {columnVisibility.prospectEmail && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('prospect_email')}
               >
@@ -629,8 +629,8 @@ const handleBulkEditSuccess = () => {
                   Email
                   {renderSortIcon('prospect_email')}
                 </div>
-              </th>
-              <th
+              </th>}
+              {columnVisibility.phone && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('phone')}
               >
@@ -638,8 +638,8 @@ const handleBulkEditSuccess = () => {
                   Phone
                   {renderSortIcon('phone')}
                 </div>
-              </th>
-              <th
+              </th>}
+              {columnVisibility.country && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('country')}
               >
@@ -647,8 +647,8 @@ const handleBulkEditSuccess = () => {
                   Country
                   {renderSortIcon('country')}
                 </div>
-              </th>
-              <th
+              </th>}
+              {columnVisibility.campaign && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('campaign')}
               >
@@ -656,11 +656,11 @@ const handleBulkEditSuccess = () => {
                   Campaign
                   {renderSortIcon('campaign')}
                 </div>
-              </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              </th>}
+              {columnVisibility.referralDestination && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Referral Destination
-          </th>
-              <th
+              </th>}
+              {columnVisibility.contactStatus && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('contact_status')}
               >
@@ -668,8 +668,8 @@ const handleBulkEditSuccess = () => {
                   Contact Status
                   {renderSortIcon('contact_status')}
                 </div>
-              </th>
-              <th
+              </th>}
+              {columnVisibility.leadQuality && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('lead_quality')}
               >
@@ -677,8 +677,8 @@ const handleBulkEditSuccess = () => {
                   Lead Quality
                   {renderSortIcon('lead_quality')}
                 </div>
-              </th>
-              <th
+              </th>}
+              {columnVisibility.lastContactDate && <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort('last_contact_date')}
               >
@@ -686,13 +686,13 @@ const handleBulkEditSuccess = () => {
                   Last Contact Date
                   {renderSortIcon('last_contact_date')}
                 </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              </th>}
+              {columnVisibility.notes && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Notes
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              </th>}
+              {columnVisibility.actions && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
-              </th>
+              </th>}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -717,60 +717,30 @@ const handleBulkEditSuccess = () => {
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {columnVisibility.prospectName && <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {lead.prospect_name || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.prospectEmail && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {lead.prospect_email || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.phone && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {lead.phone || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.country && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {lead.country}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.campaign && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {lead.campaign || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.country}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.campaign || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.country}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.campaign || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.country}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.campaign || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.country}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.campaign || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.country}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {lead.campaign || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.referralDestination && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {lead.referral_source || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  </td>}
+                  {columnVisibility.contactStatus && <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={'px-3 py-1 rounded-full text-xs font-semibold ' + getStatusBadgeColor(lead.contact_status)}>
                       {formatStatusLabel(lead.contact_status)}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  </td>}
+                  {columnVisibility.leadQuality && <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={'px-3 py-1 rounded-full text-xs font-semibold ' + getLeadQualityBadgeColor(lead.lead_quality)}>
                       {lead.lead_quality || 'Unscored'}
                     </span>
@@ -779,16 +749,16 @@ const handleBulkEditSuccess = () => {
                         ({lead.lead_score})
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.lastContactDate && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {formatDate(lead.last_contact_date)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
+                  </td>}
+                  {columnVisibility.notes && <td className="px-6 py-4 text-sm text-gray-700">
                     <div className="max-w-xs truncate" title={lead.notes || ''}>
                       {lead.notes || 'No notes'}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  </td>}
+                  {columnVisibility.actions && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -801,7 +771,7 @@ const handleBulkEditSuccess = () => {
                       </svg>
                       Edit
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               ))
             )}
