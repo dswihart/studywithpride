@@ -1,9 +1,10 @@
-'use client'
+"use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, ReactNode } from 'react'
 import enMessages from '@/messages/en.json'
 import esMessages from '@/messages/es.json'
 import ptMessages from '@/messages/pt.json'
+import { useLanguage } from '@/components/LanguageContext'
 
 type Locale = 'en' | 'es' | 'pt'
 type Messages = typeof enMessages
@@ -19,45 +20,15 @@ const IntlContext = createContext<IntlContextType | undefined>(undefined)
 const messages: Record<Locale, Messages> = {
   en: enMessages,
   es: esMessages,
-  pt: ptMessages
+  pt: ptMessages,
 }
 
 export function IntlProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en')
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    const stored = localStorage.getItem('preferred-language') as Locale | null
-    if (stored && (stored === 'en' || stored === 'es' || stored === 'pt')) {
-      setLocaleState(stored)
-    }
-    setMounted(true)
-
-    // Listen for storage changes from LanguageContext
-    const handleStorageChange = () => {
-      const newLang = localStorage.getItem('preferred-language') as Locale | null
-      if (newLang && (newLang === 'en' || newLang === 'es' || newLang === 'pt')) {
-        setLocaleState(newLang)
-      }
-    }
-
-    // Listen for storage events (from other windows/tabs)
-    window.addEventListener('storage', handleStorageChange)
-
-    // Listen for custom event (for same-window changes)
-    window.addEventListener('languageChanged', handleStorageChange as EventListener)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('languageChanged', handleStorageChange as EventListener)
-    }
-  }, [])
+  const { language, setLanguage } = useLanguage()
+  const locale: Locale = (language as Locale) ?? 'en'
 
   const setLocale = (newLocale: Locale) => {
-    setLocaleState(newLocale)
-    localStorage.setItem('preferred-language', newLocale)
-    // Dispatch custom event for same-window changes
-    window.dispatchEvent(new Event('languageChanged'))
+    setLanguage(newLocale)
   }
 
   const t = (key: string): string => {
@@ -73,10 +44,6 @@ export function IntlProvider({ children }: { children: ReactNode }) {
     }
 
     return typeof value === 'string' ? value : key
-  }
-
-  if (!mounted) {
-    return <>{children}</>
   }
 
   return (

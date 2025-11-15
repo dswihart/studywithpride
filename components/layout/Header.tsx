@@ -1,17 +1,22 @@
 "use client"
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/components/LanguageContext'
 import { useAuth } from '@/components/AuthContext'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
-import { useState, useEffect } from 'react'
+import { useTheme } from '@/components/ThemeProvider'
+import { useState, useEffect, MouseEvent as ReactMouseEvent } from 'react'
 
 export default function Header() {
   const [mounted, setMounted] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const router = useRouter()
   const { t } = useLanguage()
   const { user, signOut, loading: authLoading } = useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const isDarkMode = theme === 'dark'
 
   // Check if user is recruiter or admin
   const userRole = user?.user_metadata?.role
@@ -20,6 +25,24 @@ export default function Header() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const handleNavigate = (event: ReactMouseEvent<HTMLAnchorElement | HTMLButtonElement>, href: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) {
+      return
+    }
+    event.preventDefault()
+    setUserMenuOpen(false)
+    setMobileMenuOpen(false)
+    router.push(href)
+  }
+
+  const desktopNavLinks = [
+    { href: '/safety', label: t('nav.safety') },
+    { href: '/visa', label: t('nav.visa') },
+    { href: '/cost-calculator', label: t('nav.costCalculator') },
+    { href: '/partners', label: t('nav.partners') },
+    { href: '/news', label: 'News' }
+  ]
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -51,21 +74,16 @@ export default function Header() {
           </Link>
 
           <div className="hidden md:flex space-x-6 items-center">
-            <Link href="/safety" className="text-gray-700 hover:text-purple-600 transition">
-              {t('nav.safety')}
-            </Link>
-            <Link href="/visa" className="text-gray-700 hover:text-purple-600 transition">
-              {t('nav.visa')}
-            </Link>
-            <Link href="/cost-calculator" className="text-gray-700 hover:text-purple-600 transition">
-              {t('nav.costCalculator')}
-            </Link>
-            <Link href="/partners" className="text-gray-700 hover:text-purple-600 transition">
-              {t('nav.partners')}
-            </Link>
-            <Link href="/news" className="text-gray-700 hover:text-purple-600 transition">
-              News
-            </Link>
+            {desktopNavLinks.map(link => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(event) => handleNavigate(event, link.href)}
+                className="text-gray-700 hover:text-purple-600 transition"
+              >
+                {link.label}
+              </a>
+            ))}
 
             {mounted && !authLoading && (
               <>
@@ -96,10 +114,10 @@ export default function Header() {
 
                         {/* Recruitment Dashboard link - only for recruiters/admins */}
                         {isRecruiterOrAdmin && (
-                          <Link
+                          <a
                             href="/admin/recruitment/dashboard"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
-                            onClick={() => setUserMenuOpen(false)}
+                            onClick={(event) => handleNavigate(event, '/admin/recruitment/dashboard')}
                           >
                             <div className="flex items-center space-x-2">
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,13 +125,13 @@ export default function Header() {
                               </svg>
                               <span>Recruitment Dashboard</span>
                             </div>
-                          </Link>
+                          </a>
                         )}
 
-                        <Link
+                        <a
                           href="/student-portal"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
-                          onClick={() => setUserMenuOpen(false)}
+                          onClick={(event) => handleNavigate(event, '/student-portal')}
                         >
                           <div className="flex items-center space-x-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,11 +139,11 @@ export default function Header() {
                             </svg>
                             <span>{t('nav.studentPortal')}</span>
                           </div>
-                        </Link>
-                        <Link
+                        </a>
+                        <a
                           href="/student-portal"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
-                          onClick={() => setUserMenuOpen(false)}
+                          onClick={(event) => handleNavigate(event, '/student-portal')}
                         >
                           <div className="flex items-center space-x-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +151,7 @@ export default function Header() {
                             </svg>
                             <span>My Applications</span>
                           </div>
-                        </Link>
+                        </a>
                         <button
                           onClick={() => {
                             setUserMenuOpen(false)
@@ -153,32 +171,66 @@ export default function Header() {
                   </div>
                 ) : (
                   <div className="flex items-center space-x-3">
-                    <Link
+                    <a
                       href="/login"
+                      onClick={(event) => handleNavigate(event, '/login')}
                       className="text-purple-600 hover:text-purple-700 font-medium transition"
                     >
                       Login
-                    </Link>
-                    <Link
+                    </a>
+                    <a
                       href="/register"
+                      onClick={(event) => handleNavigate(event, '/register')}
                       className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
                     >
                       Sign Up
-                    </Link>
+                    </a>
                   </div>
                 )}
               </>
             )}
 
-            {mounted && (
-              <LanguageSwitcher />
-            )}
+            <div className="flex items-center space-x-3">
+              {mounted && (
+                <LanguageSwitcher />
+              )}
+              <button
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                className="p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-200"
+              >
+                {isDarkMode ? (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2M12 19v2M5.64 5.64l1.42 1.42M16.94 16.94l1.42 1.42M3 12h2M19 12h2M5.64 18.36l1.42-1.42M16.94 7.06l1.42-1.42M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="md:hidden flex items-center space-x-2">
             {mounted && (
               <LanguageSwitcher />
             )}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="p-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition dark:bg-gray-800 dark:text-gray-200"
+            >
+              {isDarkMode ? (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2M12 19v2M5.64 5.64l1.42 1.42M16.94 16.94l1.42 1.42M3 12h2M19 12h2M5.64 18.36l1.42-1.42M16.94 7.06l1.42-1.42M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                </svg>
+              )}
+            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="text-gray-700 hover:text-purple-600 transition"
@@ -194,41 +246,16 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pt-4 border-t border-gray-200">
             <div className="space-y-3">
-              <Link
-                href="/safety"
-                className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('nav.safety')}
-              </Link>
-              <Link
-                href="/visa"
-                className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('nav.visa')}
-              </Link>
-              <Link
-                href="/cost-calculator"
-                className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('nav.costCalculator')}
-              </Link>
-              <Link
-                href="/partners"
-                className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t('nav.partners')}
-              </Link>
-              <Link
-                href="/news"
-                className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                News
-              </Link>
+              {desktopNavLinks.map(link => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
+                  onClick={(event) => handleNavigate(event, link.href)}
+                >
+                  {link.label}
+                </a>
+              ))}
 
               {mounted && !authLoading && (
                 <>
@@ -245,29 +272,29 @@ export default function Header() {
 
                         {/* Recruitment Dashboard link - only for recruiters/admins (Mobile) */}
                         {isRecruiterOrAdmin && (
-                          <Link
+                          <a
                             href="/admin/recruitment/dashboard"
                             className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                            onClick={() => setMobileMenuOpen(false)}
+                            onClick={(event) => handleNavigate(event, '/admin/recruitment/dashboard')}
                           >
                             Recruitment Dashboard
-                          </Link>
+                          </a>
                         )}
 
-                        <Link
+                        <a
                           href="/student-portal"
                           className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={(event) => handleNavigate(event, '/student-portal')}
                         >
                           {t('nav.studentPortal')}
-                        </Link>
-                        <Link
+                        </a>
+                        <a
                           href="/student-portal"
                           className="block text-gray-700 hover:text-purple-600 hover:bg-gray-50 px-3 py-2 rounded transition"
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={(event) => handleNavigate(event, '/student-portal')}
                         >
                           My Applications
-                        </Link>
+                        </a>
                         <button
                           onClick={() => {
                             setMobileMenuOpen(false)
@@ -280,20 +307,20 @@ export default function Header() {
                       </>
                     ) : (
                       <div className="space-y-2">
-                        <Link
+                        <a
                           href="/login"
                           className="block text-center text-purple-600 hover:text-purple-700 px-3 py-2 rounded transition font-medium"
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={(event) => handleNavigate(event, '/login')}
                         >
                           Login
-                        </Link>
-                        <Link
+                        </a>
+                        <a
                           href="/register"
                           className="block text-center bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition"
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={(event) => handleNavigate(event, '/register')}
                         >
                           Sign Up
-                        </Link>
+                        </a>
                       </div>
                     )}
                   </div>

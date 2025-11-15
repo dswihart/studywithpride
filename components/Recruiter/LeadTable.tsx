@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import { useLanguage } from '@/components/LanguageContext'
-import BulkEditLeadModal from '@/components/Recruiter/BulkEditLeadModal'
+import { useEffect, useRef, useState } from "react"
+import { useLanguage } from "@/components/LanguageContext"
+import BulkEditLeadModal from "./BulkEditLeadModal"
 
 interface Lead {
   id: string
@@ -17,6 +17,11 @@ interface Lead {
   referral_source: string | null
   phone: string | null
   campaign: string | null
+  date_imported: string | null
+  name_score: number | null
+  email_score: number | null
+  phone_valid: boolean | null
+  recency_score: number | null
   lead_score: number | null
   lead_quality: string | null
 }
@@ -27,199 +32,292 @@ interface LeadTableProps {
   onSelectionChange?: (selectedIds: string[]) => void
 }
 
+const CONTACT_STATUSES = [
+  { value: "all", label: "all" },
+  { value: "not_contacted", label: "not_contacted" },
+  { value: "referral", label: "referral" },
+  { value: "contacted", label: "contacted" },
+  { value: "interested", label: "interested" },
+  { value: "qualified", label: "qualified" },
+  { value: "converted", label: "converted" },
+  { value: "unqualified", label: "unqualified" },
+]
+
 type SortColumn =
-  | 'prospect_name'
-  | 'prospect_email'
-  | 'country'
-  | 'phone'
-  | 'campaign'
-  | 'contact_status'
-  | 'lead_quality'
-  | 'last_contact_date'
+  | "prospect_name"
+  | "prospect_email"
+  | "country"
+  | "phone"
+  | "campaign"
+  | "contact_status"
+  | "lead_quality"
+  | "last_contact_date"
   | null
 
-type SortDirection = 'asc' | 'desc' | null
-
+type SortDirection = "asc" | "desc" | null
 type ColumnKey =
-  | 'prospect_name'
-  | 'prospect_email'
-  | 'phone'
-  | 'country'
-  | 'campaign'
-  | 'referral_source'
-  | 'contact_status'
-  | 'lead_quality'
-  | 'last_contact_date'
-  | 'notes'
+  | "prospect_name"
+  | "prospect_email"
+  | "phone"
+  | "country"
+  | "campaign"
+  | "referral_source"
+  | "contact_status"
+  | "lead_quality"
+  | "last_contact_date"
+  | "notes"
 
-const CONTACT_STATUSES = [
-  { value: 'all', labelKey: 'recruiter.statuses.all' },
-  { value: 'new', labelKey: 'recruiter.statuses.new' },
-  { value: 'contacted', labelKey: 'recruiter.statuses.contacted' },
-  { value: 'nurturing', labelKey: 'recruiter.statuses.nurturing' },
-  { value: 'converted', labelKey: 'recruiter.statuses.converted' },
+type ColumnDefinition = {
+  key: ColumnKey
+  labelKey: string
+  sortable?: SortColumn
+}
+
+const COLUMN_DEFINITIONS: ColumnDefinition[] = [
+  { key: "prospect_name", labelKey: "recruiter.table.columns.prospectName", sortable: "prospect_name" },
+  { key: "prospect_email", labelKey: "recruiter.table.columns.email", sortable: "prospect_email" },
+  { key: "phone", labelKey: "recruiter.table.columns.phone", sortable: "phone" },
+  { key: "country", labelKey: "recruiter.table.columns.country", sortable: "country" },
+  { key: "campaign", labelKey: "recruiter.table.columns.campaign", sortable: "campaign" },
+  { key: "referral_source", labelKey: "recruiter.table.referralColumn" },
+  { key: "contact_status", labelKey: "recruiter.table.columns.status", sortable: "contact_status" },
+  { key: "lead_quality", labelKey: "recruiter.table.columns.quality", sortable: "lead_quality" },
+  { key: "last_contact_date", labelKey: "recruiter.table.columns.lastContact", sortable: "last_contact_date" },
+  { key: "notes", labelKey: "recruiter.table.columns.notes" },
 ]
 
-const MESSAGE_TEMPLATES = [
-  { id: 'WelcomeMessage', labelKey: 'recruiter.table.templates.welcome' },
-  { id: 'FollowUp', labelKey: 'recruiter.table.templates.followUp' },
-]
+const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS.reduce(
+  (acc, column) => ({ ...acc, [column.key]: true }),
+  {} as Record<ColumnKey, boolean>
+)
 
-const COLUMN_DEFINITIONS: Array<{ key: ColumnKey; labelKey: string; sortable?: SortColumn }> = [
-  { key: 'prospect_name', labelKey: 'recruiter.table.columns.prospectName', sortable: 'prospect_name' },
-  { key: 'prospect_email', labelKey: 'recruiter.table.columns.email', sortable: 'prospect_email' },
-  { key: 'phone', labelKey: 'recruiter.table.columns.phone', sortable: 'phone' },
-  { key: 'country', labelKey: 'recruiter.table.columns.country', sortable: 'country' },
-  { key: 'campaign', labelKey: 'recruiter.table.columns.campaign', sortable: 'campaign' },
-  { key: 'referral_source', labelKey: 'recruiter.table.referralColumn' },
-  { key: 'contact_status', labelKey: 'recruiter.table.columns.status', sortable: 'contact_status' },
-  { key: 'lead_quality', labelKey: 'recruiter.table.columns.quality', sortable: 'lead_quality' },
-  { key: 'last_contact_date', labelKey: 'recruiter.table.columns.lastContact', sortable: 'last_contact_date' },
-  { key: 'notes', labelKey: 'recruiter.table.columns.notes' },
-]
+const COLUMN_VISIBILITY_STORAGE_KEY = "recruiter-lead-table-columns"
 
 export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange }: LeadTableProps) {
   const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [selectedCountry, setSelectedCountry] = useState('all')
-  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [error, setError] = useState("")
+  const [selectedCountry, setSelectedCountry] = useState("all")
+  const [selectedStatus, setSelectedStatus] = useState("all")
   const [countries, setCountries] = useState<string[]>([])
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
-  const [selectedTemplate, setSelectedTemplate] = useState(MESSAGE_TEMPLATES[0].id)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(50)
   const [allLeads, setAllLeads] = useState<Lead[]>([])
   const [selectAllPages, setSelectAllPages] = useState(false)
   const [sortColumn, setSortColumn] = useState<SortColumn>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
-  const [sendingLeadId, setSendingLeadId] = useState<string | null>(null)
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [showBulkEditModal, setShowBulkEditModal] = useState(false)
+  const [columnVisibility, setColumnVisibility] = useState<Record<ColumnKey, boolean>>(DEFAULT_COLUMN_VISIBILITY)
+  const [showColumnMenu, setShowColumnMenu] = useState(false)
+  const columnMenuRef = useRef<HTMLDivElement | null>(null)
 
-  const fetchLeads = async () => {
-    try {
-      setLoading(true)
-      setError('')
-
-      const params = new URLSearchParams()
-      if (selectedCountry !== 'all') params.append('country', selectedCountry)
-      if (selectedStatus !== 'all') params.append('contact_status', selectedStatus)
-      params.append('limit', '10000')
-
-      const response = await fetch(`/api/recruiter/leads-read?${params.toString()}`, {
-        credentials: 'include',
-      })
-
-      const result = await response.json()
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to fetch leads')
+  useEffect(() => {
+    const loadVisibility = () => {
+      if (typeof window === "undefined") return
+      const stored = window.localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY)
+      if (!stored) return
+      try {
+        const parsed = JSON.parse(stored)
+        const nextVisibility = { ...DEFAULT_COLUMN_VISIBILITY }
+        COLUMN_DEFINITIONS.forEach(({ key }) => {
+          if (typeof parsed[key] === "boolean") {
+            nextVisibility[key] = parsed[key]
+          }
+        })
+        setColumnVisibility(nextVisibility)
+      } catch {
+        // Ignore malformed data
       }
-
-      const fetched: Lead[] = result.data?.leads || []
-      setAllLeads(fetched)
-      setCurrentPage(1)
-      setSelectedLeads(new Set())
-      setSelectAllPages(false)
-
-      const uniqueCountries = Array.from(new Set(fetched.map((lead) => lead.country))).sort()
-      setCountries(uniqueCountries)
-
-      onLeadsChange?.(fetched)
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch leads')
-      setLeads([])
-    } finally {
-      setLoading(false)
     }
-  }
+
+    loadVisibility()
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(columnVisibility))
+  }, [columnVisibility])
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+        setShowColumnMenu(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
 
   useEffect(() => {
     fetchLeads()
   }, [selectedCountry, selectedStatus])
 
   useEffect(() => {
-    onSelectionChange?.(Array.from(selectedLeads))
+    if (onSelectionChange) {
+      onSelectionChange(Array.from(selectedLeads))
+    }
   }, [selectedLeads, onSelectionChange])
 
+  const fetchLeads = async () => {
+    try {
+      setLoading(true)
+      setError("")
+
+      const params = new URLSearchParams()
+      if (selectedCountry !== "all") params.append("country", selectedCountry)
+      if (selectedStatus !== "all") params.append("contact_status", selectedStatus)
+      params.append("limit", "10000")
+
+      const response = await fetch(`/api/recruiter/leads-read?${params.toString()}`, {
+        credentials: "include",
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        setError(result.error || t("recruiter.table.noResults"))
+        setLeads([])
+        return
+      }
+
+      const fetchedLeads: Lead[] = result.data?.leads || []
+      setAllLeads(fetchedLeads)
+      setCurrentPage(1)
+      setSelectedLeads(new Set())
+      setSelectAllPages(false)
+
+      const uniqueCountries = Array.from(new Set(fetchedLeads.map((lead) => lead.country))).sort()
+      setCountries(uniqueCountries)
+
+      if (onLeadsChange) {
+        onLeadsChange(fetchedLeads)
+      }
+    } catch {
+      setError(t("recruiter.table.noResults"))
+      setLeads([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleBulkEditSuccess = () => {
-    setShowBulkEditModal(false)
     fetchLeads()
-    setNotification({ type: 'success', message: t('recruiter.table.bulkSuccess') })
+    setShowBulkEditModal(false)
   }
 
   const handleSort = (column: SortColumn) => {
-    let direction: SortDirection = 'asc'
+    let newDirection: SortDirection = "asc"
 
     if (sortColumn === column) {
-      if (sortDirection === 'asc') {
-        direction = 'desc'
-      } else if (sortDirection === 'desc') {
+      if (sortDirection === "asc") {
+        newDirection = "desc"
+      } else if (sortDirection === "desc") {
         setSortColumn(null)
         setSortDirection(null)
+        setCurrentPage(1)
         return
       }
     }
 
     setSortColumn(column)
-    setSortDirection(direction)
+    setSortDirection(newDirection)
+    setCurrentPage(1)
   }
 
-  const sortedLeads = useMemo(() => {
-    if (!sortColumn || !sortDirection) return allLeads
+  const getSortedLeads = (leadsToSort: Lead[]) => {
+    if (!sortColumn || !sortDirection) return leadsToSort
 
-    return [...allLeads].sort((a, b) => {
+    return [...leadsToSort].sort((a, b) => {
       let aValue: any = null
       let bValue: any = null
 
       switch (sortColumn) {
-        case 'prospect_name':
-          aValue = a.prospect_name?.toLowerCase() || ''
-          bValue = b.prospect_name?.toLowerCase() || ''
+        case "prospect_name":
+          aValue = a.prospect_name?.toLowerCase() || ""
+          bValue = b.prospect_name?.toLowerCase() || ""
           break
-        case 'prospect_email':
-          aValue = a.prospect_email?.toLowerCase() || ''
-          bValue = b.prospect_email?.toLowerCase() || ''
+        case "prospect_email":
+          aValue = a.prospect_email?.toLowerCase() || ""
+          bValue = b.prospect_email?.toLowerCase() || ""
           break
-        case 'country':
+        case "country":
           aValue = a.country.toLowerCase()
           bValue = b.country.toLowerCase()
           break
-        case 'phone':
-          aValue = a.phone || ''
-          bValue = b.phone || ''
+        case "phone":
+          aValue = a.phone || ""
+          bValue = b.phone || ""
           break
-        case 'campaign':
-          aValue = a.campaign || ''
-          bValue = b.campaign || ''
+        case "campaign":
+          aValue = a.campaign || ""
+          bValue = b.campaign || ""
           break
-        case 'contact_status':
-          aValue = a.contact_status
-          bValue = b.contact_status
+        case "contact_status":
+          aValue = a.contact_status.toLowerCase()
+          bValue = b.contact_status.toLowerCase()
           break
-        case 'lead_quality':
-          aValue = a.lead_quality || ''
-          bValue = b.lead_quality || ''
+        case "lead_quality": {
+          const qualityOrder: Record<string, number> = {
+            High: 4,
+            Medium: 3,
+            Low: 2,
+            "Very Low": 1,
+          }
+          aValue = qualityOrder[a.lead_quality || ""] || 0
+          bValue = qualityOrder[b.lead_quality || ""] || 0
           break
-        case 'last_contact_date':
+        }
+        case "last_contact_date":
           aValue = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0
           bValue = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0
           break
       }
 
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
       return 0
     })
-  }, [allLeads, sortColumn, sortDirection])
+  }
 
   useEffect(() => {
+    const sortedLeads = getSortedLeads(allLeads)
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     setLeads(sortedLeads.slice(startIndex, endIndex))
-  }, [sortedLeads, currentPage, itemsPerPage])
+  }, [allLeads, currentPage, itemsPerPage, sortColumn, sortDirection])
+
+  const renderSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return (
+        <span className="ml-1 text-gray-400">
+          <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        </span>
+      )
+    }
+
+    if (sortDirection === "asc") {
+      return (
+        <span className="ml-1 text-blue-600">
+          <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </span>
+      )
+    }
+
+    return (
+      <span className="ml-1 text-blue-600">
+        <svg className="inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </span>
+    )
+  }
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -231,70 +329,174 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     }
   }
 
+  const handleSelectAllPages = () => {
+    setSelectedLeads(new Set(allLeads.map((lead) => lead.id)))
+    setSelectAllPages(true)
+  }
+
   const handleSelectLead = (leadId: string, checked: boolean) => {
-    const next = new Set(selectedLeads)
+    const nextSelected = new Set(selectedLeads)
     if (checked) {
-      next.add(leadId)
+      nextSelected.add(leadId)
     } else {
-      next.delete(leadId)
+      nextSelected.delete(leadId)
     }
-    setSelectedLeads(next)
+    setSelectedLeads(nextSelected)
   }
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return t('recruiter.table.na')
+    if (!dateString) return t("recruiter.table.na")
     try {
       return new Date(dateString).toLocaleDateString()
     } catch {
-      return t('recruiter.table.na')
+      return t("recruiter.table.na")
     }
   }
 
-  const formatStatus = (status: string) => {
-    const key = status as keyof typeof statusMap
-    return t(`recruiter.statuses.${statusMap[key] || 'contacted'}`)
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "not_contacted":
+        return "bg-gray-100 text-gray-800"
+      case "referral":
+        return "bg-cyan-100 text-cyan-800"
+      case "contacted":
+        return "bg-blue-100 text-blue-800"
+      case "interested":
+        return "bg-yellow-100 text-yellow-800"
+      case "qualified":
+        return "bg-purple-100 text-purple-800"
+      case "converted":
+        return "bg-green-100 text-green-800"
+      case "unqualified":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
-  const statusMap: Record<string, string> = {
-    new: 'new',
-    contacted: 'contacted',
-    nurturing: 'nurturing',
-    converted: 'converted',
+  const getStatusLabel = (status: string) => t(`recruiter.statuses.${status}`)
+
+  const getLeadQualityBadgeColor = (quality: string | null) => {
+    switch (quality) {
+      case "High":
+        return "bg-green-100 text-green-800"
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800"
+      case "Low":
+        return "bg-orange-100 text-orange-800"
+      case "Very Low":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
-  const handleSendWhatsApp = async (lead: Lead) => {
-    setNotification(null)
-    setSendingLeadId(lead.id)
-    try {
-      const response = await fetch('/api/recruiter/send-whatsapp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lead_id: lead.id, template_id: selectedTemplate }),
-      })
+  const getLeadQualityLabel = (quality: string | null) => {
+    if (!quality) return t("recruiter.qualities.unscored")
 
-      const result = await response.json()
+    const map: Record<string, string> = {
+      High: "high",
+      Medium: "medium",
+      Low: "low",
+      "Very Low": "veryLow",
+    }
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to send WhatsApp message')
+    return t(`recruiter.qualities.${map[quality] || "unscored"}`)
+  }
+
+  const toggleColumnVisibility = (key: ColumnKey) => {
+    setColumnVisibility((prev) => {
+      const next = { ...prev, [key]: !prev[key] }
+      if (Object.values(next).some(Boolean)) {
+        return next
       }
-
-      setNotification({ type: 'success', message: t('recruiter.table.whatsappSuccess') })
-      fetchLeads()
-    } catch (error: any) {
-      setNotification({ type: 'error', message: error.message || t('recruiter.table.whatsappError') })
-    } finally {
-      setSendingLeadId(null)
-    }
+      return prev
+    })
   }
 
-  const leadsTotal = sortedLeads.length
+  const visibleColumns = COLUMN_DEFINITIONS.filter((column) => columnVisibility[column.key])
+  const totalColumns = visibleColumns.length + 2 // selection + actions
   const allSelected = leads.length > 0 && selectedLeads.size === leads.length
   const someSelected = selectedLeads.size > 0 && selectedLeads.size < leads.length
+
+  const handleRowClick = (lead: Lead, event: React.MouseEvent) => {
+    const target = event.target as HTMLElement
+    if (target.closest('input[type="checkbox"]')) {
+      return
+    }
+
+    onEditLead?.(lead)
+  }
+
+  const renderCellContent = (lead: Lead, columnKey: ColumnKey) => {
+    switch (columnKey) {
+      case "prospect_name":
+        return lead.prospect_name || t("recruiter.table.na")
+      case "prospect_email":
+        return lead.prospect_email || t("recruiter.table.na")
+      case "phone":
+        return lead.phone || t("recruiter.table.na")
+      case "country":
+        return lead.country
+      case "campaign":
+        return lead.campaign || t("recruiter.table.na")
+      case "referral_source":
+        return lead.referral_source || t("recruiter.table.na")
+      case "contact_status":
+        return (
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(lead.contact_status)}`}>
+            {getStatusLabel(lead.contact_status)}
+          </span>
+        )
+      case "lead_quality":
+        return (
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getLeadQualityBadgeColor(lead.lead_quality)}`}>
+            {getLeadQualityLabel(lead.lead_quality)}
+            {lead.lead_score !== null && <span className="ml-2 text-gray-500">({lead.lead_score})</span>}
+          </span>
+        )
+      case "last_contact_date":
+        return formatDate(lead.last_contact_date)
+      case "notes":
+        return (
+          <div className="max-w-xs truncate" title={lead.notes || ""}>
+            {lead.notes || t("recruiter.table.noNotes")}
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
+  const renderHeaderCell = (column: ColumnDefinition) => {
+    const baseClasses = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+
+    if (column.sortable) {
+      return (
+        <th
+          key={column.key}
+          className={`${baseClasses} cursor-pointer select-none hover:bg-gray-100`}
+          onClick={() => handleSort(column.sortable!)}
+        >
+          <div className="flex items-center">
+            {t(column.labelKey)}
+            {renderSortIcon(column.sortable!)}
+          </div>
+        </th>
+      )
+    }
+
+    return (
+      <th key={column.key} className={baseClasses}>
+        {t(column.labelKey)}
+      </th>
+    )
+  }
 
   if (loading && leads.length === 0) {
     return (
       <div className="rounded-lg bg-white p-8 text-center shadow-md">
-        <p className="text-gray-600">{t('recruiter.table.loading')}</p>
+        <div className="text-lg text-gray-600">{t("recruiter.table.loading")}</div>
       </div>
     )
   }
@@ -302,10 +504,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-md">
       <div className="border-b border-gray-200 p-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="country-filter">
-              {t('recruiter.table.filterCountry')}
+              {t("recruiter.table.filterCountry")}
             </label>
             <select
               id="country-filter"
@@ -313,7 +515,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
               onChange={(event) => setSelectedCountry(event.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">{t('recruiter.table.allCountries')}</option>
+              <option value="all">{t("recruiter.table.allCountries")}</option>
               {countries.map((country) => (
                 <option key={country} value={country}>
                   {country}
@@ -322,9 +524,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
             </select>
           </div>
 
-          <div>
+          <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="status-filter">
-              {t('recruiter.table.filterStatus')}
+              {t("recruiter.table.filterStatus")}
             </label>
             <select
               id="status-filter"
@@ -334,46 +536,63 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
             >
               {CONTACT_STATUSES.map((status) => (
                 <option key={status.value} value={status.value}>
-                  {t(status.labelKey)}
+                  {t(`recruiter.statuses.${status.label}`)}
                 </option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="template-filter">
-              {t('recruiter.table.templateLabel')}
-            </label>
-            <select
-              id="template-filter"
-              value={selectedTemplate}
-              onChange={(event) => setSelectedTemplate(event.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+          <div className="flex-1" ref={columnMenuRef}>
+            <span className="mb-2 block text-sm font-medium text-gray-700">
+              {t("recruiter.table.columnVisibility")}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowColumnMenu((prev) => !prev)}
+              className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-blue-500"
             >
-              {MESSAGE_TEMPLATES.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {t(template.labelKey)}
-                </option>
-              ))}
-            </select>
+              {t("recruiter.table.columnButton")}
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showColumnMenu && (
+              <div className="absolute z-10 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
+                <div className="max-h-64 overflow-auto p-4">
+                  {COLUMN_DEFINITIONS.map((column) => (
+                    <label key={column.key} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={columnVisibility[column.key]}
+                        onChange={() => toggleColumnVisibility(column.key)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{t(column.labelKey)}</span>
+                    </label>
+                  ))}
+                  <p className="mt-3 text-xs text-gray-500">{t("recruiter.table.columnHint")}</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div>
+          <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="items-per-page">
-              {t('recruiter.table.leadsPerPage')}
+              {t("recruiter.table.leadsPerPage")}
             </label>
             <select
               id="items-per-page"
               value={itemsPerPage}
               onChange={(event) => {
+                const newValue = Number(event.target.value)
                 setCurrentPage(1)
-                setItemsPerPage(Number(event.target.value))
+                setItemsPerPage(newValue)
               }}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-blue-500"
             >
-              {[10, 25, 50, 100, 200].map((size) => (
-                <option key={size} value={size}>
-                  {size}
+              {[10, 25, 50, 100, 200].map((value) => (
+                <option key={value} value={value}>
+                  {value}
                 </option>
               ))}
             </select>
@@ -381,42 +600,32 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
         </div>
       </div>
 
-      {notification && (
-        <div className={`${notification.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'} border-b border-gray-200 px-6 py-3 text-sm`}>
-          {notification.message}
+      {error && (
+        <div className="border-b border-red-200 bg-red-50 p-4 text-red-700">
+          {error}
         </div>
       )}
 
-      {error && (
-        <div className="border-b border-red-200 bg-red-50 px-6 py-3 text-sm text-red-700">{error}</div>
-      )}
-
       <div className="overflow-x-auto">
-        {selectedLeads.size === leads.length && leads.length > 0 && !selectAllPages && leadsTotal > leads.length && (
+        {selectedLeads.size === leads.length && leads.length > 0 && !selectAllPages && allLeads.length > leads.length && (
           <div className="border-b border-blue-200 bg-blue-50 px-6 py-3 text-sm text-blue-800">
-            {t('recruiter.table.pageSelectionPrefix')} {leads.length} {t('recruiter.table.pageSelectionSuffix')}
-            <button
-              onClick={() => {
-                setSelectedLeads(new Set(allLeads.map((lead) => lead.id)))
-                setSelectAllPages(true)
-              }}
-              className="ml-2 font-medium underline"
-            >
-              {t('recruiter.table.selectAllLink')} {allLeads.length} {t('recruiter.table.selectAllSuffix')}
+            {t("recruiter.table.pageSelectionPrefix")} {leads.length} {t("recruiter.table.pageSelectionSuffix")}
+            <button onClick={handleSelectAllPages} className="ml-2 font-medium text-blue-600 underline hover:text-blue-800">
+              {t("recruiter.table.selectAllLink")} {allLeads.length} {t("recruiter.table.selectAllSuffix")}
             </button>
           </div>
         )}
         {selectAllPages && (
           <div className="border-b border-blue-200 bg-blue-50 px-6 py-3 text-sm text-blue-800">
-            {t('recruiter.table.allSelectedPrefix')} {allLeads.length} {t('recruiter.table.allSelectedSuffix')}
+            {t("recruiter.table.allSelectedPrefix")} {allLeads.length} {t("recruiter.table.allSelectedSuffix")}
             <button
               onClick={() => {
                 setSelectedLeads(new Set())
                 setSelectAllPages(false)
               }}
-              className="ml-2 font-medium underline"
+              className="ml-2 font-medium text-blue-600 underline hover:text-blue-800"
             >
-              {t('recruiter.table.clearSelection')}
+              {t("recruiter.table.clearSelection")}
             </button>
           </div>
         )}
@@ -424,7 +633,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3">
+              <th className="px-6 py-3 text-left">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -435,53 +644,25 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                   className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
               </th>
-              {COLUMN_DEFINITIONS.map((column) => {
-                const baseClass = 'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-                if (column.sortable) {
-                  return (
-                    <th
-                      key={column.key}
-                      className={`${baseClass} cursor-pointer select-none hover:bg-gray-100`}
-                      onClick={() => handleSort(column.sortable!)}
-                    >
-                      <div className="flex items-center gap-1">
-                        {t(column.labelKey)}
-                        {sortColumn === column.sortable && (
-                          <span className="text-blue-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                  )
-                }
-                return (
-                  <th key={column.key} className={baseClass}>
-                    {t(column.labelKey)}
-                  </th>
-                )
-              })}
+              {visibleColumns.map((column) => renderHeaderCell(column))}
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                {t('recruiter.table.columns.actions')}
+                {t("recruiter.table.columns.actions")}
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {leads.length === 0 ? (
               <tr>
-                <td className="px-6 py-8 text-center text-gray-500" colSpan={COLUMN_DEFINITIONS.length + 2}>
-                  {t('recruiter.table.noResults')}
+                <td className="px-6 py-8 text-center text-gray-500" colSpan={totalColumns}>
+                  {t("recruiter.table.noResults")}
                 </td>
               </tr>
             ) : (
               leads.map((lead) => (
                 <tr
                   key={lead.id}
-                  className={`cursor-pointer transition hover:bg-gray-50 ${selectedLeads.has(lead.id) ? 'bg-blue-50' : ''}`}
-                  onClick={(event) => {
-                    if ((event.target as HTMLElement).closest('button, input')) {
-                      return
-                    }
-                    onEditLead?.(lead)
-                  }}
+                  className={`cursor-pointer transition hover:bg-gray-50 ${selectedLeads.has(lead.id) ? "bg-blue-50" : ""}`}
+                  onClick={(event) => handleRowClick(lead, event)}
                 >
                   <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
                     <input
@@ -491,51 +672,24 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{lead.prospect_name || t('recruiter.table.na')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{lead.prospect_email || t('recruiter.table.na')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{lead.phone || t('recruiter.table.na')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{lead.country}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{lead.campaign || t('recruiter.table.na')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{lead.referral_source || t('recruiter.table.na')}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
-                      {formatStatus(lead.contact_status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800">
-                      {lead.lead_quality || t('recruiter.qualities.unscored')}
-                      {lead.lead_score !== null && <span className="ml-1 text-gray-500">({lead.lead_score})</span>}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{formatDate(lead.last_contact_date)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    <div className="max-w-xs truncate" title={lead.notes || ''}>
-                      {lead.notes || t('recruiter.table.noNotes')}
-                    </div>
-                  </td>
+                  {visibleColumns.map((column) => (
+                    <td key={`${lead.id}-${column.key}`} className="px-6 py-4 text-sm text-gray-700">
+                      {renderCellContent(lead, column.key)}
+                    </td>
+                  ))}
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onEditLead?.(lead)
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        {t('recruiter.table.edit')}
-                      </button>
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          handleSendWhatsApp(lead)
-                        }}
-                        disabled={sendingLeadId === lead.id || !lead.phone}
-                        className="inline-flex items-center justify-center rounded-lg bg-green-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {sendingLeadId === lead.id ? t('recruiter.table.whatsappSending') : t('recruiter.table.whatsappButton')}
-                      </button>
-                    </div>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onEditLead?.(lead)
+                      }}
+                      className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      {t("recruiter.table.edit")}
+                    </button>
                   </td>
                 </tr>
               ))
@@ -549,38 +703,40 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
           {selectedLeads.size > 0 && (
             <button
               onClick={() => setShowBulkEditModal(true)}
-              className="mb-2 rounded bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+              className="mb-2 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700"
             >
-              {t('recruiter.table.editSelected')} ({selectedLeads.size})
+              {t("recruiter.table.editSelected")} ({selectedLeads.size})
             </button>
           )}
           <p className="text-sm text-gray-600">
-            {t('recruiter.table.selectionSummaryPrefix')} {((currentPage - 1) * itemsPerPage) + 1} {t('recruiter.table.selectionSummaryTo')} {Math.min(currentPage * itemsPerPage, sortedLeads.length)} {t('recruiter.table.selectionSummaryOf')} {sortedLeads.length} {sortedLeads.length === 1 ? t('recruiter.table.leadLabel') : t('recruiter.table.leadsLabel')}
-            {selectedLeads.size > 0 && ` (${selectedLeads.size} ${t('recruiter.table.selectedSuffix')})`}
+            {t("recruiter.table.selectionSummaryPrefix")} {((currentPage - 1) * itemsPerPage) + 1} {t("recruiter.table.selectionSummaryTo")} {Math.min(currentPage * itemsPerPage, getSortedLeads(allLeads).length)} {t("recruiter.table.selectionSummaryOf")} {getSortedLeads(allLeads).length}{" "}
+            {getSortedLeads(allLeads).length === 1 ? t("recruiter.table.leadLabel") : t("recruiter.table.leadsLabel")}
+            {selectedLeads.size > 0 && ` (${selectedLeads.size} ${t("recruiter.table.selectedSuffix")})`}
           </p>
-          {sortedLeads.length > itemsPerPage && (
+          {getSortedLeads(allLeads).length > itemsPerPage && (
             <div className="mt-4 flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPage === 1}
                 className="rounded border px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {t('recruiter.table.previous')}
+                {t("recruiter.table.previous")}
               </button>
               <span className="text-sm text-gray-600">
-                {t('recruiter.table.page')} {currentPage} {t('recruiter.table.of')} {Math.ceil(sortedLeads.length / itemsPerPage)}
+                {t("recruiter.table.page")} {currentPage} {t("recruiter.table.of")} {Math.ceil(getSortedLeads(allLeads).length / itemsPerPage)}
               </span>
               <button
-                onClick={() => setCurrentPage((page) => Math.min(Math.ceil(sortedLeads.length / itemsPerPage), page + 1))}
-                disabled={currentPage >= Math.ceil(sortedLeads.length / itemsPerPage)}
+                onClick={() => setCurrentPage((page) => Math.min(Math.ceil(getSortedLeads(allLeads).length / itemsPerPage), page + 1))}
+                disabled={currentPage >= Math.ceil(getSortedLeads(allLeads).length / itemsPerPage)}
                 className="rounded border px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {t('recruiter.table.next')}
+                {t("recruiter.table.next")}
               </button>
             </div>
           )}
         </div>
       )}
+
       <BulkEditLeadModal
         isOpen={showBulkEditModal}
         onClose={() => setShowBulkEditModal(false)}

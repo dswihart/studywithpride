@@ -21,6 +21,7 @@ interface Lead {
   created_time: string | null
   referral_source: string | null
   phone: string | null
+  campaign: string | null
   date_imported: string | null
   name_score: number | null
   email_score: number | null
@@ -44,6 +45,7 @@ interface CsvRow {
     name: string
     email: string
     phone: string
+    campaign: string
     country: string
     status: string
     referral_destination: string
@@ -69,9 +71,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     id: '',
     name: '',
     email: '',
+    campaign: '',
     phone: '',
     country: '',
-    contact_status: 'new',
+    contact_status: 'not_contacted',
     referral_source: '',
     notes: '',
     lead_quality: '',
@@ -97,10 +100,13 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
   }, [editLead])
 
   const statuses = [
-    { value: 'new', label: 'New' },
+    { value: 'not_contacted', label: 'Not Contacted' },
+    { value: 'referral', label: 'Referral' },
     { value: 'contacted', label: 'Contacted' },
-    { value: 'nurturing', label: 'Nurturing' },
-    { value: 'converted', label: 'Converted' }
+    { value: 'interested', label: 'Interested' },
+    { value: 'qualified', label: 'Qualified' },
+    { value: 'converted', label: 'Converted' },
+    { value: 'unqualified', label: 'Unqualified' }
   ]
 
   const validStatusValues = statuses.map(s => s.value)
@@ -113,6 +119,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         name: editLead.prospect_name || '',
         email: editLead.prospect_email || '',
         phone: editLead.phone || '',
+        campaign: editLead.campaign || '',
         country: editLead.country,
         contact_status: editLead.contact_status,
         referral_source: editLead.referral_source || '',
@@ -127,14 +134,15 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         id: '',
         name: '',
         email: '',
+        campaign: '',
         phone: '',
         country: '',
-        contact_status: 'new',
+        contact_status: 'not_contacted',
         referral_source: '',
         notes: '',
         lead_quality: '',
         last_contact_date: '',
-    created_time: '',
+        created_time: '',
       })
     }
   }, [editLead, isOpen])
@@ -164,6 +172,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           prospect_name: formData.name,
           referral_source: formData.referral_source || null,
           phone: formData.phone || null,
+          campaign: formData.campaign || null,
           notes: formData.notes,
           lead_quality: formData.lead_quality || null,
           last_contact_date: formData.last_contact_date || null,
@@ -178,7 +187,20 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       }
 
       setSuccess(`Lead ${editLead ? 'updated' : 'added'} successfully!`)
-      setFormData({ id: '', name: '', email: '', phone: '', country: '', contact_status: 'new', referral_source: '', notes: '', lead_quality: '', last_contact_date: '', created_time: '' })
+      setFormData({
+        id: '',
+        name: '',
+        email: '',
+        campaign: '',
+        phone: '',
+        country: '',
+        contact_status: 'not_contacted',
+        referral_source: '',
+        notes: '',
+        lead_quality: '',
+        last_contact_date: '',
+        created_time: ''
+      })
       setTimeout(() => {
         onSuccess()
         onClose()
@@ -234,6 +256,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'prospect_email': 'email',
       'email_address': 'email',
       'phone': 'phone',
+      'campaign': 'campaign',
       'phone_number': 'phone',
       'mobile': 'phone',
       'telephone': 'phone',
@@ -261,6 +284,12 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'lead_score': 'lead_score',
       'leadscore': 'lead_score',
       'lead_quality': 'lead_quality',
+      'created_time': 'created_time',
+      'createdtime': 'created_time',
+      'date_acquired': 'created_time',
+      'dateacquired': 'created_time',
+      'acquisition_date': 'created_time',
+      'acquisitiondate': 'created_time',
       'leadquality': 'lead_quality'
     }
 
@@ -282,17 +311,26 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
     // Fuzzy matching
     const statusMap: { [key: string]: string } = {
-      'new': 'new',
-      'not_contacted': 'new',
+      'not_contacted': 'not_contacted',
+      'notcontacted': 'not_contacted',
+      'new': 'not_contacted',
+      'referral': 'referral',
+      'referred': 'referral',
       'contacted': 'contacted',
       'reached': 'contacted',
-      'nurturing': 'nurturing',
-      'follow_up': 'nurturing',
+      'interested': 'interested',
+      'warm': 'interested',
+      'qualified': 'qualified',
+      'hot': 'qualified',
       'converted': 'converted',
-      'won': 'converted'
+      'won': 'converted',
+      'enrolled': 'converted',
+      'unqualified': 'unqualified',
+      'lost': 'unqualified',
+      'rejected': 'unqualified'
     }
 
-    return statusMap[normalized] || 'new'
+    return statusMap[normalized] || 'not_contacted'
   }
 
   const normalizeCountry = (country: string): string => {
@@ -634,9 +672,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           {(activeTab === 'single' || editLead) && (
             <form onSubmit={handleSingleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Student Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
                 <input
                   type="text"
                   required
@@ -648,9 +684,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Student Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student Email</label>
                 <input
                   type="email"
                   required
@@ -662,9 +696,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -675,9 +707,18 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign (Optional)</label>
+                <input
+                  type="text"
+                  value={formData.campaign}
+                  onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Spring 2025, Facebook Ads"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                 <select
                   required
                   value={formData.country}
@@ -686,28 +727,30 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 >
                   <option value="">Select a country</option>
                   {countries.map((country) => (
-                    <option key={country} value={country}>{country}</option>
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
                   ))}
                 </select>
-            </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Status
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Status</label>
                 <select
                   value={formData.contact_status}
                   onChange={(e) => setFormData({ ...formData, contact_status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   {statuses.map((status) => (
-                    <option key={status.value} value={status.value}>{status.label}</option>
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
                   ))}
                 </select>
-            </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Referral Destination
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Referral Destination</label>
                 <input
                   type="text"
                   value={formData.referral_source}
@@ -718,9 +761,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -730,46 +771,41 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 />
               </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Lead Quality
-              </label>
-              <select
-                value={formData.lead_quality}
-                onChange={(e) => setFormData({ ...formData, lead_quality: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Not Scored</option>
-                <option value="Hot">Hot</option>
-                <option value="Warm">Warm</option>
-                <option value="Cold">Cold</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date Acquired
-              </label>
-              <input
-                type="date"
-                value={formData.created_time}
-                onChange={(e) => setFormData({ ...formData, created_time: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Lead Quality</label>
+                  <select
+                    value={formData.lead_quality}
+                    onChange={(e) => setFormData({ ...formData, lead_quality: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Not Scored</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Very Low">Very Low</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date Acquired</label>
+                  <input
+                    type="date"
+                    value={formData.created_time}
+                    onChange={(e) => setFormData({ ...formData, created_time: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Contact Date
-              </label>
-              <input
-                type="date"
-                value={formData.last_contact_date}
-                onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Contact Date</label>
+                <input
+                  type="date"
+                  value={formData.last_contact_date}
+                  onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <button

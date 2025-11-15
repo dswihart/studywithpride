@@ -3,7 +3,7 @@
  * Displays aggregate metrics for recruitment leads
  */
 
-'use client'
+"use client"
 
 import { useLanguage } from '@/components/LanguageContext'
 
@@ -31,7 +31,10 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
     return acc
   }, {} as Record<string, number>)
 
-  const totalContacted = leads.filter((lead) => lead.contact_status !== 'new').length
+  // Calculate total contacted (any status other than 'not_contacted')
+  const totalContacted = leads.filter(
+    lead => lead.contact_status !== 'not_contacted'
+  ).length
 
   return (
     <div className="mb-8 space-y-4">

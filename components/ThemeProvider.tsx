@@ -1,8 +1,8 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react"
 
-type Theme = "light" | "dark"
+export type Theme = "light" | "dark"
 
 interface ThemeContextType {
   theme: Theme
@@ -11,36 +11,57 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light")
+const THEME_COOKIE = 'theme'
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+export function ThemeProvider({ children, initialTheme = "light" }: { children: ReactNode, initialTheme?: Theme }) {
+  const [theme, setTheme] = useState<Theme>(initialTheme)
   const [mounted, setMounted] = useState(false)
+
+  const persistTheme = useCallback((nextTheme: Theme) => {
+    try {
+      window.localStorage.setItem("theme", nextTheme)
+      document.cookie = `${THEME_COOKIE}=${nextTheme}; path=/; max-age=${COOKIE_MAX_AGE}`
+    } catch {
+      // ignore persistence issues (e.g., disabled cookies)
+    }
+  }, [])
+
+  const applyTheme = useCallback((nextTheme: Theme) => {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    root.classList.toggle('dark', nextTheme === 'dark')
+    root.dataset.theme = nextTheme
+  }, [])
 
   // Initialize theme on mount
   useEffect(() => {
-    setMounted(true)
+    if (typeof window === 'undefined') return
+
     // Get stored theme or use system preference
-    const storedTheme = localStorage.getItem("theme") as Theme | null
+    const storedTheme = window.localStorage.getItem("theme") as Theme | null
     if (storedTheme) {
       setTheme(storedTheme)
+      applyTheme(storedTheme)
+      persistTheme(storedTheme)
     } else {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      const initialTheme: Theme = prefersDark ? "dark" : "light"
-      setTheme(initialTheme)
-      localStorage.setItem("theme", initialTheme)
+      const detectedTheme: Theme = prefersDark ? "dark" : "light"
+      setTheme(detectedTheme)
+      applyTheme(detectedTheme)
+      persistTheme(detectedTheme)
     }
-  }, [])
+
+    setMounted(true)
+  }, [applyTheme, persistTheme])
 
   // Apply theme whenever it changes (only after mount)
   useEffect(() => {
     if (!mounted) return
 
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
-    localStorage.setItem("theme", theme)
-  }, [theme, mounted])
+    applyTheme(theme)
+    persistTheme(theme)
+  }, [theme, mounted, applyTheme, persistTheme])
 
   // Toggle theme function
   const toggleTheme = () => {
