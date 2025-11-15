@@ -67,11 +67,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
 
     // Handle flat keys (original behavior)
-    const value = translations[language][key as TranslationKey];
+    const langTranslations = translations[language as Language] as unknown as Record<string, string>;
+    const value = langTranslations[key];
     if (typeof value === 'string') {
       return value;
     }
-    const fallback = translations.en[key as TranslationKey];
+    const fallback = (translations.en as unknown as Record<string, string>)[key];
     if (typeof fallback === 'string') {
       return fallback;
     }

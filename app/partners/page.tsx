@@ -50,14 +50,14 @@ export default function PartnersPage() {
   const otherPartners = []
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-b from-white to-purple-50 dark:from-gray-950 dark:to-slate-900">
       <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
             {t('partners.title')}
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
             {t('partners.subtitle')}
           </p>
         </div>
@@ -92,16 +92,16 @@ export default function PartnersPage() {
               </p>
 
               {/* Programs */}
-              <div className="bg-white rounded-2xl p-6 mb-8">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 mb-8">
                 <div className="flex items-center mb-4">
                   <span className="text-3xl mr-3">📚</span>
-                  <h3 className="text-2xl font-bold text-gray-900">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     Programs Offered
                   </h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3">
                   {mainPartner.programs.map((program, idx) => (
-                    <div key={idx} className="flex items-center text-gray-700">
+                    <div key={idx} className="flex items-center text-gray-700 dark:text-gray-200">
                       <svg className="w-5 h-5 mr-2 flex-shrink-0 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
@@ -212,21 +212,21 @@ export default function PartnersPage() {
         </div>
 
         {/* Support Section */}
-        <div className="mt-12 bg-blue-50 border-2 border-blue-400 rounded-2xl p-8">
+        <div className="mt-12 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-400 dark:border-blue-700 rounded-2xl p-8">
           <div className="flex items-start">
-            <svg className="h-8 w-8 text-blue-600 mr-4 flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-8 w-8 text-blue-600 dark:text-blue-300 mr-4 flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="text-xl font-bold text-blue-900 mb-3">
+              <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-3">
                 {t('partners.needHelp')}
               </h3>
-              <p className="text-blue-800 mb-4">
+              <p className="text-blue-800 dark:text-blue-200 mb-4">
                 {t('partners.helpDescription')}
               </p>
               <a
                 href="/student-portal"
-                className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition"
+                className="inline-flex items-center text-blue-600 dark:text-blue-300 font-semibold hover:text-blue-500 transition"
               >
                 {t('partners.getGuidance')}
                 <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

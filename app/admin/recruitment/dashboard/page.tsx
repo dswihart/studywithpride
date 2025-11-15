@@ -24,6 +24,7 @@ interface Lead {
   prospect_name: string | null
   referral_source: string | null
   phone: string | null
+  campaign: string | null
   name_score: number | null
   email_score: number | null
   phone_valid: boolean | null

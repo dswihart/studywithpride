@@ -45,7 +45,7 @@ interface CsvRow {
     name: string
     email: string
     phone: string
-  campaign: string
+    campaign: string
     country: string
     status: string
     referral_destination: string
@@ -134,6 +134,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         id: '',
         name: '',
         email: '',
+        campaign: '',
         phone: '',
         country: '',
         contact_status: 'not_contacted',
@@ -141,7 +142,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         notes: '',
         lead_quality: '',
         last_contact_date: '',
-    created_time: '',
+        created_time: '',
       })
     }
   }, [editLead, isOpen])
@@ -186,8 +187,20 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       }
 
       setSuccess(`Lead ${editLead ? 'updated' : 'added'} successfully!`)
-      setFormData({ id: '', name: '', email: '', phone: '', country: '', contact_status: 'not_contacted', referral_source: '', notes: '', lead_quality: '', last_contact_date: '',
-    created_time: '' })
+      setFormData({
+        id: '',
+        name: '',
+        email: '',
+        campaign: '',
+        phone: '',
+        country: '',
+        contact_status: 'not_contacted',
+        referral_source: '',
+        notes: '',
+        lead_quality: '',
+        last_contact_date: '',
+        created_time: ''
+      })
       setTimeout(() => {
         onSuccess()
         onClose()
@@ -659,9 +672,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           {(activeTab === 'single' || editLead) && (
             <form onSubmit={handleSingleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Student Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
                 <input
                   type="text"
                   required
@@ -673,9 +684,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Student Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student Email</label>
                 <input
                   type="email"
                   required
@@ -687,9 +696,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -699,11 +706,19 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 />
               </div>
 
-              <div>                <label className="block text-sm font-medium text-gray-700 mb-1">                  Campaign (Optional)                </label>                <input                  type="text"                  value={formData.campaign}                  onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"                  placeholder="e.g., Spring 2025, Facebook Ads"                />              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign (Optional)</label>
+                <input
+                  type="text"
+                  value={formData.campaign}
+                  onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Spring 2025, Facebook Ads"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                 <select
                   required
                   value={formData.country}
@@ -712,93 +727,85 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 >
                   <option value="">Select a country</option>
                   {countries.map((country) => (
-                    <option key={country} value={country}>{country}</option>
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
                   ))}
                 </select>
-            </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Status
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Status</label>
                 <select
                   value={formData.contact_status}
                   onChange={(e) => setFormData({ ...formData, contact_status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   {statuses.map((status) => (
-                    <option key={status.value} value={status.value}>{status.label}</option>
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
                   ))}
                 </select>
-            </div>
-              <div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Referral Destination
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.referral_source}
-                    onChange={(e) => setFormData({ ...formData, referral_source: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., University Name, Program, Partner Organization"
-                  />
-                </div>
+              </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Referral Destination</label>
+                <input
+                  type="text"
+                  value={formData.referral_source}
+                  onChange={(e) => setFormData({ ...formData, referral_source: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., University Name, Program, Partner Organization"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Add any notes..."
-                  placeholder="Add any notes..."
                 />
               </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Lead Quality
-              </label>
-              <select
-                value={formData.lead_quality}
-                onChange={(e) => setFormData({ ...formData, lead_quality: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Not Scored</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-                <option value="Very Low">Very Low</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date Acquired
-              </label>
-              <input
-                type="date"
-                value={formData.created_time}
-                onChange={(e) => setFormData({ ...formData, created_time: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Lead Quality</label>
+                  <select
+                    value={formData.lead_quality}
+                    onChange={(e) => setFormData({ ...formData, lead_quality: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Not Scored</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Very Low">Very Low</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date Acquired</label>
+                  <input
+                    type="date"
+                    value={formData.created_time}
+                    onChange={(e) => setFormData({ ...formData, created_time: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Contact Date
-              </label>
-              <input
-                type="date"
-                value={formData.last_contact_date}
-                onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Contact Date</label>
+                <input
+                  type="date"
+                  value={formData.last_contact_date}
+                  onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <button

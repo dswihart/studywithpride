@@ -107,20 +107,21 @@ export default function TestimonialsPage() {
     : testimonials.filter(t => t.country === selectedCountry)
 
   return (
-        <div className="container mx-auto px-4 py-16">
+    <div className="min-h-screen bg-gradient-to-b from-white to-purple-50 dark:from-gray-950 dark:to-slate-900">
+      <div className="container mx-auto px-4 py-16">
           {/* Page Title */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {t('testimonials.title')}
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               {t('testimonials.subtitle')}
             </p>
           </div>
 
           {/* Country Filter */}
           <div className="flex justify-center mb-12">
-            <div className="inline-flex rounded-lg shadow-sm bg-white p-1" role="group">
+            <div className="inline-flex rounded-lg shadow-sm bg-white dark:bg-gray-900 p-1" role="group">
               {countries.map((country) => (
                 <button
                   key={country}
@@ -128,7 +129,7 @@ export default function TestimonialsPage() {
                   className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
                     selectedCountry === country
                       ? 'bg-purple-600 text-white'
-                      : 'text-gray-700 hover:bg-purple-100'
+                      : 'text-gray-700 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-900/40'
                   }`}
                 >
                   {country === 'all' ? t('testimonials.allCountries') : country}
@@ -142,27 +143,27 @@ export default function TestimonialsPage() {
             {filteredTestimonials.map((testimonial) => (
               <div
                 key={testimonial.id}
-                className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
+                className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
               >
                 <div className="flex items-start mb-4">
                   <div className="text-4xl mr-4">{testimonial.image}</div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{testimonial.name}</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {testimonial.flag} {testimonial.country}
                     </p>
                     <p className="text-xs text-purple-600 font-medium mt-1">
                       {testimonial.program}
                     </p>
-                    <p className="text-xs text-gray-500">{testimonial.university}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{testimonial.university}</p>
                   </div>
                 </div>
 
-                <blockquote className="text-gray-700 italic mb-4">
+                <blockquote className="text-gray-700 dark:text-gray-300 italic mb-4">
                   "{testimonial.quote}"
                 </blockquote>
 
-                <div className="text-xs text-gray-500 text-right">
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
                   Class of {testimonial.year}
                 </div>
               </div>
@@ -196,10 +197,10 @@ export default function TestimonialsPage() {
 
           {/* CTA Section */}
           <section className="mt-16 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               {t('testimonials.readyToJoin')}
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 dark:text-gray-300 mb-8">
               {t('testimonials.startYourJourney')}
             </p>
             <a
@@ -209,7 +210,7 @@ export default function TestimonialsPage() {
               {t('testimonials.applyNow')}
             </a>
           </section>
-        </div>
-    
+      </div>
+    </div>
   )
 }
