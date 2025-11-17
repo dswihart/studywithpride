@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import LeadTable from '@/components/Recruiter/LeadTable'
 import LeadMetrics from '@/components/Recruiter/LeadMetrics'
+import SendWhatsAppModal from "@/components/Recruiter/SendWhatsAppModal"
 import AddLeadModal from '@/components/Recruiter/AddLeadModal'
 
 interface Lead {
@@ -44,6 +45,8 @@ export default function RecruiterDashboardPage() {
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false)
+  const [whatsAppLead, setWhatsAppLead] = useState<Lead | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -99,6 +102,21 @@ export default function RecruiterDashboardPage() {
   const handleCloseModal = () => {
     setIsAddLeadModalOpen(false)
     setEditingLead(null)
+  }
+
+  const handleWhatsAppClick = (lead: Lead) => {
+    setWhatsAppLead(lead)
+    setIsWhatsAppModalOpen(true)
+  }
+
+  const handleWhatsAppSuccess = () => {
+    // Refresh the lead table
+    window.location.reload()
+  }
+
+  const handleCloseWhatsAppModal = () => {
+    setIsWhatsAppModalOpen(false)
+    setWhatsAppLead(null)
   }
 
   const handleSelectionChange = (selectedIds: string[]) => {
@@ -215,6 +233,7 @@ export default function RecruiterDashboardPage() {
             onLeadsChange={handleLeadsChange}
             onEditLead={handleEditLead}
             onSelectionChange={handleSelectionChange}
+            onWhatsAppClick={handleWhatsAppClick}
           />
         </div>
 
@@ -224,6 +243,14 @@ export default function RecruiterDashboardPage() {
           onClose={handleCloseModal}
           onSuccess={handleAddLeadSuccess}
           editLead={editingLead}
+        />
+
+        {/* WhatsApp Message Modal */}
+        <SendWhatsAppModal
+          isOpen={isWhatsAppModalOpen}
+          onClose={handleCloseWhatsAppModal}
+          onSuccess={handleWhatsAppSuccess}
+          lead={whatsAppLead}
         />
 
         {/* Delete Confirmation Modal */}

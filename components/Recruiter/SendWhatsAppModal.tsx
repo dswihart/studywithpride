@@ -1,0 +1,321 @@
+/**
+ * SendWhatsAppModal Component
+ * Modal for sending WhatsApp messages to leads
+ * Supports template messages and text messages
+ */
+
+"use client"
+
+import { useState } from "react"
+
+interface Lead {
+  id: string
+  prospect_name: string | null
+  phone: string | null
+  country: string
+  phone_valid: boolean | null
+}
+
+interface SendWhatsAppModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: () => void
+  lead: Lead | null
+}
+
+interface MessageTemplate {
+  id: string
+  name: string
+  category: string
+  description: string
+  body: string
+  params: number
+}
+
+const MESSAGE_TEMPLATES: MessageTemplate[] = [
+  {
+    id: "welcome_message",
+    name: "Welcome Message",
+    category: "UTILITY",
+    description: "Initial welcome message for new leads",
+    body: "Hello {{1}}!\n\nThank you for your interest in studying abroad with Study With Pride. Our recruitment team will contact you shortly to discuss your {{2}} study options.\n\nBest regards,\nStudy With Pride Team",
+    params: 2
+  },
+  {
+    id: "follow_up",
+    name: "Follow Up",
+    category: "UTILITY",
+    description: "Follow up message for contacted leads",
+    body: "Hi {{1}},\n\nFollowing up on your study abroad inquiry for {{2}}. Do you have time this week to discuss your application options?\n\nBest regards,\n{{3}} - Study With Pride",
+    params: 3
+  },
+  {
+    id: "application_reminder",
+    name: "Application Reminder",
+    category: "UTILITY",
+    description: "Reminder about application deadlines",
+    body: "Hi {{1}},\n\nThis is a friendly reminder about your {{2}} application. The deadline is approaching on {{3}}. Let us know if you need assistance!\n\nStudy With Pride Team",
+    params: 3
+  }
+]
+
+export default function SendWhatsAppModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  lead
+}: SendWhatsAppModalProps) {
+  const [messageType, setMessageType] = useState<"template" | "text">("template")
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("")
+  const [templateParams, setTemplateParams] = useState<string[]>([])
+  const [textMessage, setTextMessage] = useState<string>("")
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string>("")
+
+  if (!isOpen || !lead) return null
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId)
+    const template = MESSAGE_TEMPLATES.find(t => t.id === templateId)
+    if (template) {
+      const newParams = Array(template.params).fill("")
+      newParams[0] = lead.prospect_name || "there"
+      if (template.params >= 2) {
+        newParams[1] = lead.country || "your country"
+      }
+      setTemplateParams(newParams)
+    }
+    setError("")
+  }
+
+  const handleParamChange = (index: number, value: string) => {
+    const newParams = [...templateParams]
+    newParams[index] = value
+    setTemplateParams(newParams)
+  }
+
+  const getPreviewMessage = () => {
+    if (messageType === "text") {
+      return textMessage
+    }
+    
+    const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate)
+    if (!template) return ""
+    
+    let preview = template.body
+    templateParams.forEach((param, index) => {
+      preview = preview.replace(`{{${index + 1}}}`, param || `[param ${index + 1}]`)
+    })
+    return preview
+  }
+
+  const handleSend = async () => {
+    setError("")
+    
+    if (messageType === "template") {
+      if (!selectedTemplate) {
+        setError("Please select a message template")
+        return
+      }
+      
+      const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate)
+      if (template && templateParams.some((p, i) => !p)) {
+        setError("Please fill in all template parameters")
+        return
+      }
+    } else {
+      if (!textMessage.trim()) {
+        setError("Please enter a message")
+        return
+      }
+    }
+
+    setSending(true)
+
+    try {
+      const payload: any = {
+        leadId: lead.id
+      }
+
+      if (messageType === "template") {
+        payload.templateId = selectedTemplate
+        payload.templateParams = templateParams
+      } else {
+        payload.text = textMessage
+      }
+
+      const response = await fetch("/api/recruiter/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        setError(result.error || "Failed to send WhatsApp message")
+        setSending(false)
+        return
+      }
+
+      onSuccess()
+      handleClose()
+    } catch (err: any) {
+      setError(err.message || "Network error. Please try again.")
+      setSending(false)
+    }
+  }
+
+  const handleClose = () => {
+    setMessageType("template")
+    setSelectedTemplate("")
+    setTemplateParams([])
+    setTextMessage("")
+    setError("")
+    setSending(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Send WhatsApp Message</h2>
+            <p className="text-sm text-gray-600">
+              To: {lead.prospect_name || "Lead"} ({lead.phone})
+            </p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Message Type
+          </label>
+          <div className="flex gap-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="template"
+                checked={messageType === "template"}
+                onChange={(e) => setMessageType(e.target.value as "template" | "text")}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700">Template Message (for first contact)</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="text"
+                checked={messageType === "text"}
+                onChange={(e) => setMessageType(e.target.value as "template" | "text")}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700">Text Message (24hr window)</span>
+            </label>
+          </div>
+        </div>
+
+        {messageType === "template" ? (
+          <>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Template
+              </label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => handleTemplateChange(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">-- Choose a template --</option>
+                {MESSAGE_TEMPLATES.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} - {template.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedTemplate && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Template Parameters
+                </label>
+                {templateParams.map((param, index) => (
+                  <div key={index} className="mb-2">
+                    <input
+                      type="text"
+                      value={param}
+                      onChange={(e) => handleParamChange(index, e.target.value)}
+                      placeholder={`Parameter ${index + 1}`}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Message Text
+            </label>
+            <textarea
+              value={textMessage}
+              onChange={(e) => setTextMessage(e.target.value)}
+              placeholder="Type your message here..."
+              rows={5}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Note: Text messages can only be sent within 24 hours of the last customer reply
+            </p>
+          </div>
+        )}
+
+        <div className="mb-4 rounded-lg bg-gray-50 p-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Preview
+          </label>
+          <div className="whitespace-pre-wrap text-sm text-gray-700">
+            {getPreviewMessage() || "Select a template or type a message to see preview"}
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={handleClose}
+            disabled={sending}
+            className="rounded-lg border border-gray-300 px-6 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={sending}
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            {sending ? "Sending..." : "Send WhatsApp"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
