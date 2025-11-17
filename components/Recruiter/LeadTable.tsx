@@ -34,6 +34,7 @@ interface LeadTableProps {
   onEditLead?: (lead: Lead) => void
   onSelectionChange?: (selectedIds: string[]) => void
   onWhatsAppClick?: (lead: Lead) => void
+  onMessageHistoryClick?: (lead: Lead) => void
 }
 
 const CONTACT_STATUSES = [

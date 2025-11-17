@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import LeadTable from '@/components/Recruiter/LeadTable'
 import LeadMetrics from '@/components/Recruiter/LeadMetrics'
 import SendWhatsAppModal from "@/components/Recruiter/SendWhatsAppModal"
+import MessageHistoryModal from "@/components/Recruiter/MessageHistoryModal"
 import AddLeadModal from '@/components/Recruiter/AddLeadModal'
 
 interface Lead {
@@ -47,6 +48,8 @@ export default function RecruiterDashboardPage() {
   const [deleting, setDeleting] = useState(false)
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false)
   const [whatsAppLead, setWhatsAppLead] = useState<Lead | null>(null)
+  const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false)
+  const [messageHistoryLead, setMessageHistoryLead] = useState<Lead | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -119,10 +122,20 @@ export default function RecruiterDashboardPage() {
     setWhatsAppLead(null)
   }
 
+  const handleMessageHistoryClick = (lead: Lead) => {
+    setMessageHistoryLead(lead)
+    setIsMessageHistoryOpen(true)
+  }
+
+  const handleCloseMessageHistory = () => {
+const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds(selectedIds)  }
+    setIsMessageHistoryOpen(false)
+    setMessageHistoryLead(null)
+  }
+
   const handleSelectionChange = (selectedIds: string[]) => {
     setSelectedLeadIds(selectedIds)
   }
-
   const handleDeleteSelected = () => {
     if (selectedLeadIds.length === 0) return
     setShowDeleteConfirm(true)
@@ -234,6 +247,7 @@ export default function RecruiterDashboardPage() {
             onEditLead={handleEditLead}
             onSelectionChange={handleSelectionChange}
             onWhatsAppClick={handleWhatsAppClick}
+              onMessageHistoryClick={handleMessageHistoryClick}
           />
         </div>
 
@@ -251,6 +265,13 @@ export default function RecruiterDashboardPage() {
           onClose={handleCloseWhatsAppModal}
           onSuccess={handleWhatsAppSuccess}
           lead={whatsAppLead}
+        />
+
+        {/* Message History Modal */}
+        <MessageHistoryModal
+          isOpen={isMessageHistoryOpen}
+          onClose={handleCloseMessageHistory}
+          lead={messageHistoryLead}
         />
 
         {/* Delete Confirmation Modal */}
