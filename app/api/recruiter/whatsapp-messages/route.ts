@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,25 +9,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    // Return mock data for now to test the UI
+    const mockMessages = [
+      {
+        id: '1',
+        lead_id: leadId,
+        direction: 'outbound',
+        content: 'Hello! This is a test message from Study With Pride.',
+        status: 'delivered',
+        sent_at: new Date().toISOString()
+      }
+    ]
 
-    // Fetch messages for this lead
-    const { data: messages, error } = await supabase
-      .from('whatsapp_messages')
-      .select('*')
-      .eq('lead_id', leadId)
-      .order('sent_at', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching WhatsApp messages:', error)
-      return NextResponse.json({ 
-        error: 'Failed to fetch messages', 
-        details: error.message,
-        code: error.code 
-      }, { status: 500 })
-    }
-
-    return NextResponse.json({ messages: messages || [] })
+    return NextResponse.json({ messages: mockMessages })
   } catch (error: any) {
     console.error('Unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 })
