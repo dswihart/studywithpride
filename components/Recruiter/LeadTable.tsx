@@ -102,7 +102,7 @@ const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "recruiter-lead-table-columns"
 
-export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick }: LeadTableProps) {
+export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick }: LeadTableProps) {
   const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -676,8 +676,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                 <tr
                   key={lead.id}
                   className={`cursor-pointer transition hover:bg-gray-50 ${selectedLeads.has(lead.id) ? "bg-blue-50" : ""}`}
-                  onClick={(event) => handleRowClick(lead, event)}
-                >
+                  onClick={(event) => handleRowClick(lead, event)}>
                   <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
                     <input
                       type="checkbox"
@@ -708,6 +707,19 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                           WhatsApp
                         </button>
                       )}
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onMessageHistoryClick?.(lead)
+                        }}
+                        className="flex items-center gap-1 font-medium text-purple-600 hover:text-purple-800"
+                        title="View message history"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        Messages
+                      </button>
                       <button
                         onClick={(event) => {
                           event.stopPropagation()
