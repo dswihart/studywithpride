@@ -6,24 +6,67 @@
 export interface MessageTemplate {
   id: string
   name: string
+  whatsappTemplateName: string
+  languageCode: string
   category: string
   description: string
   body: string
   params: number
 }
 
+// Country to language code mapping
+export const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
+  "Spain": "es",
+  "Mexico": "es",
+  "Colombia": "es",
+  "Argentina": "es",
+  "Chile": "es",
+  "Peru": "es",
+  "Venezuela": "es",
+  "Ecuador": "es",
+  "Guatemala": "es",
+  "Cuba": "es",
+  "Bolivia": "es",
+  "Dominican Republic": "es",
+  "Honduras": "es",
+  "Paraguay": "es",
+  "El Salvador": "es",
+  "Nicaragua": "es",
+  "Costa Rica": "es",
+  "Panama": "es",
+  "Uruguay": "es",
+}
+
+export function getLanguageForCountry(country: string): string {
+  return COUNTRY_LANGUAGE_MAP[country] || "en"
+}
+
 export const WHATSAPP_TEMPLATES: MessageTemplate[] = [
   {
     id: "welcome_message",
     name: "Welcome Message",
+    whatsappTemplateName: "c3swelcome",
+    languageCode: "en",
     category: "UTILITY",
     description: "Initial welcome message for new leads",
     body: "Hello {{1}},\nThank you for your interest in studying abroad with C3S Barcelona Business School. I'm here to guide you through your {{2}} study options and answer any questions you may have. To get started, could you please share your preferred intake month and your current level of studies?\n\nLooking forward to assisting you.",
     params: 2
   },
   {
+    id: "welcome_message_es",
+    name: "Mensaje de Bienvenida",
+    whatsappTemplateName: "c3slgbtspainish",
+    languageCode: "es",
+    category: "UTILITY",
+    description: "Mensaje inicial de bienvenida para nuevos leads",
+    body: "Hola {{1}},\nGracias por tu interés en estudiar en el extranjero con C3S Barcelona Business School. Estoy aquí para guiarte a través de tus opciones de estudio en {{2}} y responder cualquier pregunta que tengas. Para empezar, ¿podrías compartir tu mes de ingreso preferido y tu nivel actual de estudios?\n\nEspero poder ayudarte.",
+    params: 2
+  },
+  {
     id: "follow_up",
     name: "Follow Up",
+    whatsappTemplateName: "follow_up",
+    languageCode: "en",
     category: "UTILITY",
     description: "Follow up message for contacted leads",
     body: "Hi {{1}},\n\nFollowing up on your study abroad inquiry for {{2}}. Do you have time this week to discuss your application options?\n\nBest regards,\n{{3}} - C3S Barcelona Business School",
@@ -32,6 +75,8 @@ export const WHATSAPP_TEMPLATES: MessageTemplate[] = [
   {
     id: "application_reminder",
     name: "Application Reminder",
+    whatsappTemplateName: "application_reminder",
+    languageCode: "en",
     category: "UTILITY",
     description: "Reminder about application deadlines",
     body: "Hi {{1}},\n\nThis is a friendly reminder about your {{2}} application. The deadline is approaching on {{3}}. Let us know if you need assistance!\n\nC3S Barcelona Business School Team",
@@ -39,21 +84,25 @@ export const WHATSAPP_TEMPLATES: MessageTemplate[] = [
   }
 ]
 
-/**
- * Expand a template by replacing {{1}}, {{2}}, etc. with actual parameter values
- */
+export function getTemplatesByLanguage(languageCode: string): MessageTemplate[] {
+  return WHATSAPP_TEMPLATES.filter(t => t.languageCode === languageCode)
+}
+
+export function getTemplatesForCountry(country: string): MessageTemplate[] {
+  const languageCode = getLanguageForCountry(country)
+  const templates = getTemplatesByLanguage(languageCode)
+  return templates.length > 0 ? templates : getTemplatesByLanguage("en")
+}
+
 export function expandTemplate(templateBody: string, params: string[]): string {
   let expanded = templateBody
   params.forEach((param, index) => {
     const placeholder = `{{${index + 1}}}`
-    expanded = expanded.replace(new RegExp(placeholder.replace(/[{}]/g, '\$&'), 'g'), param)
+    expanded = expanded.replace(new RegExp(placeholder.replace(/[{}]/g, "\\$&"), "g"), param)
   })
   return expanded
 }
 
-/**
- * Get template by ID
- */
 export function getTemplate(templateId: string): MessageTemplate | undefined {
   return WHATSAPP_TEMPLATES.find(t => t.id === templateId)
 }

@@ -106,11 +106,33 @@ export async function POST(request: NextRequest) {
     
     const whatsappService = createWhatsAppService()
     
+    // Get template object and extract WhatsApp template name
+    let whatsappTemplateName: string | undefined
+    let languageCode: string | undefined
+    if (templateId) {
+      const template = getTemplate(templateId)
+      if (!template) {
+        return NextResponse.json(
+          { success: false, error: `Template not found: ${templateId}` } as SendWhatsAppResponse,
+          { status: 400 }
+        )
+      }
+      whatsappTemplateName = template.whatsappTemplateName
+      languageCode = template.languageCode
+      
+      console.log("[send-whatsapp] Using template:", {
+        internalId: templateId,
+        whatsappName: whatsappTemplateName,
+        language: languageCode
+      })
+    }
+    
     const sendResult = await whatsappService.sendMessage({
       to: lead.phone,
-      templateId,
+      templateId: whatsappTemplateName,
       templateParams,
-      text
+      text,
+      languageCode
     })
     
     if (!sendResult.success) {

@@ -46,6 +46,7 @@ export default function SendWhatsAppModal({
   const [textMessage, setTextMessage] = useState<string>("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string>("")
+  const [successMessage, setSuccessMessage] = useState<string>("")
 
   if (!isOpen || !lead) return null
 
@@ -61,6 +62,7 @@ export default function SendWhatsAppModal({
       setTemplateParams(newParams)
     }
     setError("")
+    setSuccessMessage("")
   }
 
   const handleParamChange = (index: number, value: string) => {
@@ -133,8 +135,22 @@ export default function SendWhatsAppModal({
         return
       }
 
+      // Call onSuccess to refresh data
       onSuccess()
-      handleClose()
+      
+      // For template messages, close the modal
+      // For text messages, keep it open and clear the input
+      if (messageType === "template") {
+        handleClose()
+      } else {
+        // Clear the text message input
+        setTextMessage("")
+        // Show success message
+        setSuccessMessage("Message sent! You can continue the conversation.")
+        setSending(false)
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(""), 3000)
+      }
     } catch (err: any) {
       setError(err.message || "Network error. Please try again.")
       setSending(false)
@@ -147,6 +163,7 @@ export default function SendWhatsAppModal({
     setTemplateParams([])
     setTextMessage("")
     setError("")
+    setSuccessMessage("")
     setSending(false)
     onClose()
   }
@@ -181,7 +198,11 @@ export default function SendWhatsAppModal({
                 type="radio"
                 value="template"
                 checked={messageType === "template"}
-                onChange={(e) => setMessageType(e.target.value as "template" | "text")}
+                onChange={(e) => {
+                  setMessageType(e.target.value as "template" | "text")
+                  setError("")
+                  setSuccessMessage("")
+                }}
                 className="mr-2"
               />
               <span className="text-sm text-gray-700">Template Message (for first contact)</span>
@@ -191,7 +212,11 @@ export default function SendWhatsAppModal({
                 type="radio"
                 value="text"
                 checked={messageType === "text"}
-                onChange={(e) => setMessageType(e.target.value as "template" | "text")}
+                onChange={(e) => {
+                  setMessageType(e.target.value as "template" | "text")
+                  setError("")
+                  setSuccessMessage("")
+                }}
                 className="mr-2"
               />
               <span className="text-sm text-gray-700">Text Message (24hr window)</span>
@@ -245,7 +270,11 @@ export default function SendWhatsAppModal({
             </label>
             <textarea
               value={textMessage}
-              onChange={(e) => setTextMessage(e.target.value)}
+              onChange={(e) => {
+                setTextMessage(e.target.value)
+                setError("")
+                setSuccessMessage("")
+              }}
               placeholder="Type your message here..."
               rows={5}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -264,6 +293,15 @@ export default function SendWhatsAppModal({
             {getPreviewMessage() || "Select a template or type a message to see preview"}
           </div>
         </div>
+
+        {successMessage && (
+          <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700 flex items-center gap-2">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            {successMessage}
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
