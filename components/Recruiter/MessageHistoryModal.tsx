@@ -77,42 +77,73 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
         style={{
           backgroundColor: 'white',
           padding: '30px',
-          borderRadius: '8px',
-          maxWidth: '600px',
+          borderRadius: '12px',
+          maxWidth: '700px',
           width: '100%',
           maxHeight: '80vh',
           overflow: 'auto',
           position: 'relative',
-          zIndex: 10000
+          zIndex: 10000,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: '0 0 20px 0', fontSize: '24px' }}>
-          Messages for {lead?.prospect_name || 'Lead'}
+        <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: 600, color: '#1f2937' }}>
+          Message History: {lead?.prospect_name || 'Lead'}
         </h2>
 
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Loading messages...</div>
         ) : messages.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+          <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
             No messages yet
           </div>
         ) : (
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {messages.map((message) => (
               <div 
                 key={message.id}
                 style={{
-                  marginBottom: '10px',
-                  padding: '12px',
-                  backgroundColor: message.direction === 'outbound' ? '#dcf8c6' : '#f0f0f0',
-                  borderRadius: '8px',
-                  textAlign: message.direction === 'outbound' ? 'right' : 'left'
+                  display: 'flex',
+                  justifyContent: message.direction === 'outbound' ? 'flex-end' : 'flex-start',
+                  width: '100%'
                 }}
               >
-                <div>{message.content}</div>
-                <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                  {new Date(message.sent_at).toLocaleTimeString()}
+                <div
+                  style={{
+                    maxWidth: '70%',
+                    padding: '12px 16px',
+                    backgroundColor: message.direction === 'outbound' ? '#3b82f6' : '#f3f4f6',
+                    color: message.direction === 'outbound' ? '#ffffff' : '#1f2937',
+                    borderRadius: message.direction === 'outbound' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <div style={{ fontSize: '14px', lineHeight: '1.5', wordWrap: 'break-word' }}>
+                    {message.content}
+                  </div>
+                  <div 
+                    style={{ 
+                      fontSize: '11px', 
+                      marginTop: '6px',
+                      color: message.direction === 'outbound' ? 'rgba(255,255,255,0.8)' : '#6b7280',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {new Date(message.sent_at).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
+                    {message.direction === 'outbound' && (
+                      <span style={{ marginLeft: '4px' }}>
+                        {message.status === 'delivered' ? '✓✓' : message.status === 'sent' ? '✓' : '⏱'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -122,13 +153,15 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
         <button
           onClick={onClose}
           style={{
-            padding: '10px 20px',
-            backgroundColor: '#007bff',
+            padding: '12px 24px',
+            backgroundColor: '#3b82f6',
             color: 'white',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '8px',
             cursor: 'pointer',
-            fontSize: '16px'
+            fontSize: '14px',
+            fontWeight: 500,
+            marginTop: '8px'
           }}
         >
           Close
