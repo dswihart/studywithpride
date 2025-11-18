@@ -56,7 +56,7 @@ export default function SendWhatsAppModal({
     if (template) {
       const newParams = Array(template.params).fill("")
       newParams[0] = lead.prospect_name || "there"
-      if (template.params >= 2) {
+      if (template.params >= 2 && lead.country) {
         newParams[1] = lead.country || "your country"
       }
       setTemplateParams(newParams)

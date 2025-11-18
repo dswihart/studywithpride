@@ -5,7 +5,7 @@
  * Features:
  * - Multi-provider support (Meta, Twilio)
  * - Phone number validation (E.164 format)
- * - Template message handling
+ * - Template message handling with header image support
  * - Bi-directional messaging (send and receive)
  * - Error handling and retry logic
  * - Performance monitoring
@@ -30,6 +30,7 @@ export interface SendMessageParams {
   templateParams?: string[]
   text?: string // For session messages (within 24hr window)
   languageCode?: string
+  headerImageUrl?: string // Header image URL for templates
 }
 
 export interface SendMessageResult {
@@ -136,16 +137,36 @@ async function sendViaMeta(
         }
       }
       
+      const components: any[] = []
+      
+      // Add header component if header image URL is provided
+      if (params.headerImageUrl) {
+        components.push({
+          type: "header",
+          parameters: [
+            {
+              type: "image",
+              image: {
+                link: params.headerImageUrl
+              }
+            }
+          ]
+        })
+      }
+      
+      // Add body component if parameters are provided
       if (params.templateParams && params.templateParams.length > 0) {
-        messagePayload.template.components = [
-          {
-            type: "body",
-            parameters: params.templateParams.map(param => ({
-              type: "text",
-              text: param
-            }))
-          }
-        ]
+        components.push({
+          type: "body",
+          parameters: params.templateParams.map(param => ({
+            type: "text",
+            text: param
+          }))
+        })
+      }
+      
+      if (components.length > 0) {
+        messagePayload.template.components = components
       }
     } else {
       return {
@@ -155,6 +176,8 @@ async function sendViaMeta(
         timestamp: Date.now()
       }
     }
+    
+    console.log("[WhatsApp Meta] Sending message payload:", JSON.stringify(messagePayload, null, 2))
     
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${config.phoneNumberId}/messages`,

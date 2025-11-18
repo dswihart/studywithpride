@@ -12,7 +12,6 @@ export interface MessageTemplate {
   description: string
   body: string
   params: number
-  headerImageUrl?: string
 }
 
 // Country to language code mapping
@@ -48,29 +47,27 @@ export const WHATSAPP_TEMPLATES: MessageTemplate[] = [
     name: "Welcome Message",
     whatsappTemplateName: "c3swelcome",
     languageCode: "en",
-    category: "MARKETING",
+    category: "UTILITY",
     description: "Initial welcome message for new leads",
-    body: "Hello {{1}} 👋\nThank you for your interest in studying abroad with C3S Barcelona Business School 🌍✨\n\nWe will guide you step by step 👣\nSo your journey to study and live in Spain is smooth, safe, and welcoming to everyone 💫\n\nBarcelona is a diverse and open city where people from many cultures and backgrounds feel at home 🌆🤗\n\nTo get started, please tell me your preferred intake 📚👇\n1️⃣ February\n2️⃣ May\n3️⃣ October\n\nIf you have any questions along the way, feel free to ask 💬\nI'm here to support you throughout the process 🤝🌟",
-    params: 1,
-    headerImageUrl: "https://studywithpride.com/images/pride-header.jpg"
+    body: "Hello {{1}},\nThank you for your interest in studying abroad with C3S Barcelona Business School. I'm here to guide you through your {{2}} study options and answer any questions you may have. To get started, could you please share your preferred intake month and your current level of studies?\n\nLooking forward to assisting you.",
+    params: 2
   },
   {
     id: "welcome_message_es",
     name: "Mensaje de Bienvenida",
     whatsappTemplateName: "c3slgbtspainish",
     languageCode: "es_PE",
-    category: "MARKETING",
+    category: "UTILITY",
     description: "Mensaje inicial de bienvenida para nuevos leads",
-    body: "Hola {{1}} 👋\nGracias por tu interés en estudiar en el extranjero con C3S Barcelona Business School 🌍✨\n\nTe guiaremos paso a paso 👣\nPara que tu experiencia de estudiar y vivir en España sea sencilla, segura y acogedora para todas las personas 💫\n\nBarcelona es una ciudad diversa y abierta, donde personas de muchas culturas y orígenes se sienten como en casa 🌆🤗\n\nPara empezar, dime tu convocatoria preferida 📚👇\n⿡ Febrero\n⿢ Mayo\n⿣ Octubre\n\nSi tienes alguna pregunta en el camino, no dudes en escribir 💬\nEstoy aquí para apoyarte durante todo el proceso 🤝🌟",
-    params: 1,
-    headerImageUrl: "https://studywithpride.com/images/pride-header.jpg"
+    body: "Hola {{1}},\nGracias por tu interés en estudiar en el extranjero con C3S Barcelona Business School. Estoy aquí para guiarte a través de tus opciones de estudio en {{2}} y responder cualquier pregunta que tengas. Para empezar, ¿podrías compartir tu mes de ingreso preferido y tu nivel actual de estudios?\n\nEspero poder ayudarte.",
+    params: 2
   },
   {
     id: "follow_up",
     name: "Follow Up",
     whatsappTemplateName: "follow_up",
     languageCode: "en",
-    category: "MARKETING",
+    category: "UTILITY",
     description: "Follow up message for contacted leads",
     body: "Hi {{1}},\n\nFollowing up on your study abroad inquiry for {{2}}. Do you have time this week to discuss your application options?\n\nBest regards,\n{{3}} - C3S Barcelona Business School",
     params: 3
@@ -80,7 +77,7 @@ export const WHATSAPP_TEMPLATES: MessageTemplate[] = [
     name: "Application Reminder",
     whatsappTemplateName: "application_reminder",
     languageCode: "en",
-    category: "MARKETING",
+    category: "UTILITY",
     description: "Reminder about application deadlines",
     body: "Hi {{1}},\n\nThis is a friendly reminder about your {{2}} application. The deadline is approaching on {{3}}. Let us know if you need assistance!\n\nC3S Barcelona Business School Team",
     params: 3
@@ -101,7 +98,7 @@ export function expandTemplate(templateBody: string, params: string[]): string {
   let expanded = templateBody
   params.forEach((param, index) => {
     const placeholder = `{{${index + 1}}}`
-    expanded = expanded.replace(new RegExp(placeholder.replace(/[{}]/g, "\$&"), "g"), param)
+    expanded = expanded.replace(new RegExp(placeholder.replace(/[{}]/g, "\\$&"), "g"), param)
   })
   return expanded
 }

@@ -132,7 +132,8 @@ export async function POST(request: NextRequest) {
       templateId: whatsappTemplateName,
       templateParams,
       text,
-      languageCode
+      languageCode,
+      headerImageUrl: template?.headerImageUrl
     })
     
     if (!sendResult.success) {
