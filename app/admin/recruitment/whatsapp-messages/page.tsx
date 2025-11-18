@@ -231,7 +231,7 @@ export default function WhatsAppMessagesPage() {
                 <div
                   key={message.id}
                   className="p-4 hover:bg-gray-50 transition cursor-pointer"
-                  onClick={() => router.push(`/admin/recruitment/dashboard?leadId=${message.lead_id}`)}
+                  onClick={() => window.location.href = `/admin/recruitment/dashboard?leadId=${message.lead_id}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

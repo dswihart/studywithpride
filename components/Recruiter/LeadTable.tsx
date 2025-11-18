@@ -35,6 +35,7 @@ interface LeadTableProps {
   onSelectionChange?: (selectedIds: string[]) => void
   onWhatsAppClick?: (lead: Lead) => void
   onMessageHistoryClick?: (lead: Lead) => void
+  highlightedLeadId?: string | null
 }
 
 const CONTACT_STATUSES = [
@@ -102,7 +103,7 @@ const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "recruiter-lead-table-columns"
 
-export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick }: LeadTableProps) {
+export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick, highlightedLeadId }: LeadTableProps) {
   const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -675,7 +676,14 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
               leads.map((lead) => (
                 <tr
                   key={lead.id}
-                  className={`cursor-pointer transition hover:bg-gray-50 ${selectedLeads.has(lead.id) ? "bg-blue-50" : ""}`}
+                  id={`lead-row-${lead.id}`}
+                  className={`cursor-pointer transition hover:bg-gray-50 ${
+                    highlightedLeadId === lead.id 
+                      ? "bg-yellow-100 border-2 border-yellow-400 shadow-lg" 
+                      : selectedLeads.has(lead.id) 
+                        ? "bg-blue-50" 
+                        : ""
+                  }`}
                   onClick={(event) => handleRowClick(lead, event)}>
                   <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
                     <input

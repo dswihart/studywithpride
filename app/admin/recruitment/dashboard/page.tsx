@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -50,11 +51,53 @@ export default function RecruiterDashboardPage() {
   const [whatsAppLead, setWhatsAppLead] = useState<Lead | null>(null)
   const [isMessageHistoryOpen, setIsMessageHistoryOpen] = useState(false)
   const [messageHistoryLead, setMessageHistoryLead] = useState<Lead | null>(null)
+  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null)
+  const [highlightedLeadName, setHighlightedLeadName] = useState<string | null>(null)
+  const searchParams = useSearchParams()
   const router = useRouter()
 
   useEffect(() => {
     checkAuthorization()
   }, [])
+
+  // Check for leadId in URL to highlight specific lead
+  useEffect(() => {
+    const leadId = searchParams.get('leadId')
+    console.log('Lead highlighting check:', { leadId, leadsCount: leads.length })
+    
+    if (leadId && leads.length > 0) {
+      // Find the lead to get their name
+      const lead = leads.find(l => l.id === leadId)
+      console.log('Found lead:', lead)
+      
+      if (lead) {
+        console.log('Setting highlight for:', lead.prospect_name)
+        setHighlightedLeadId(leadId)
+        setHighlightedLeadName(lead.prospect_name || 'Unknown Lead')
+        
+        // Clear highlight after 5 seconds
+        setTimeout(() => {
+          setHighlightedLeadId(null)
+          setHighlightedLeadName(null)
+        }, 5000)
+        
+        // Scroll to the lead in the table after a longer delay to ensure table is rendered
+        setTimeout(() => {
+          const leadRow = document.getElementById(`lead-row-${leadId}`)
+          console.log('Lead row element:', leadRow)
+          if (leadRow) {
+            leadRow.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          } else {
+            console.log('Lead row not found in DOM')
+          }
+        }, 500)
+      } else {
+        console.log('Lead not found in leads array')
+      }
+    } else if (leadId) {
+      console.log('Waiting for leads to load...', leads.length)
+    }
+  }, [searchParams, leads])
 
   const checkAuthorization = async () => {
     try {
@@ -229,15 +272,15 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
               </svg>
               Main Site
             </Link>
-            <Link
-              href="/admin/recruitment/whatsapp-messages"
+            <button
+              onClick={() => window.location.href = '/admin/recruitment/whatsapp-messages'}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               Messages
-            </Link>
+            </button>
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
@@ -250,6 +293,32 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
         {/* Metrics */}
         <LeadMetrics leads={leads} />
 
+        {/* Notification Banner */}
+        {highlightedLeadName && (
+          <div className="mt-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg shadow-md flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="font-semibold">Viewing messages from {highlightedLeadName}</p>
+                <p className="text-sm text-yellow-800">Lead highlighted below - will auto-clear in 5 seconds</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setHighlightedLeadId(null)
+                setHighlightedLeadName(null)
+              }}
+              className="text-yellow-700 hover:text-yellow-900"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Lead Table */}
         <div className="mt-8">
           <LeadTable
@@ -257,7 +326,8 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
             onEditLead={handleEditLead}
             onSelectionChange={handleSelectionChange}
             onWhatsAppClick={handleWhatsAppClick}
-              onMessageHistoryClick={handleMessageHistoryClick}
+            onMessageHistoryClick={handleMessageHistoryClick}
+            highlightedLeadId={highlightedLeadId}
           />
         </div>
 
