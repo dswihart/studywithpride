@@ -2,7 +2,7 @@
  * Database Utility: Update Lead Status After WhatsApp Message
  * 
  * Automatically updates lead status to "contacted" after WhatsApp message is sent
- * Also updates last_contact_date and logs the message ID in notes
+ * Also updates last_contact_date (WhatsApp messages are tracked separately in whatsapp_messages table)
  * 
  * Performance target: <150ms
  */
@@ -50,7 +50,7 @@ export async function updateLeadStatusAfterWhatsApp(
     // First, get the current lead to know the previous status
     const { data: lead, error: fetchError } = await supabase
       .from("leads")
-      .select("contact_status, notes")
+      .select("contact_status")
       .eq("id", params.leadId)
       .single()
     
@@ -64,20 +64,12 @@ export async function updateLeadStatusAfterWhatsApp(
     
     const previousStatus = lead.contact_status
     
-    // Prepare the new note to append
-    const timestamp = new Date().toISOString()
-    const newNote = `[${timestamp}] WhatsApp message sent (ID: ${params.messageId})`
-    const updatedNotes = lead.notes 
-      ? `${lead.notes}\n${newNote}`
-      : newNote
-    
-    // Update the lead
+    // Update the lead - WhatsApp messages are tracked in whatsapp_messages table, not in notes
     const { error: updateError } = await supabase
       .from("leads")
       .update({
         contact_status: "contacted",
-        last_contact_date: new Date().toISOString(),
-        notes: updatedNotes
+        last_contact_date: new Date().toISOString()
       })
       .eq("id", params.leadId)
     

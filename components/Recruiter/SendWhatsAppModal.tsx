@@ -8,6 +8,7 @@
 
 import { useState } from "react"
 
+import { WHATSAPP_TEMPLATES, expandTemplate } from "@/lib/whatsapp/templates"
 interface Lead {
   id: string
   prospect_name: string | null
@@ -32,32 +33,6 @@ interface MessageTemplate {
   params: number
 }
 
-const MESSAGE_TEMPLATES: MessageTemplate[] = [
-  {
-    id: "welcome_message",
-    name: "Welcome Message",
-    category: "UTILITY",
-    description: "Initial welcome message for new leads",
-    body: "Hello {{1}}!\n\nThank you for your interest in studying abroad with Study With Pride. Our recruitment team will contact you shortly to discuss your {{2}} study options.\n\nBest regards,\nStudy With Pride Team",
-    params: 2
-  },
-  {
-    id: "follow_up",
-    name: "Follow Up",
-    category: "UTILITY",
-    description: "Follow up message for contacted leads",
-    body: "Hi {{1}},\n\nFollowing up on your study abroad inquiry for {{2}}. Do you have time this week to discuss your application options?\n\nBest regards,\n{{3}} - Study With Pride",
-    params: 3
-  },
-  {
-    id: "application_reminder",
-    name: "Application Reminder",
-    category: "UTILITY",
-    description: "Reminder about application deadlines",
-    body: "Hi {{1}},\n\nThis is a friendly reminder about your {{2}} application. The deadline is approaching on {{3}}. Let us know if you need assistance!\n\nStudy With Pride Team",
-    params: 3
-  }
-]
 
 export default function SendWhatsAppModal({
   isOpen,
@@ -76,7 +51,7 @@ export default function SendWhatsAppModal({
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId)
-    const template = MESSAGE_TEMPLATES.find(t => t.id === templateId)
+    const template = WHATSAPP_TEMPLATES.find(t => t.id === templateId)
     if (template) {
       const newParams = Array(template.params).fill("")
       newParams[0] = lead.prospect_name || "there"
@@ -99,7 +74,7 @@ export default function SendWhatsAppModal({
       return textMessage
     }
     
-    const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate)
+    const template = WHATSAPP_TEMPLATES.find(t => t.id === selectedTemplate)
     if (!template) return ""
     
     let preview = template.body
@@ -118,7 +93,7 @@ export default function SendWhatsAppModal({
         return
       }
       
-      const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate)
+      const template = WHATSAPP_TEMPLATES.find(t => t.id === selectedTemplate)
       if (template && templateParams.some((p, i) => !p)) {
         setError("Please fill in all template parameters")
         return
@@ -236,7 +211,7 @@ export default function SendWhatsAppModal({
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
               >
                 <option value="">-- Choose a template --</option>
-                {MESSAGE_TEMPLATES.map(template => (
+                {WHATSAPP_TEMPLATES.map(template => (
                   <option key={template.id} value={template.id}>
                     {template.name} - {template.description}
                   </option>

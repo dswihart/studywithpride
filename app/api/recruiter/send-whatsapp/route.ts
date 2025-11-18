@@ -15,6 +15,8 @@ import { requireRole } from "@/lib/auth/role-guard"
 import { createWhatsAppService } from "@/lib/whatsapp/messaging-service"
 import { updateLeadStatusAfterWhatsApp } from "@/lib/db/utils/update-lead-status"
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createServiceClient } from "@supabase/supabase-js"
+import { getTemplate, expandTemplate } from "@/lib/whatsapp/templates"
 
 interface SendWhatsAppRequest {
   leadId: string
@@ -132,26 +134,70 @@ export async function POST(request: NextRequest) {
       console.warn("[send-whatsapp] Message sent but lead status update failed:", updateResult.error)
     }
     
-    const { error: messageInsertError } = await supabase
-      .from("whatsapp_messages")
-      .insert({
-        lead_id: leadId,
-        message_id: sendResult.messageId,
-        direction: "outbound",
-        message_type: templateId ? "template" : "text",
-        content: text || `Template: ${templateId}`,
-        template_id: templateId,
-        status: "sent",
-        sent_by: roleCheck.user?.id,
-        metadata: {
-          template_params: templateParams,
-          provider: sendResult.provider,
-          response_time: sendResult.responseTime
-        }
-      })
+    // Determine the content to save
+    let contentToSave = text || ""
+    if (templateId && templateParams) {
+      const template = getTemplate(templateId)
+      if (template) {
+        contentToSave = expandTemplate(template.body, templateParams)
+      } else {
+        contentToSave = `Template: ${templateId}`
+      }
+    }
     
-    if (messageInsertError) {
-      console.error("[send-whatsapp] Failed to save message to database:", messageInsertError)
+    // Use service role client to bypass RLS for saving message history
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("[send-whatsapp] Supabase configuration missing - cannot save message history")
+    } else {
+      try {
+        const serviceClient = createServiceClient(supabaseUrl, supabaseServiceKey)
+        
+        console.log("[send-whatsapp] Attempting to save message to database:", {
+          lead_id: leadId,
+          message_id: sendResult.messageId,
+          direction: "outbound",
+          message_type: templateId ? "template" : "text",
+          template_id: templateId,
+          sent_by: roleCheck.user?.id,
+          content_preview: contentToSave.substring(0, 50) + "..."
+        })
+        
+        const { data: insertedMessage, error: messageInsertError } = await serviceClient
+          .from("whatsapp_messages")
+          .insert({
+            lead_id: leadId,
+            message_id: sendResult.messageId,
+            direction: "outbound",
+            message_type: templateId ? "template" : "text",
+            content: contentToSave,
+            template_id: templateId,
+            status: "sent",
+            sent_by: roleCheck.user?.id,
+            metadata: {
+              template_params: templateParams,
+              provider: sendResult.provider,
+              response_time: sendResult.responseTime
+            }
+          })
+          .select()
+        
+        if (messageInsertError) {
+          console.error("[send-whatsapp] Failed to save message to database:", {
+            error: messageInsertError,
+            message: messageInsertError.message,
+            code: messageInsertError.code,
+            details: messageInsertError.details,
+            hint: messageInsertError.hint
+          })
+        } else {
+          console.log("[send-whatsapp] Message saved successfully:", insertedMessage)
+        }
+      } catch (dbError: any) {
+        console.error("[send-whatsapp] Exception while saving message:", dbError)
+      }
     }
     
     const totalTime = Date.now() - startTime
