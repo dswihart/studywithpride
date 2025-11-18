@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     // Get template object and extract WhatsApp template name
     let whatsappTemplateName: string | undefined
     let languageCode: string | undefined
+    let headerImageUrl: string | undefined
     if (templateId) {
       const template = getTemplate(templateId)
       if (!template) {
@@ -119,11 +120,13 @@ export async function POST(request: NextRequest) {
       }
       whatsappTemplateName = template.whatsappTemplateName
       languageCode = template.languageCode
+      headerImageUrl = template.headerImageUrl
       
       console.log("[send-whatsapp] Using template:", {
         internalId: templateId,
         whatsappName: whatsappTemplateName,
-        language: languageCode
+        languageCode,
+        hasHeaderImage: !!headerImageUrl
       })
     }
     
@@ -131,9 +134,8 @@ export async function POST(request: NextRequest) {
       to: lead.phone,
       templateId: whatsappTemplateName,
       templateParams,
-      text,
       languageCode,
-      headerImageUrl: template?.headerImageUrl
+      headerImageUrl
     })
     
     if (!sendResult.success) {
@@ -201,6 +203,8 @@ export async function POST(request: NextRequest) {
             sent_by: roleCheck.user?.id,
             metadata: {
               template_params: templateParams,
+              languageCode,
+              headerImageUrl,
               provider: sendResult.provider,
               response_time: sendResult.responseTime
             }
