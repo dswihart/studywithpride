@@ -1,5 +1,7 @@
 "use client"
 
+
+
 import { useEffect, useRef, useState } from "react"
 import { useLanguage } from "@/components/LanguageContext"
 import BulkEditLeadModal from "./BulkEditLeadModal"
@@ -164,6 +166,25 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   useEffect(() => {
     fetchLeads()
   }, [selectedCountry, selectedStatus])
+
+  // Auto-clear filters when highlighting a lead to ensure it's visible
+  useEffect(() => {
+    if (!highlightedLeadId) return
+    
+    // Check if filters are currently active
+    const hasActiveFilters = selectedCountry !== "all" || selectedStatus !== "all"
+    
+    if (hasActiveFilters && allLeads.length > 0) {
+      // Check if the highlighted lead exists in allLeads
+      const leadExists = allLeads.some(lead => lead.id === highlightedLeadId)
+      
+      if (leadExists) {
+        console.log("Auto-clearing filters to show highlighted lead:", highlightedLeadId)
+        setSelectedCountry("all")
+        setSelectedStatus("all")
+      }
+    }
+  }, [highlightedLeadId, allLeads, selectedCountry, selectedStatus])
 
   useEffect(() => {
     if (onSelectionChange) {

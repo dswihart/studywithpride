@@ -65,39 +65,45 @@ export default function RecruiterDashboardPage() {
     const leadId = searchParams.get('leadId')
     console.log('Lead highlighting check:', { leadId, leadsCount: leads.length })
     
-    if (leadId && leads.length > 0) {
-      // Find the lead to get their name
-      const lead = leads.find(l => l.id === leadId)
-      console.log('Found lead:', lead)
-      
-      if (lead) {
-        console.log('Setting highlight for:', lead.prospect_name)
+    if (leadId) {
+      // ALWAYS set highlightedLeadId from URL, even if lead is filtered out
+      // This triggers LeadTable's auto-clear filter logic
+      if (highlightedLeadId !== leadId) {
+        console.log('Setting highlightedLeadId from URL:', leadId)
         setHighlightedLeadId(leadId)
-        setHighlightedLeadName(lead.prospect_name || 'Unknown Lead')
         
         // Clear highlight after 5 seconds
         setTimeout(() => {
           setHighlightedLeadId(null)
           setHighlightedLeadName(null)
         }, 5000)
-        
-        // Scroll to the lead in the table after a longer delay to ensure table is rendered
-        setTimeout(() => {
-          const leadRow = document.getElementById(`lead-row-${leadId}`)
-          console.log('Lead row element:', leadRow)
-          if (leadRow) {
-            leadRow.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          } else {
-            console.log('Lead row not found in DOM')
-          }
-        }, 500)
-      } else {
-        console.log('Lead not found in leads array')
       }
-    } else if (leadId) {
-      console.log('Waiting for leads to load...', leads.length)
+      
+      // Try to find the lead in the current filtered array to set the name
+      if (leads.length > 0) {
+        const lead = leads.find(l => l.id === leadId)
+        console.log('Found lead in filtered array:', lead)
+        
+        if (lead) {
+          console.log('Setting lead name for notification:', lead.prospect_name)
+          setHighlightedLeadName(lead.prospect_name || 'Unknown Lead')
+          
+          // Scroll to the lead in the table
+          setTimeout(() => {
+            const leadRow = document.getElementById(`lead-row-${leadId}`)
+            console.log('Lead row element:', leadRow)
+            if (leadRow) {
+              leadRow.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            } else {
+              console.log('Lead row not found in DOM (filters may still be clearing)')
+            }
+          }, 500)
+        } else {
+          console.log('Lead not found in filtered array - waiting for auto-filter clear')
+        }
+      }
     }
-  }, [searchParams, leads])
+  }, [searchParams, leads, highlightedLeadId])
 
   const checkAuthorization = async () => {
     try {
