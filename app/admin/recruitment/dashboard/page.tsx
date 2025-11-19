@@ -28,6 +28,7 @@ interface Lead {
   referral_source: string | null
   phone: string | null
   campaign: string | null
+  campaign_name: string | null
   name_score: number | null
   email_score: number | null
   phone_valid: boolean | null
@@ -36,6 +37,7 @@ interface Lead {
   lead_quality: string | null
   date_imported: string | null
   created_time: string | null
+  barcelona_timeline: number | null
 }
 
 export default function RecruiterDashboardPage() {

@@ -28,9 +28,11 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
   const [contactStatus, setContactStatus] = useState('')
   const [referralSource, setReferralSource] = useState('')
   const [campaign, setCampaign] = useState('')
+  const [barcelonaTimeline, setBarcelonaTimeline] = useState('')
   const [updateStatus, setUpdateStatus] = useState(false)
   const [updateReferral, setUpdateReferral] = useState(false)
   const [updateCampaign, setUpdateCampaign] = useState(false)
+  const [updateBarcelonaTimeline, setUpdateBarcelonaTimeline] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -39,7 +41,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!updateStatus && !updateReferral && !updateCampaign) {
+    if (!updateStatus && !updateReferral && !updateCampaign && !updateBarcelonaTimeline) {
       setError('Please select at least one field to update')
       return
     }
@@ -65,6 +67,9 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
       if (updateReferral && referralSource.trim()) {
       if (updateCampaign && campaign.trim()) {
         updates.campaign = campaign.trim()
+      }
+      if (updateBarcelonaTimeline && barcelonaTimeline) {
+        updates.barcelona_timeline = parseInt(barcelonaTimeline)
       }
         updates.referral_source = referralSource.trim()
       }
@@ -106,6 +111,8 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
     setUpdateReferral(false)
     setUpdateCampaign(false)
     setCampaign('')
+    setBarcelonaTimeline('')
+    setUpdateBarcelonaTimeline(false)
     setError('')
     onClose()
   }

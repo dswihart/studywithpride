@@ -19,6 +19,8 @@ interface Lead {
   referral_source: string | null
   phone: string | null
   campaign: string | null
+  campaign_name: string | null
+  barcelona_timeline: number | null
   date_imported: string | null
   name_score: number | null
   email_score: number | null

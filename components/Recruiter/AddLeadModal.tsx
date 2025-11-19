@@ -29,6 +29,7 @@ interface Lead {
   recency_score: number | null
   lead_score: number | null
   lead_quality: string | null
+  barcelona_timeline: number | null
 }
 
 interface AddLeadModalProps {
@@ -46,6 +47,7 @@ interface CsvRow {
     email: string
     phone: string
     campaign: string
+    campaign_name: string
     country: string
     status: string
     referral_destination: string
@@ -80,6 +82,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     lead_quality: '',
     last_contact_date: '',
     created_time: '',
+    barcelona_timeline: '',
   })
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [parsedRows, setParsedRows] = useState<CsvRow[]>([])
@@ -127,6 +130,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         lead_quality: editLead.lead_quality || '',
         last_contact_date: editLead.last_contact_date ? editLead.last_contact_date.split('T')[0] : '',
         created_time: editLead.created_time ? editLead.created_time.split('T')[0] : '',
+        barcelona_timeline: editLead.barcelona_timeline ? editLead.barcelona_timeline.toString() : '',
       })
       setActiveTab('single')
     } else {
@@ -143,6 +147,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         lead_quality: '',
         last_contact_date: '',
         created_time: '',
+        barcelona_timeline: '',
       })
     }
   }, [editLead, isOpen])
@@ -177,6 +182,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           lead_quality: formData.lead_quality || null,
           last_contact_date: formData.last_contact_date || null,
       created_time: formData.created_time || null,
+          barcelona_timeline: formData.barcelona_timeline ? parseInt(formData.barcelona_timeline) : null,
         })
       })
 
@@ -199,7 +205,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         notes: '',
         lead_quality: '',
         last_contact_date: '',
-        created_time: ''
+        created_time: '',
+        barcelona_timeline: ''
       })
       setTimeout(() => {
         onSuccess()
@@ -257,6 +264,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'email_address': 'email',
       'phone': 'phone',
       'campaign': 'campaign',
+      'campaign_name': 'campaign_name',
       'phone_number': 'phone',
       'mobile': 'phone',
       'telephone': 'phone',
@@ -399,6 +407,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         name: '',
         email: '',
         phone: '',
+        campaign: '',
+        campaign_name: '',
         country: '',
         status: 'not_contacted',
         referral_destination: '',
@@ -554,6 +564,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         prospect_name: row.data.name,
         referral_source: row.data.referral_destination || null,
         phone: row.data.phone || null,
+        campaign_name: row.data.campaign_name || row.data.campaign || null,
         name_score: row.data.name_score ? parseInt(row.data.name_score) : null,
         email_score: row.data.email_score ? parseInt(row.data.email_score) : null,
         phone_valid: row.data.phone_valid === "TRUE" || row.data.phone_valid === true || row.data.phone_valid === "1",
@@ -805,6 +816,19 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">When do you want to come to Barcelona?</label>
+                <select
+                  value={formData.barcelona_timeline}
+                  onChange={(e) => setFormData({ ...formData, barcelona_timeline: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select timeline</option>
+                  <option value="6">6 months</option>
+                  <option value="12">12 months</option>
+                </select>
               </div>
 
               <div className="flex gap-3 pt-2">
