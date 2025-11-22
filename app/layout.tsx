@@ -50,14 +50,14 @@ export default async function RootLayout({
 }) {
   const cookieStore = await cookies()
   const storedTheme = (cookieStore.get(THEME_COOKIE)?.value as Theme | undefined) || 'light'
-  const bodyClass = `${inter.className} ${storedTheme === 'dark' ? 'dark' : ''}`.trim()
+  const themeClass = storedTheme === 'dark' ? 'dark' : ''
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={themeClass}>
       <head>
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitializer }} />
       </head>
-      <body className={bodyClass}>
+      <body className={inter.className}>
         <ThemeProvider initialTheme={storedTheme}>
           <LanguageProvider>
             <IntlProvider>
