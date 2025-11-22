@@ -93,7 +93,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     'USA', 'Canada', 'Mexico', 'Brazil', 'Spain', 'UK',
     'Germany', 'France', 'Italy', 'Portugal', 'Netherlands', 'Other'
   ]
-  
+
   // Add current lead's country if editing and not in list
   const countries = useMemo(() => {
     if (editLead && editLead.country && !baseCountries.includes(editLead.country)) {
@@ -181,7 +181,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           notes: formData.notes,
           lead_quality: formData.lead_quality || null,
           last_contact_date: formData.last_contact_date || null,
-      created_time: formData.created_time || null,
+          created_time: formData.created_time || null,
           barcelona_timeline: formData.barcelona_timeline ? parseInt(formData.barcelona_timeline) : null,
         })
       })
@@ -580,7 +580,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       const BATCH_SIZE = 100
       let totalInserted = 0
       const batches = []
-      
+
       for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
         batches.push(leadsToInsert.slice(i, i + BATCH_SIZE))
       }
@@ -624,16 +624,16 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {editLead ? 'Edit Lead' : 'Add Leads'}
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -643,24 +643,22 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
           {/* Tabs - Only show when not editing */}
           {!editLead && (
-            <div className="flex border-b border-gray-200 mb-4">
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
               <button
                 onClick={() => setActiveTab('single')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'single'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500'
-                }`}
+                className={`px-4 py-2 font-medium ${activeTab === 'single'
+                    ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                  }`}
               >
                 Single Lead
               </button>
               <button
                 onClick={() => setActiveTab('import')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'import'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500'
-                }`}
+                className={`px-4 py-2 font-medium ${activeTab === 'import'
+                    ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                  }`}
               >
                 Import CSV
               </button>
@@ -669,12 +667,12 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
           {/* Messages */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 rounded">
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-300 rounded">
               {success}
             </div>
           )}
@@ -683,58 +681,58 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           {(activeTab === 'single' || editLead) && (
             <form onSubmit={handleSingleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Student Name</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="John Doe"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Student Email</label>
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="student@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number (Optional)</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="+1-555-123-4567"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Campaign (Optional)</label>
                 <input
                   type="text"
                   value={formData.campaign}
                   onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., Spring 2025, Facebook Ads"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>
                 <select
                   required
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Select a country</option>
                   {countries.map((country) => (
@@ -746,11 +744,11 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Status</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Status</label>
                 <select
                   value={formData.contact_status}
                   onChange={(e) => setFormData({ ...formData, contact_status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   {statuses.map((status) => (
                     <option key={status.value} value={status.value}>
@@ -761,34 +759,34 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Referral Destination</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Referral Destination</label>
                 <input
                   type="text"
                   value={formData.referral_source}
                   onChange={(e) => setFormData({ ...formData, referral_source: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., University Name, Program, Partner Organization"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Add any notes..."
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Lead Quality</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead Quality</label>
                   <select
                     value={formData.lead_quality}
                     onChange={(e) => setFormData({ ...formData, lead_quality: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">Not Scored</option>
                     <option value="High">High</option>
@@ -868,10 +866,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   <li>• <strong>Notes:</strong> notes, note, comments, comment</li>
                 </ul>
                 <p className="text-xs text-blue-600">
-                  ✓ Supports quoted fields with commas<br/>
-                  ✓ Case-insensitive headers<br/>
-                  ✓ Email validation<br/>
-                  ✓ Duplicate detection<br/>
+                  ✓ Supports quoted fields with commas<br />
+                  ✓ Case-insensitive headers<br />
+                  ✓ Email validation<br />
+                  ✓ Duplicate detection<br />
                   ✓ Auto-normalizes country and status values
                 </p>
               </div>
@@ -920,11 +918,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                       </thead>
                       <tbody>
                         {parsedRows.slice(0, 50).map((row, i) => (
-                          <tr key={i} className={`border-t ${
-                            row.errors.length > 0 ? 'bg-red-50' :
-                            row.isDuplicate ? 'bg-yellow-50' :
-                            'bg-white'
-                          }`}>
+                          <tr key={i} className={`border-t ${row.errors.length > 0 ? 'bg-red-50' :
+                              row.isDuplicate ? 'bg-yellow-50' :
+                                'bg-white'
+                            }`}>
                             <td className="px-3 py-2">
                               {row.errors.length > 0 ? (
                                 <span className="text-red-600 font-bold">✗</span>

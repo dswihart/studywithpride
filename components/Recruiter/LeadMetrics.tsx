@@ -6,6 +6,7 @@
 "use client"
 
 import { useLanguage } from '@/components/LanguageContext'
+import { UsersIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 
 interface Lead {
   id: string
@@ -41,23 +42,29 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
       {/* Top Row: Total Leads and Total Contacted - Smaller and Side by Side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Total Leads Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-          <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-            {t('recruiter.metrics.totalLeads')}
-          </h3>
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-            {totalLeads}
-          </p>
+        <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('recruiter.metrics.totalLeads')}</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalLeads}</p>
+            </div>
+            <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-3 text-blue-600 dark:text-blue-400">
+              <UsersIcon className="h-6 w-6" aria-hidden="true" />
+            </div>
+          </div>
         </div>
 
         {/* Total Contacted Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-          <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-            {t('recruiter.metrics.totalContacted')}
-          </h3>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
-            {totalContacted}
-          </p>
+        <div className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('recruiter.metrics.totalContacted')}</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalContacted}</p>
+            </div>
+            <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-3 text-green-600 dark:text-green-400">
+              <CheckCircleIcon className="h-6 w-6" aria-hidden="true" />
+            </div>
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {totalLeads > 0 ? Math.round((totalContacted / totalLeads) * 100) : 0}% {t('recruiter.metrics.percentOfTotal')}
           </p>

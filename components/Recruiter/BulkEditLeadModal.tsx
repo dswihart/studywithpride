@@ -65,12 +65,12 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
         updates.contact_status = contactStatus
       }
       if (updateReferral && referralSource.trim()) {
-      if (updateCampaign && campaign.trim()) {
-        updates.campaign = campaign.trim()
-      }
-      if (updateBarcelonaTimeline && barcelonaTimeline) {
-        updates.barcelona_timeline = parseInt(barcelonaTimeline)
-      }
+        if (updateCampaign && campaign.trim()) {
+          updates.campaign = campaign.trim()
+        }
+        if (updateBarcelonaTimeline && barcelonaTimeline) {
+          updates.barcelona_timeline = parseInt(barcelonaTimeline)
+        }
         updates.referral_source = referralSource.trim()
       }
 
@@ -119,18 +119,18 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Bulk Edit Leads</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Bulk Edit Leads</h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
           >
             ×
           </button>
         </div>
 
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
           Updating {selectedLeadIds.length} lead{selectedLeadIds.length !== 1 ? 's' : ''}
         </div>
 
@@ -145,7 +145,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
                 onChange={(e) => setUpdateStatus(e.target.checked)}
                 className="w-4 h-4"
               />
-              <label htmlFor="updateStatus" className="font-medium">
+              <label htmlFor="updateStatus" className="font-medium text-gray-700 dark:text-gray-300">
                 Update Contact Status
               </label>
             </div>
@@ -154,7 +154,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
                 value={contactStatus}
                 onChange={(e) => setContactStatus(e.target.value)}
                 required={updateStatus}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select Status</option>
                 {CONTACT_STATUSES.map(status => (
@@ -176,7 +176,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
                 onChange={(e) => setUpdateReferral(e.target.checked)}
                 className="w-4 h-4"
               />
-              <label htmlFor="updateReferral" className="font-medium">
+              <label htmlFor="updateReferral" className="font-medium text-gray-700 dark:text-gray-300">
                 Update Referral Destination
               </label>
             </div>
@@ -187,21 +187,21 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
                 onChange={(e) => setReferralSource(e.target.value)}
                 placeholder="Enter referral destination"
                 required={updateReferral}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             )}
           </div>
-          {/* Campaign */}          <div>            <div className="flex items-center gap-2 mb-2">              <input                type="checkbox"                id="updateCampaign"                checked={updateCampaign}                onChange={(e) => setUpdateCampaign(e.target.checked)}                className="w-4 h-4"              />              <label htmlFor="updateCampaign" className="font-medium">                Update Campaign              </label>            </div>            {updateCampaign && (              <input                type="text"                value={campaign}                onChange={(e) => setCampaign(e.target.value)}                placeholder="Enter campaign name"                required={updateCampaign}                className="w-full p-2 border rounded"              />            )}          </div>
+          {/* Campaign */}          <div>            <div className="flex items-center gap-2 mb-2">              <input type="checkbox" id="updateCampaign" checked={updateCampaign} onChange={(e) => setUpdateCampaign(e.target.checked)} className="w-4 h-4" />              <label htmlFor="updateCampaign" className="font-medium text-gray-700 dark:text-gray-300">                Update Campaign              </label>            </div>            {updateCampaign && (<input type="text" value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="Enter campaign name" required={updateCampaign} className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />)}          </div>
 
           {error && (
-            <div className="text-red-600 text-sm">{error}</div>
+            <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
           )}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               disabled={loading}
             >
               Cancel

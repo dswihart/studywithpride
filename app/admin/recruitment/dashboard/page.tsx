@@ -66,30 +66,30 @@ export default function RecruiterDashboardPage() {
   useEffect(() => {
     const leadId = searchParams.get('leadId')
     console.log('Lead highlighting check:', { leadId, leadsCount: leads.length })
-    
+
     if (leadId) {
       // ALWAYS set highlightedLeadId from URL, even if lead is filtered out
       // This triggers LeadTable's auto-clear filter logic
       if (highlightedLeadId !== leadId) {
         console.log('Setting highlightedLeadId from URL:', leadId)
         setHighlightedLeadId(leadId)
-        
+
         // Clear highlight after 5 seconds
         setTimeout(() => {
           setHighlightedLeadId(null)
           setHighlightedLeadName(null)
         }, 5000)
       }
-      
+
       // Try to find the lead in the current filtered array to set the name
       if (leads.length > 0) {
         const lead = leads.find(l => l.id === leadId)
         console.log('Found lead in filtered array:', lead)
-        
+
         if (lead) {
           console.log('Setting lead name for notification:', lead.prospect_name)
           setHighlightedLeadName(lead.prospect_name || 'Unknown Lead')
-          
+
           // Scroll to the lead in the table
           setTimeout(() => {
             const leadRow = document.getElementById(`lead-row-${leadId}`)
@@ -180,7 +180,7 @@ export default function RecruiterDashboardPage() {
   }
 
   const handleCloseMessageHistory = () => {
-const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds(selectedIds)  }
+    const handleSelectionChange = (selectedIds: string[]) => { setSelectedLeadIds(selectedIds) }
     setIsMessageHistoryOpen(false)
     setMessageHistoryLead(null)
   }
@@ -223,8 +223,8 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-xl text-gray-600 dark:text-gray-300">Loading...</div>
       </div>
     )
   }
@@ -234,15 +234,15 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Recruitment Dashboard
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Manage and track recruitment leads
             </p>
           </div>
@@ -365,20 +365,20 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Leads</h3>
-                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Leads</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone</p>
                 </div>
               </div>
 
-              <p className="text-gray-700 mb-6">
+              <p className="text-gray-700 dark:text-gray-300 mb-6">
                 Are you sure you want to delete {selectedLeadIds.length} lead{selectedLeadIds.length !== 1 ? 's' : ''}? This will permanently remove {selectedLeadIds.length === 1 ? 'this lead' : 'these leads'} from your database.
               </p>
 
@@ -386,7 +386,7 @@ const handleSelectionChange = (selectedIds: string[]) => {    setSelectedLeadIds
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={deleting}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium disabled:opacity-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium disabled:opacity-50"
                 >
                   Cancel
                 </button>

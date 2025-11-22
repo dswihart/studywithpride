@@ -36,12 +36,12 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
 
   const fetchMessages = async () => {
     if (!lead) return
-    
+
     try {
       setLoading(true)
       const response = await fetch(`/api/recruiter/whatsapp-messages?leadId=${lead.id}`)
       const data = await response.json()
-      
+
       if (response.ok) {
         setMessages(data.messages || [])
       } else {
@@ -57,80 +57,40 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
   if (!isOpen) return null
 
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: '20px'
-      }}
-      onClick={onClose}
-    >
-      <div 
-        style={{
-          backgroundColor: 'white',
-          padding: '30px',
-          borderRadius: '12px',
-          maxWidth: '700px',
-          width: '100%',
-          maxHeight: '80vh',
-          overflow: 'auto',
-          position: 'relative',
-          zIndex: 10000,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-        }}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-5">
+      <div
+        className="bg-white dark:bg-gray-800 p-8 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-auto relative z-[10000] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: 600, color: '#1f2937' }}>
+        <h2 className="mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
           Message History: {lead?.prospect_name || 'Lead'}
         </h2>
 
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Loading messages...</div>
+          <div className="p-10 text-center text-gray-500 dark:text-gray-400">Loading messages...</div>
         ) : messages.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+          <div className="p-10 text-center text-gray-400 dark:text-gray-500">
             No messages yet
           </div>
         ) : (
-          <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="mb-5 flex flex-col gap-3">
             {messages.map((message) => (
-              <div 
+              <div
                 key={message.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: message.direction === 'outbound' ? 'flex-end' : 'flex-start',
-                  width: '100%'
-                }}
+                className={`flex w-full ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  style={{
-                    maxWidth: '70%',
-                    padding: '12px 16px',
-                    backgroundColor: message.direction === 'outbound' ? '#3b82f6' : '#f3f4f6',
-                    color: message.direction === 'outbound' ? '#ffffff' : '#1f2937',
-                    borderRadius: message.direction === 'outbound' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}
+                  className={`max-w-[70%] px-4 py-3 shadow-sm ${message.direction === 'outbound'
+                      ? 'bg-blue-500 text-white rounded-t-2xl rounded-bl-2xl rounded-br-sm'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-t-2xl rounded-br-2xl rounded-bl-sm'
+                    }`}
                 >
-                  <div style={{ fontSize: '14px', lineHeight: '1.5', wordWrap: 'break-word' }}>
+                  <div className="text-sm leading-relaxed break-words">
                     {message.content}
                   </div>
-                  <div 
-                    style={{ 
-                      fontSize: '11px', 
-                      marginTop: '6px',
-                      color: message.direction === 'outbound' ? 'rgba(255,255,255,0.8)' : '#6b7280',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
+                  <div
+                    className={`text-[11px] mt-1.5 flex items-center gap-1 ${message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                      }`}
                   >
                     {new Date(message.sent_at).toLocaleString('en-US', {
                       month: 'short',
@@ -139,7 +99,7 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
                       minute: '2-digit'
                     })}
                     {message.direction === 'outbound' && (
-                      <span style={{ marginLeft: '4px' }}>
+                      <span className="ml-1">
                         {message.status === 'delivered' ? '✓✓' : message.status === 'sent' ? '✓' : '⏱'}
                       </span>
                     )}
@@ -152,17 +112,7 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
 
         <button
           onClick={onClose}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 500,
-            marginTop: '8px'
-          }}
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white border-none rounded-lg cursor-pointer text-sm font-medium mt-2 transition-colors"
         >
           Close
         </button>
