@@ -59,6 +59,7 @@ type SortColumn =
   | "country"
   | "phone"
   | "campaign"
+  | "referral_source"
   | "contact_status"
   | "lead_quality"
   | "last_contact_date"
@@ -92,7 +93,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "phone", labelKey: "recruiter.table.columns.phone", sortable: "phone" },
   { key: "country", labelKey: "recruiter.table.columns.country", sortable: "country" },
   { key: "campaign", labelKey: "recruiter.table.columns.campaign", sortable: "campaign" },
-  { key: "referral_source", labelKey: "recruiter.table.referralColumn" },
+  { key: "referral_source", labelKey: "recruiter.table.referralColumn", sortable: "referral_source" },
   { key: "contact_status", labelKey: "recruiter.table.columns.status", sortable: "contact_status" },
   { key: "lead_quality", labelKey: "recruiter.table.columns.quality", sortable: "lead_quality" },
   { key: "last_contact_date", labelKey: "recruiter.table.columns.lastContact", sortable: "last_contact_date" },
@@ -287,6 +288,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
         case "campaign":
           aValue = a.campaign || ""
           bValue = b.campaign || ""
+          break
+        case "referral_source":
+          aValue = a.referral_source?.toLowerCase() || ""
+          bValue = b.referral_source?.toLowerCase() || ""
           break
         case "contact_status":
           aValue = a.contact_status.toLowerCase()
@@ -701,10 +706,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                   key={lead.id}
                   id={`lead-row-${lead.id}`}
                   className={`cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-700 ${highlightedLeadId === lead.id
-                      ? "bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 shadow-lg"
-                      : selectedLeads.has(lead.id)
-                        ? "bg-blue-50 dark:bg-blue-900/20"
-                        : ""
+                    ? "bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 shadow-lg"
+                    : selectedLeads.has(lead.id)
+                      ? "bg-blue-50 dark:bg-blue-900/20"
+                      : ""
                     }`}
                   onClick={(event) => handleRowClick(lead, event)}>
                   <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
