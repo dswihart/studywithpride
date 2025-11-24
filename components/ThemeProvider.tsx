@@ -18,6 +18,15 @@ export function ThemeProvider({ children, initialTheme = "light" }: { children: 
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [mounted, setMounted] = useState(false)
 
+  const persistTheme = useCallback((nextTheme: Theme) => {
+    try {
+      window.localStorage.setItem("theme", nextTheme)
+      document.cookie = `${THEME_COOKIE}=${nextTheme}; path=/; max-age=${COOKIE_MAX_AGE}`
+    } catch {
+      // ignore persistence issues (e.g., disabled cookies)
+    }
+  }, [])
+
   const applyTheme = useCallback((nextTheme: Theme) => {
     if (typeof document === 'undefined') return
     const root = document.documentElement
@@ -34,25 +43,25 @@ export function ThemeProvider({ children, initialTheme = "light" }: { children: 
     if (storedTheme) {
       setTheme(storedTheme)
       applyTheme(storedTheme)
+      persistTheme(storedTheme)
     } else {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
       const detectedTheme: Theme = prefersDark ? "dark" : "light"
       setTheme(detectedTheme)
       applyTheme(detectedTheme)
-      window.localStorage.setItem("theme", detectedTheme)
+      persistTheme(detectedTheme)
     }
 
     setMounted(true)
-  }, [applyTheme])
+  }, [applyTheme, persistTheme])
 
   // Apply theme whenever it changes (only after mount)
   useEffect(() => {
     if (!mounted) return
 
     applyTheme(theme)
-    window.localStorage.setItem("theme", theme)
-    document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${COOKIE_MAX_AGE}`
-  }, [theme, mounted, applyTheme])
+    persistTheme(theme)
+  }, [theme, mounted, applyTheme, persistTheme])
 
   // Toggle theme function
   const toggleTheme = () => {

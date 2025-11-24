@@ -8,6 +8,7 @@ import { AuthProvider } from '@/components/AuthContext'
 import { LanguageProvider } from '@/components/LanguageContext'
 import { ThemeProvider, type Theme } from '@/components/ThemeProvider'
 import { cookies } from 'next/headers'
+import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,11 +28,16 @@ const THEME_COOKIE = 'theme'
 
 const themeInitializer = `(() => {
   try {
-    const storedTheme = localStorage.getItem('theme');
+    const storageKey = 'theme';
+    const cookieName = '${THEME_COOKIE}';
+    const storedTheme = window.localStorage.getItem(storageKey);
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = storedTheme || (prefersDark ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    document.documentElement.dataset.theme = theme;
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.dataset.theme = theme;
+    window.localStorage.setItem(storageKey, theme);
+    document.cookie = cookieName + '=' + theme + '; path=/; max-age=31536000';
   } catch (error) {
     console.warn('Theme init failed', error);
   }
@@ -47,11 +53,11 @@ export default async function RootLayout({
   const bodyClass = `${inter.className} ${storedTheme === 'dark' ? 'dark' : ''}`.trim()
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitializer }} />
+      </head>
       <body className={bodyClass}>
-        <script
-          dangerouslySetInnerHTML={{ __html: themeInitializer }}
-        />
         <ThemeProvider initialTheme={storedTheme}>
           <LanguageProvider>
             <IntlProvider>
