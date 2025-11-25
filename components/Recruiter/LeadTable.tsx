@@ -2,7 +2,7 @@
 
 
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { useLanguage } from "@/components/LanguageContext"
 import BulkEditLeadModal from "./BulkEditLeadModal"
 
@@ -129,6 +129,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   const columnMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
+
     const loadVisibility = () => {
       if (typeof window === "undefined") return
       const stored = window.localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY)
@@ -151,11 +152,13 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   }, [])
 
   useEffect(() => {
+
     if (typeof window === "undefined") return
     window.localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(columnVisibility))
   }, [columnVisibility])
 
   useEffect(() => {
+
     const handleClick = (event: MouseEvent) => {
       if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
         setShowColumnMenu(false)
@@ -166,12 +169,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     return () => document.removeEventListener("mousedown", handleClick)
   }, [])
 
-  useEffect(() => {
-    fetchLeads()
-  }, [selectedCountry, selectedStatus])
-
   // Auto-clear filters when highlighting a lead to ensure it's visible
   useEffect(() => {
+
     if (!highlightedLeadId) return
 
     // Check if filters are currently active
@@ -190,12 +190,13 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   }, [highlightedLeadId, allLeads, selectedCountry, selectedStatus])
 
   useEffect(() => {
+
     if (onSelectionChange) {
       onSelectionChange(Array.from(selectedLeads))
     }
   }, [selectedLeads, onSelectionChange])
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       setLoading(true)
       setError("")
@@ -235,7 +236,12 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCountry, selectedStatus, t, onLeadsChange])
+
+  // Fetch leads when filters change
+  useEffect(() => {
+    fetchLeads()
+  }, [fetchLeads])
 
   const handleBulkEditSuccess = () => {
     fetchLeads()
@@ -321,6 +327,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   }
 
   useEffect(() => {
+
     const sortedLeads = getSortedLeads(allLeads)
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage

@@ -16,6 +16,7 @@ import SendWhatsAppModal from "@/components/Recruiter/SendWhatsAppModal"
 import MessageHistoryModal from "@/components/Recruiter/MessageHistoryModal"
 import AddLeadModal from '@/components/Recruiter/AddLeadModal'
 import { useTheme } from '@/components/ThemeProvider'
+import * as XLSX from 'xlsx'
 
 interface Lead {
   id: string
@@ -195,6 +196,62 @@ function RecruiterDashboardContent() {
     setShowDeleteConfirm(true)
   }
 
+  const handleExportSelected = () => {
+    if (selectedLeadIds.length === 0) return
+    
+    // Filter leads to only selected ones
+    const selectedLeads = leads.filter(lead => selectedLeadIds.includes(lead.id))
+    
+    // Prepare data for export
+    const exportData = selectedLeads.map(lead => ({
+      'Name': lead.prospect_name || '',
+      'Email': lead.prospect_email || '',
+      'Phone': lead.phone || '',
+      'Country': lead.country || '',
+      'Campaign': lead.campaign || '',
+      'Campaign Name': lead.campaign_name || '',
+      'Status': lead.contact_status || '',
+      'Lead Quality': lead.lead_quality || '',
+      'Lead Score': lead.lead_score || '',
+      'Referral Source': lead.referral_source || '',
+      'Last Contact': lead.last_contact_date || '',
+      'Notes': lead.notes || '',
+      'Created At': lead.created_at || '',
+      'Date Imported': lead.date_imported || ''
+    }))
+    
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 25 }, // Name
+      { wch: 30 }, // Email
+      { wch: 18 }, // Phone
+      { wch: 15 }, // Country
+      { wch: 20 }, // Campaign
+      { wch: 25 }, // Campaign Name
+      { wch: 15 }, // Status
+      { wch: 12 }, // Lead Quality
+      { wch: 10 }, // Lead Score
+      { wch: 25 }, // Referral Source
+      { wch: 15 }, // Last Contact
+      { wch: 40 }, // Notes
+      { wch: 20 }, // Created At
+      { wch: 15 }, // Date Imported
+    ]
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Leads')
+    
+    // Generate filename with date
+    const date = new Date().toISOString().split('T')[0]
+    const filename = `leads_export_${date}.xlsx`
+    
+    // Download file
+    XLSX.writeFile(wb, filename)
+  }
+
   const confirmDelete = async () => {
     if (selectedLeadIds.length === 0) return
 
@@ -250,16 +307,27 @@ function RecruiterDashboardContent() {
           </div>
           <div className="flex gap-3">
             {selectedLeadIds.length > 0 && (
-              <button
-                onClick={handleDeleteSelected}
-                disabled={deleting}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete Selected ({selectedLeadIds.length})
-              </button>
+              <>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={deleting}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Selected ({selectedLeadIds.length})
+                </button>
+                <button
+                  onClick={handleExportSelected}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export Selected ({selectedLeadIds.length})
+                </button>
+              </>
             )}
             <button
               onClick={() => {
