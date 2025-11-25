@@ -63,7 +63,7 @@ export default function Header() {
   }, [userMenuOpen])
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50 transition-colors">
+    <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50 transition-colors">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
@@ -79,7 +79,7 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={(event) => handleNavigate(event, link.href)}
-                className="text-gray-700 hover:text-purple-600 transition"
+                className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 transition"
               >
                 {link.label}
               </a>
@@ -103,10 +103,10 @@ export default function Header() {
                     </button>
 
                     {userMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
-                        <div className="px-4 py-3 border-b border-gray-200">
-                          <p className="text-sm text-gray-500">Signed in as</p>
-                          <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+                      <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-200 dark:border-gray-700">
+                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Signed in as</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.email}</p>
                           {userRole && (
                             <p className="text-xs text-purple-600 mt-1 capitalize">{userRole}</p>
                           )}
@@ -116,7 +116,7 @@ export default function Header() {
                         {isRecruiterOrAdmin && (
                           <a
                             href="/admin/recruitment/dashboard"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                             onClick={(event) => handleNavigate(event, '/admin/recruitment/dashboard')}
                           >
                             <div className="flex items-center space-x-2">
@@ -130,7 +130,7 @@ export default function Header() {
 
                         <a
                           href="/student-portal"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                           onClick={(event) => handleNavigate(event, '/student-portal')}
                         >
                           <div className="flex items-center space-x-2">
@@ -142,7 +142,7 @@ export default function Header() {
                         </a>
                         <a
                           href="/student-portal"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                           onClick={(event) => handleNavigate(event, '/student-portal')}
                         >
                           <div className="flex items-center space-x-2">
@@ -157,7 +157,7 @@ export default function Header() {
                             setUserMenuOpen(false)
                             signOut()
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition"
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                         >
                           <div className="flex items-center space-x-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,7 +233,7 @@ export default function Header() {
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-purple-600 transition"
+              className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 transition"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -244,7 +244,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pt-4 border-t border-gray-200">
+          <div className="md:hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="space-y-3">
               {desktopNavLinks.map(link => (
                 <a
@@ -264,7 +264,7 @@ export default function Header() {
                       <>
                         <div className="px-3 py-2 mb-2">
                           <p className="text-xs text-gray-500">Signed in as</p>
-                          <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.email}</p>
                           {userRole && (
                             <p className="text-xs text-purple-600 mt-1 capitalize">{userRole}</p>
                           )}

@@ -796,32 +796,32 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date Acquired</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Acquired</label>
                   <input
                     type="date"
                     value={formData.created_time}
                     onChange={(e) => setFormData({ ...formData, created_time: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Contact Date</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Contact Date</label>
                 <input
                   type="date"
                   value={formData.last_contact_date}
                   onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">When do you want to come to Barcelona?</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When do you want to come to Barcelona?</label>
                 <select
                   value={formData.barcelona_timeline}
                   onChange={(e) => setFormData({ ...formData, barcelona_timeline: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Select timeline</option>
                   <option value="6">6 months</option>
@@ -833,7 +833,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>
@@ -883,9 +883,9 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   accept=".csv,.xlsx,.xls"
                   onChange={handleFileUpload}
                   disabled={loading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Accepts CSV (.csv) and Excel (.xlsx, .xls) files
                 </p>
               </div>
@@ -893,7 +893,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               {parsedRows.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-700">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Preview ({parsedRows.length} rows)
                     </h4>
                     <div className="flex gap-3 text-xs">
@@ -905,7 +905,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   </div>
                   <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
                     <table className="min-w-full text-xs">
-                      <thead className="bg-gray-100 sticky top-0">
+                      <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0">
                         <tr>
                           <th className="px-3 py-2 text-left">Status</th>
                           <th className="px-3 py-2 text-left">Name</th>
@@ -918,9 +918,9 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                       </thead>
                       <tbody>
                         {parsedRows.slice(0, 50).map((row, i) => (
-                          <tr key={i} className={`border-t ${row.errors.length > 0 ? 'bg-red-50' :
-                              row.isDuplicate ? 'bg-yellow-50' :
-                                'bg-white'
+                          <tr key={i} className={`border-t ${row.errors.length > 0 ? 'bg-red-50 dark:bg-red-900/30' :
+                              row.isDuplicate ? 'bg-yellow-50 dark:bg-yellow-900/30' :
+                                'bg-white dark:bg-gray-800'
                             }`}>
                             <td className="px-3 py-2">
                               {row.errors.length > 0 ? (
@@ -936,7 +936,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                             <td className="px-3 py-2">{row.data.phone || 'N/A'}</td>
                             <td className="px-3 py-2">{row.data.country}</td>
                             <td className="px-3 py-2">
-                              <span className="px-2 py-1 rounded text-xs bg-gray-100">
+                              <span className="px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-600 dark:text-gray-200">
                                 {row.data.status}
                               </span>
                             </td>
@@ -962,7 +962,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                       </tbody>
                     </table>
                     {parsedRows.length > 50 && (
-                      <div className="p-2 text-center text-xs text-gray-500 bg-gray-50">
+                      <div className="p-2 text-center text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
                         Showing first 50 of {parsedRows.length} rows
                       </div>
                     )}
@@ -974,7 +974,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>
