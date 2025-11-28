@@ -1,11 +1,11 @@
 /**
  * AddTaskModal Component
- * Modal for creating new follow-up tasks
+ * Modal for creating new follow-up tasks with lead search functionality
  */
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Lead {
   id: string
@@ -54,9 +54,17 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
   const [taskType, setTaskType] = useState('follow_up')
   const [priority, setPriority] = useState('medium')
   const [selectedLeadId, setSelectedLeadId] = useState(leadId || '')
+  const [selectedLeadName, setSelectedLeadName] = useState(leadName || '')
   const [dueDate, setDueDate] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Lead search state
+  const [leadSearch, setLeadSearch] = useState('')
+  const [showLeadDropdown, setShowLeadDropdown] = useState(false)
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([])
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Reset form when modal opens
   useEffect(() => {
@@ -66,10 +74,48 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
       setTaskType('follow_up')
       setPriority('medium')
       setSelectedLeadId(leadId || '')
+      setSelectedLeadName(leadName || '')
       setDueDate('')
       setError('')
+      setLeadSearch('')
+      setShowLeadDropdown(false)
     }
-  }, [isOpen, leadId])
+  }, [isOpen, leadId, leadName])
+
+  // Filter leads based on search
+  useEffect(() => {
+    if (!leads || !leadSearch.trim()) {
+      setFilteredLeads(leads?.slice(0, 10) || [])
+      return
+    }
+
+    const searchLower = leadSearch.toLowerCase()
+    const filtered = leads.filter(lead => {
+      const name = lead.prospect_name?.toLowerCase() || ''
+      const email = lead.prospect_email?.toLowerCase() || ''
+      const phone = lead.phone?.toLowerCase() || ''
+      return name.includes(searchLower) || email.includes(searchLower) || phone.includes(searchLower)
+    }).slice(0, 10)
+
+    setFilteredLeads(filtered)
+  }, [leadSearch, leads])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowLeadDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   if (!isOpen) return null
 
@@ -77,6 +123,19 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
     const date = new Date()
     date.setDate(date.getDate() + days)
     setDueDate(date.toISOString().split('T')[0])
+  }
+
+  const handleSelectLead = (lead: Lead) => {
+    setSelectedLeadId(lead.id)
+    setSelectedLeadName(lead.prospect_name || lead.prospect_email || 'Unknown Lead')
+    setLeadSearch('')
+    setShowLeadDropdown(false)
+  }
+
+  const handleClearLead = () => {
+    setSelectedLeadId('')
+    setSelectedLeadName('')
+    setLeadSearch('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,7 +201,7 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Lead Selection */}
+          {/* Lead Selection with Search */}
           {leadId && leadName ? (
             <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,25 +209,90 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
               </svg>
               <span className="text-blue-800 dark:text-blue-200 font-medium">{leadName}</span>
             </div>
-          ) : leads && leads.length > 0 ? (
+          ) : (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Link to Lead (optional)
               </label>
-              <select
-                value={selectedLeadId}
-                onChange={(e) => setSelectedLeadId(e.target.value)}
-                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="">No lead selected</option>
-                {leads.map(lead => (
-                  <option key={lead.id} value={lead.id}>
-                    {lead.prospect_name || lead.prospect_email || 'Unknown Lead'}
-                  </option>
-                ))}
-              </select>
+
+              {/* Selected Lead Display */}
+              {selectedLeadId && selectedLeadName ? (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="flex-1 text-blue-800 dark:text-blue-200 font-medium">{selectedLeadName}</span>
+                  <button
+                    type="button"
+                    onClick={handleClearLead}
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={leadSearch}
+                      onChange={(e) => {
+                        setLeadSearch(e.target.value)
+                        setShowLeadDropdown(true)
+                      }}
+                      onFocus={() => setShowLeadDropdown(true)}
+                      placeholder="Search by name, email, or phone..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Dropdown Results */}
+                  {showLeadDropdown && (
+                    <div
+                      ref={dropdownRef}
+                      className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      {filteredLeads.length === 0 ? (
+                        <div className="p-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                          {leadSearch ? 'No leads found' : 'Type to search leads...'}
+                        </div>
+                      ) : (
+                        filteredLeads.map(lead => (
+                          <button
+                            key={lead.id}
+                            type="button"
+                            onClick={() => handleSelectLead(lead)}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition flex items-center gap-3"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                              <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                                {(lead.prospect_name?.[0] || lead.prospect_email?.[0] || '?').toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {lead.prospect_name || 'Unknown Name'}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {lead.prospect_email || lead.phone || 'No contact info'}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          ) : null}
+          )}
 
           {/* Title */}
           <div>
