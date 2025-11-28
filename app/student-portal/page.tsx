@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/components/AuthContext"
 import { useLanguage } from "@/components/LanguageContext"
+import DeadlineCountdown from "@/components/features/DeadlineCountdown"
 
 interface UniversityApplication {
   id?: string
@@ -93,6 +94,11 @@ export default function StudentPortalPage() {
           <p className="text-gray-600">
             {t('loggedInAs')} <span className="font-medium">{user.email}</span>
           </p>
+        </div>
+
+        {/* Deadline Countdown Widget */}
+        <div className="mb-8">
+          <DeadlineCountdown />
         </div>
 
         {/* University Applications Section */}
