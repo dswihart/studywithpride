@@ -1,6 +1,6 @@
 /**
- * Story 5.1-B: Recruiter Dashboard Page (Enhanced with Pipeline & Performance)
- * Displays lead management interface for recruiters with analytics
+ * Story 5.1-B: Recruiter Dashboard Page (Enhanced with Pipeline, Performance & Tasks)
+ * Displays lead management interface for recruiters with analytics and task management
  */
 
 'use client'
@@ -20,6 +20,8 @@ import PipelineKanban from '@/components/Recruiter/PipelineKanban'
 import RecruiterPerformanceDashboard from '@/components/Recruiter/RecruiterPerformanceDashboard'
 import LeadActivityTimeline from '@/components/Recruiter/LeadActivityTimeline'
 import QuickContactLogger from '@/components/Recruiter/QuickContactLogger'
+import TaskList from '@/components/Recruiter/TaskList'
+import AddTaskModal from '@/components/Recruiter/AddTaskModal'
 import { useTheme } from '@/components/ThemeProvider'
 import * as XLSX from 'xlsx'
 
@@ -47,7 +49,7 @@ interface Lead {
   barcelona_timeline: number | null
 }
 
-type DashboardTab = 'leads' | 'pipeline' | 'performance'
+type DashboardTab = 'leads' | 'tasks' | 'pipeline' | 'performance'
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -70,6 +72,10 @@ function RecruiterDashboardContent() {
   const [timelineLead, setTimelineLead] = useState<Lead | null>(null)
   const [showContactLogger, setShowContactLogger] = useState(false)
   const [contactLoggerLead, setContactLoggerLead] = useState<Lead | null>(null)
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false)
+  const [taskLeadId, setTaskLeadId] = useState<string | undefined>()
+  const [taskLeadName, setTaskLeadName] = useState<string | undefined>()
+  const [taskListKey, setTaskListKey] = useState(0)
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -83,7 +89,7 @@ function RecruiterDashboardContent() {
     const leadId = searchParams.get('leadId')
     const tab = searchParams.get('tab') as DashboardTab | null
 
-    if (tab && ['leads', 'pipeline', 'performance'].includes(tab)) {
+    if (tab && ['leads', 'tasks', 'pipeline', 'performance'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -204,6 +210,22 @@ function RecruiterDashboardContent() {
   const handleContactLogSuccess = () => {
     // Refresh leads after logging contact
     window.location.reload()
+  }
+
+  const handleAddTask = (leadId?: string) => {
+    if (leadId) {
+      const lead = leads.find(l => l.id === leadId)
+      setTaskLeadId(leadId)
+      setTaskLeadName(lead?.prospect_name || lead?.prospect_email || undefined)
+    } else {
+      setTaskLeadId(undefined)
+      setTaskLeadName(undefined)
+    }
+    setIsAddTaskModalOpen(true)
+  }
+
+  const handleTaskSuccess = () => {
+    setTaskListKey(prev => prev + 1) // Force TaskList to refresh
   }
 
   const handleExportSelected = () => {
@@ -403,6 +425,21 @@ function RecruiterDashboardContent() {
               </span>
             </button>
             <button
+              onClick={() => setActiveTab('tasks')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+                activeTab === 'tasks'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Tasks
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab('pipeline')}
               className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
                 activeTab === 'pipeline'
@@ -482,6 +519,13 @@ function RecruiterDashboardContent() {
           </>
         )}
 
+        {activeTab === 'tasks' && (
+          <TaskList
+            key={taskListKey}
+            onAddTask={handleAddTask}
+          />
+        )}
+
         {activeTab === 'pipeline' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <PipelineKanban
@@ -523,6 +567,19 @@ function RecruiterDashboardContent() {
           onClose={() => setIsBulkWhatsAppOpen(false)}
           onSuccess={() => window.location.reload()}
           selectedLeads={leads.filter(l => selectedLeadIds.includes(l.id))}
+        />
+
+        <AddTaskModal
+          isOpen={isAddTaskModalOpen}
+          onClose={() => {
+            setIsAddTaskModalOpen(false)
+            setTaskLeadId(undefined)
+            setTaskLeadName(undefined)
+          }}
+          onSuccess={handleTaskSuccess}
+          leadId={taskLeadId}
+          leadName={taskLeadName}
+          leads={leads}
         />
 
         {/* Quick Contact Logger */}
