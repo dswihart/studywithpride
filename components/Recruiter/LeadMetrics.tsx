@@ -30,13 +30,13 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
 
   // Basic metrics
   const totalLeads = leads.length
-  const totalContacted = leads.filter(lead => lead.contact_status !== 'not_contacted').length
+  const totalContacted = leads.filter(lead => lead.contact_status !== 'not_contacted' || lead.referral_source).length
   const validPhones = leads.filter(lead => lead.phone_valid).length
 
   // Funnel stages
   const funnel = {
-    not_contacted: leads.filter(l => l.contact_status === 'not_contacted').length,
-    contacted: leads.filter(l => l.contact_status === 'contacted').length,
+    not_contacted: leads.filter(l => l.contact_status === 'not_contacted' && !l.referral_source).length,
+    contacted: leads.filter(l => l.contact_status === 'contacted' || (l.contact_status === 'not_contacted' && l.referral_source)).length,
     interested: leads.filter(l => l.contact_status === 'interested').length,
     qualified: leads.filter(l => l.contact_status === 'qualified').length,
     converted: leads.filter(l => l.contact_status === 'converted').length,
