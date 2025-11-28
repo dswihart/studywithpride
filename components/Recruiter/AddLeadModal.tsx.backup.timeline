@@ -59,7 +59,6 @@ interface CsvRow {
     lead_score: string | null
     lead_quality: string | null
     barcelona_timeline: string | null
-    created_time: string | null
   }
   errors: string[]
   warnings: string[]
@@ -426,9 +425,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         phone_valid: null,
         recency_score: null,
         lead_score: null,
-        lead_quality: null,
-        barcelona_timeline: null,
-        created_time: null
+        lead_quality: null
       }
 
       // Map values to fields
@@ -538,7 +535,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     }
   }
 
-const handleCSVImport = async () => {
+  const handleCSVImport = async () => {
     if (parsedRows.length === 0) return
 
     setLoading(true)
@@ -552,149 +549,84 @@ const handleCSVImport = async () => {
         throw new Error('Not authenticated')
       }
 
-      // Separate new leads and duplicates
-      const newLeads = parsedRows.filter(row => row.errors.length === 0 && !row.isDuplicate)
-      const duplicateLeads = parsedRows.filter(row => row.errors.length === 0 && row.isDuplicate)
+      // Import all valid rows
+      const rowsToImport = parsedRows.filter(row =>
+        row.errors.length === 0 && !row.isDuplicate
+      )
 
-      console.log(`New leads to import: ${newLeads.length}, Duplicates to update: ${duplicateLeads.length}`)
+      console.log(`Preparing to import ${rowsToImport.length} leads`)
 
+      if (rowsToImport.length === 0) {
+        setError('No valid rows to import. Please check your file format.')
+        setLoading(false)
+        return
+      }
+
+      // Prepare data for bulk insert
+      const leadsToInsert = rowsToImport.map(row => ({
+        user_id: currentUser.id,
+        country: row.data.country || 'Other',
+        contact_status: row.data.status || 'not_contacted',
+        prospect_email: row.data.email,
+        prospect_name: row.data.name,
+        referral_source: row.data.referral_destination || null,
+        phone: row.data.phone || null,
+        campaign_name: row.data.campaign_name || row.data.campaign || null,
+        name_score: row.data.name_score ? parseInt(row.data.name_score) : null,
+        email_score: row.data.email_score ? parseInt(row.data.email_score) : null,
+        phone_valid: row.data.phone_valid === "TRUE" || row.data.phone_valid === true || row.data.phone_valid === "1",
+        recency_score: row.data.recency_score ? parseInt(row.data.recency_score) : null,
+        lead_score: row.data.lead_score ? parseInt(row.data.lead_score) : null,
+        lead_quality: row.data.lead_quality || null,
+        notes: row.data.notes || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }))
+
+      // Process in batches of 100 to avoid Supabase limits
+      const BATCH_SIZE = 100
       let totalInserted = 0
-      let totalUpdated = 0
+      const batches = []
 
-      // Insert new leads
-      if (newLeads.length > 0) {
-        const leadsToInsert = newLeads.map(row => ({
-          user_id: currentUser.id,
-          country: row.data.country || 'Other',
-          contact_status: row.data.status || 'not_contacted',
-          prospect_email: row.data.email,
-          prospect_name: row.data.name,
-          referral_source: row.data.referral_destination || null,
-          phone: row.data.phone || null,
-          campaign_name: row.data.campaign_name || row.data.campaign || null,
-          name_score: row.data.name_score ? parseInt(row.data.name_score) : null,
-          email_score: row.data.email_score ? parseInt(row.data.email_score) : null,
-          phone_valid: row.data.phone_valid === "TRUE" || row.data.phone_valid === true || row.data.phone_valid === "1",
-          recency_score: row.data.recency_score ? parseInt(row.data.recency_score) : null,
-          lead_score: row.data.lead_score ? parseInt(row.data.lead_score) : null,
-          lead_quality: row.data.lead_quality || null,
-          notes: row.data.notes || '',
-          barcelona_timeline: row.data.barcelona_timeline ? parseInt(row.data.barcelona_timeline) : null,
-          created_time: row.data.created_time || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }))
-
-        const BATCH_SIZE = 100
-        const batches = []
-        for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
-          batches.push(leadsToInsert.slice(i, i + BATCH_SIZE))
-        }
-
-        for (let i = 0; i < batches.length; i++) {
-          const batch = batches[i]
-          const { data, error: insertError } = await supabase
-            .from('leads')
-            .insert(batch)
-            .select()
-
-          if (insertError) {
-            console.error(`Insert batch ${i + 1} error:`, insertError)
-            throw new Error(`Failed to import batch ${i + 1}: ${insertError.message}`)
-          }
-          totalInserted += data?.length || batch.length
-        }
+      for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
+        batches.push(leadsToInsert.slice(i, i + BATCH_SIZE))
       }
 
-      // Update duplicates with missing data
-      if (duplicateLeads.length > 0) {
-        for (const row of duplicateLeads) {
-          // Find existing lead by email
-          const { data: existingLead } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('prospect_email', row.data.email.toLowerCase())
-            .single()
+      console.log(`Processing ${batches.length} batches of up to ${BATCH_SIZE} leads each`)
 
-          if (existingLead) {
-            // Build update object only for fields that are empty in existing but have values in import
-            const updates: Record<string, any> = {}
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i]
+        console.log(`Inserting batch ${i + 1}/${batches.length} (${batch.length} leads)`)
 
-            if (!existingLead.phone && row.data.phone) {
-              updates.phone = row.data.phone
-            }
-            if (!existingLead.campaign_name && (row.data.campaign_name || row.data.campaign)) {
-              updates.campaign_name = row.data.campaign_name || row.data.campaign
-            }
-            if (!existingLead.referral_source && row.data.referral_destination) {
-              updates.referral_source = row.data.referral_destination
-            }
-            if (!existingLead.barcelona_timeline && row.data.barcelona_timeline) {
-              updates.barcelona_timeline = parseInt(row.data.barcelona_timeline)
-            }
-            if (!existingLead.created_time && row.data.created_time) {
-              updates.created_time = row.data.created_time
-            }
-            if (!existingLead.notes && row.data.notes) {
-              updates.notes = row.data.notes
-            }
-            if (!existingLead.name_score && row.data.name_score) {
-              updates.name_score = parseInt(row.data.name_score)
-            }
-            if (!existingLead.email_score && row.data.email_score) {
-              updates.email_score = parseInt(row.data.email_score)
-            }
-            if (!existingLead.lead_score && row.data.lead_score) {
-              updates.lead_score = parseInt(row.data.lead_score)
-            }
-            if (!existingLead.lead_quality && row.data.lead_quality) {
-              updates.lead_quality = row.data.lead_quality
-            }
-            if (!existingLead.recency_score && row.data.recency_score) {
-              updates.recency_score = parseInt(row.data.recency_score)
-            }
+        const { data, error: insertError } = await supabase
+          .from('leads')
+          .insert(batch)
+          .select()
 
-            // Only update if there are changes
-            if (Object.keys(updates).length > 0) {
-              updates.updated_at = new Date().toISOString()
-
-              const { error: updateError } = await supabase
-                .from('leads')
-                .update(updates)
-                .eq('id', existingLead.id)
-
-              if (!updateError) {
-                totalUpdated++
-              } else {
-                console.error(`Failed to update lead ${existingLead.id}:`, updateError)
-              }
-            }
-          }
+        if (insertError) {
+          console.error(`Batch ${i + 1} error:`, insertError)
+          throw new Error(`Failed to import batch ${i + 1}: ${insertError.message}`)
         }
+
+        totalInserted += data?.length || batch.length
+        console.log(`Successfully inserted batch ${i + 1}. Total so far: ${totalInserted}`)
       }
 
-      const messages = []
-      if (totalInserted > 0) messages.push(`${totalInserted} new leads imported`)
-      if (totalUpdated > 0) messages.push(`${totalUpdated} existing leads updated with missing data`)
-
-      if (messages.length === 0) {
-        setError('No changes made. All leads already exist with complete data.')
-      } else {
-        setSuccess(`Successfully ${messages.join(' and ')}\!`)
-      }
+      console.log(`Import complete! Total inserted: ${totalInserted} leads`)
+      setSuccess(`Successfully imported ${totalInserted} leads!`)
 
       setTimeout(() => {
         onSuccess()
         onClose()
-      }, 1500)
-
+      }, 2000)
     } catch (err: any) {
       console.error('Import error:', err)
-      setError(err.message || 'Failed to import leads')
+      setError(err.message || 'Failed to import CSV')
     } finally {
       setLoading(false)
     }
   }
+
   if (!isOpen) return null
 
   return (

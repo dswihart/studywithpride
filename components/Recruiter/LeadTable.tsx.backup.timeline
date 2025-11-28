@@ -65,8 +65,6 @@ type SortColumn =
   | "lead_quality"
   | "last_contact_date"
   | "is_duplicate"
-  | "barcelona_timeline"
-  | "created_time"
   | null
 
 type SortDirection = "asc" | "desc" | null
@@ -81,12 +79,8 @@ type ColumnKey =
   | "lead_quality"
   | "last_contact_date"
   | "is_duplicate"
-  | "barcelona_timeline"
-  | "created_time"
   | "notes"
   | "is_duplicate"
-  | "barcelona_timeline"
-  | "created_time"
 
 type ColumnDefinition = {
   key: ColumnKey
@@ -106,8 +100,6 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "last_contact_date", labelKey: "recruiter.table.columns.lastContact", sortable: "last_contact_date" },
   { key: "notes", labelKey: "recruiter.table.columns.notes" },
   { key: "is_duplicate", labelKey: "recruiter.table.columns.duplicate", sortable: "is_duplicate" },
-  { key: "barcelona_timeline", labelKey: "recruiter.table.columns.barcelonaTimeline" },
-  { key: "created_time", labelKey: "recruiter.table.columns.createdTime" },
 ]
 
 const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS.reduce(
@@ -538,10 +530,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
             {lead.notes || t("recruiter.table.noNotes")}
           </div>
         )
-      case "barcelona_timeline":
-        return lead.barcelona_timeline ? lead.barcelona_timeline + " months" : t("recruiter.table.na")
-      case "created_time":
-        return lead.created_time || t("recruiter.table.na")
       case "is_duplicate":
         return (
           <span className={"px-3 py-1 rounded-full text-xs font-semibold " + (lead.is_duplicate ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800")}>
