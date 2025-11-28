@@ -1,6 +1,6 @@
 /**
  * BulkEditLeadModal Component
- * Allows updating multiple leads at once (status and referral destination)
+ * Allows updating multiple leads at once (status, referral destination, campaign, barcelona timeline)
  */
 
 'use client'
@@ -29,10 +29,12 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
   const [referralSource, setReferralSource] = useState('')
   const [campaign, setCampaign] = useState('')
   const [barcelonaTimeline, setBarcelonaTimeline] = useState('')
+  const [lastContactDate, setLastContactDate] = useState('')
   const [updateStatus, setUpdateStatus] = useState(false)
   const [updateReferral, setUpdateReferral] = useState(false)
   const [updateCampaign, setUpdateCampaign] = useState(false)
   const [updateBarcelonaTimeline, setUpdateBarcelonaTimeline] = useState(false)
+  const [updateLastContactDate, setUpdateLastContactDate] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -41,7 +43,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!updateStatus && !updateReferral && !updateCampaign && !updateBarcelonaTimeline) {
+    if (!updateStatus && !updateReferral && !updateCampaign && !updateBarcelonaTimeline && !updateLastContactDate) {
       setError('Please select at least one field to update')
       return
     }
@@ -56,22 +58,45 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
       return
     }
 
+    if (updateCampaign && !campaign.trim()) {
+      setError('Please enter a campaign name')
+      return
+    }
+
+    if (updateBarcelonaTimeline && !barcelonaTimeline) {
+      setError('Please select a Barcelona timeline')
+      return
+    }
+
+    if (updateLastContactDate && !lastContactDate) {
+      setError('Please select a date contacted')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      const updates: any = {}
+      const updates: Record<string, string | number> = {}
+
       if (updateStatus && contactStatus) {
         updates.contact_status = contactStatus
       }
+
       if (updateReferral && referralSource.trim()) {
-        if (updateCampaign && campaign.trim()) {
-          updates.campaign = campaign.trim()
-        }
-        if (updateBarcelonaTimeline && barcelonaTimeline) {
-          updates.barcelona_timeline = parseInt(barcelonaTimeline)
-        }
         updates.referral_source = referralSource.trim()
+      }
+
+      if (updateCampaign && campaign.trim()) {
+        updates.campaign = campaign.trim()
+      }
+
+      if (updateBarcelonaTimeline && barcelonaTimeline) {
+        updates.barcelona_timeline = parseInt(barcelonaTimeline)
+      }
+
+      if (updateLastContactDate && lastContactDate) {
+        updates.last_contact_date = new Date(lastContactDate).toISOString()
       }
 
       console.log('Sending bulk update:', { leadIds: selectedLeadIds, updates })
@@ -96,9 +121,9 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
 
       onSuccess()
       onClose()
-    } catch (err: any) {
+    } catch (err) {
       console.error('Bulk update error:', err)
-      setError(err.message || 'An error occurred')
+      setError('An error occurred')
     } finally {
       setLoading(false)
     }
@@ -107,12 +132,14 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
   const handleClose = () => {
     setContactStatus('')
     setReferralSource('')
+    setCampaign('')
+    setBarcelonaTimeline('')
+    setLastContactDate('')
     setUpdateStatus(false)
     setUpdateReferral(false)
     setUpdateCampaign(false)
-    setCampaign('')
-    setBarcelonaTimeline('')
     setUpdateBarcelonaTimeline(false)
+    setUpdateLastContactDate(false)
     setError('')
     onClose()
   }
@@ -153,7 +180,6 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
               <select
                 value={contactStatus}
                 onChange={(e) => setContactStatus(e.target.value)}
-                required={updateStatus}
                 className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select Status</option>
@@ -166,7 +192,7 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
             )}
           </div>
 
-          {/* Referral Source - Changed to text input */}
+          {/* Referral Source */}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <input
@@ -186,12 +212,86 @@ export default function BulkEditLeadModal({ isOpen, onClose, selectedLeadIds, on
                 value={referralSource}
                 onChange={(e) => setReferralSource(e.target.value)}
                 placeholder="Enter referral destination"
-                required={updateReferral}
                 className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             )}
           </div>
-          {/* Campaign */}          <div>            <div className="flex items-center gap-2 mb-2">              <input type="checkbox" id="updateCampaign" checked={updateCampaign} onChange={(e) => setUpdateCampaign(e.target.checked)} className="w-4 h-4" />              <label htmlFor="updateCampaign" className="font-medium text-gray-700 dark:text-gray-300">                Update Campaign              </label>            </div>            {updateCampaign && (<input type="text" value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="Enter campaign name" required={updateCampaign} className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />)}          </div>
+
+          {/* Campaign */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="updateCampaign"
+                checked={updateCampaign}
+                onChange={(e) => setUpdateCampaign(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="updateCampaign" className="font-medium text-gray-700 dark:text-gray-300">
+                Update Campaign
+              </label>
+            </div>
+            {updateCampaign && (
+              <input
+                type="text"
+                value={campaign}
+                onChange={(e) => setCampaign(e.target.value)}
+                placeholder="Enter campaign name"
+                className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            )}
+          </div>
+
+          {/* Barcelona Timeline */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="updateBarcelonaTimeline"
+                checked={updateBarcelonaTimeline}
+                onChange={(e) => setUpdateBarcelonaTimeline(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="updateBarcelonaTimeline" className="font-medium text-gray-700 dark:text-gray-300">
+                Update Barcelona Timeline
+              </label>
+            </div>
+            {updateBarcelonaTimeline && (
+              <select
+                value={barcelonaTimeline}
+                onChange={(e) => setBarcelonaTimeline(e.target.value)}
+                className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">Select Timeline</option>
+                <option value="6">6 months</option>
+                <option value="12">12 months</option>
+              </select>
+            )}
+          </div>
+
+          {/* Date Contacted */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="updateLastContactDate"
+                checked={updateLastContactDate}
+                onChange={(e) => setUpdateLastContactDate(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="updateLastContactDate" className="font-medium text-gray-700 dark:text-gray-300">
+                Update Date Contacted
+              </label>
+            </div>
+            {updateLastContactDate && (
+              <input
+                type="date"
+                value={lastContactDate}
+                onChange={(e) => setLastContactDate(e.target.value)}
+                className="w-full p-2 border rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            )}
+          </div>
 
           {error && (
             <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>

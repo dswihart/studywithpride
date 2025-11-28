@@ -39,6 +39,7 @@ interface LeadTableProps {
   onSelectionChange?: (selectedIds: string[]) => void
   onWhatsAppClick?: (lead: Lead) => void
   onMessageHistoryClick?: (lead: Lead) => void
+  onLogContactClick?: (lead: Lead) => void
   highlightedLeadId?: string | null
 }
 
@@ -108,7 +109,7 @@ const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "recruiter-lead-table-columns"
 
-export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick, highlightedLeadId }: LeadTableProps) {
+export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick, onLogContactClick, highlightedLeadId }: LeadTableProps) {
   const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -126,7 +127,18 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   const [showBulkEditModal, setShowBulkEditModal] = useState(false)
   const [columnVisibility, setColumnVisibility] = useState<Record<ColumnKey, boolean>>(DEFAULT_COLUMN_VISIBILITY)
   const [showColumnMenu, setShowColumnMenu] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const columnMenuRef = useRef<HTMLDivElement | null>(null)
+
+  // Use refs for callbacks to prevent infinite re-render loops
+  const onLeadsChangeRef = useRef(onLeadsChange)
+  const onSelectionChangeRef = useRef(onSelectionChange)
+
+  // Keep refs up to date
+  useEffect(() => {
+    onLeadsChangeRef.current = onLeadsChange
+    onSelectionChangeRef.current = onSelectionChange
+  }, [onLeadsChange, onSelectionChange])
 
   useEffect(() => {
 
@@ -190,11 +202,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   }, [highlightedLeadId, allLeads, selectedCountry, selectedStatus])
 
   useEffect(() => {
-
-    if (onSelectionChange) {
-      onSelectionChange(Array.from(selectedLeads))
+    if (onSelectionChangeRef.current) {
+      onSelectionChangeRef.current(Array.from(selectedLeads))
     }
-  }, [selectedLeads, onSelectionChange])
+  }, [selectedLeads])
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -227,8 +238,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
       const uniqueCountries = Array.from(new Set(fetchedLeads.map((lead) => lead.country))).sort()
       setCountries(uniqueCountries)
 
-      if (onLeadsChange) {
-        onLeadsChange(fetchedLeads)
+      // Use ref to call callback without causing re-render loop
+      if (onLeadsChangeRef.current) {
+        onLeadsChangeRef.current(fetchedLeads)
       }
     } catch {
       setError(t("recruiter.table.noResults"))
@@ -236,7 +248,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     } finally {
       setLoading(false)
     }
-  }, [selectedCountry, selectedStatus, t, onLeadsChange])
+  }, [selectedCountry, selectedStatus, t])
 
   // Fetch leads when filters change
   useEffect(() => {
@@ -266,6 +278,17 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     setSortDirection(newDirection)
     setCurrentPage(1)
   }
+
+  const getFilteredLeads = useCallback((leadsToFilter: Lead[]) => {
+    if (!searchQuery.trim()) return leadsToFilter
+    const query = searchQuery.toLowerCase().trim()
+    return leadsToFilter.filter((lead) => {
+      const name = (lead.prospect_name || "").toLowerCase()
+      const email = (lead.prospect_email || "").toLowerCase()
+      const phone = (lead.phone || "").toLowerCase()
+      return name.includes(query) || email.includes(query) || phone.includes(query)
+    })
+  }, [searchQuery])
 
   const getSortedLeads = (leadsToSort: Lead[]) => {
     if (!sortColumn || !sortDirection) return leadsToSort
@@ -327,12 +350,12 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
   }
 
   useEffect(() => {
-
-    const sortedLeads = getSortedLeads(allLeads)
+    const filteredLeads = getFilteredLeads(allLeads)
+    const sortedLeads = getSortedLeads(filteredLeads)
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     setLeads(sortedLeads.slice(startIndex, endIndex))
-  }, [allLeads, currentPage, itemsPerPage, sortColumn, sortDirection])
+  }, [allLeads, currentPage, itemsPerPage, sortColumn, sortDirection, getFilteredLeads])
 
   const renderSortIcon = (column: SortColumn) => {
     if (sortColumn !== column) {
@@ -555,6 +578,42 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
     <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-md">
       <div className="border-b border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col gap-4 sm:flex-row">
+          {/* Search Input */}
+          <div className="flex-1 sm:flex-[2]">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="search-input">
+              Search Leads
+            </label>
+            <div className="relative">
+              <input
+                id="search-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
+                placeholder="Search by name, email, or phone..."
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 pl-10 text-gray-900 dark:text-white placeholder-gray-400 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("")
+                    setCurrentPage(1)
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="flex-1">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="country-filter">
               {t("recruiter.table.filterCountry")}
@@ -765,6 +824,19 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                       <button
                         onClick={(event) => {
                           event.stopPropagation()
+                          onLogContactClick?.(lead)
+                        }}
+                        className="flex items-center gap-1 font-medium text-amber-600 hover:text-amber-800"
+                        title="Log contact attempt"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        Log
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation()
                           onEditLead?.(lead)
                         }}
                         className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
@@ -794,11 +866,12 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
             </button>
           )}
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {t("recruiter.table.selectionSummaryPrefix")} {((currentPage - 1) * itemsPerPage) + 1} {t("recruiter.table.selectionSummaryTo")} {Math.min(currentPage * itemsPerPage, getSortedLeads(allLeads).length)} {t("recruiter.table.selectionSummaryOf")} {getSortedLeads(allLeads).length}{" "}
-            {getSortedLeads(allLeads).length === 1 ? t("recruiter.table.leadLabel") : t("recruiter.table.leadsLabel")}
+            {t("recruiter.table.selectionSummaryPrefix")} {((currentPage - 1) * itemsPerPage) + 1} {t("recruiter.table.selectionSummaryTo")} {Math.min(currentPage * itemsPerPage, getSortedLeads(getFilteredLeads(allLeads)).length)} {t("recruiter.table.selectionSummaryOf")} {getSortedLeads(getFilteredLeads(allLeads)).length}{" "}
+            {getSortedLeads(getFilteredLeads(allLeads)).length === 1 ? t("recruiter.table.leadLabel") : t("recruiter.table.leadsLabel")}
             {selectedLeads.size > 0 && ` (${selectedLeads.size} ${t("recruiter.table.selectedSuffix")})`}
+            {searchQuery && ` (filtered from ${allLeads.length} total)`}
           </p>
-          {getSortedLeads(allLeads).length > itemsPerPage && (
+          {getSortedLeads(getFilteredLeads(allLeads)).length > itemsPerPage && (
             <div className="mt-4 flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -808,11 +881,11 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
                 {t("recruiter.table.previous")}
               </button>
               <span className="text-sm text-gray-600">
-                {t("recruiter.table.page")} {currentPage} {t("recruiter.table.of")} {Math.ceil(getSortedLeads(allLeads).length / itemsPerPage)}
+                {t("recruiter.table.page")} {currentPage} {t("recruiter.table.of")} {Math.ceil(getSortedLeads(getFilteredLeads(allLeads)).length / itemsPerPage)}
               </span>
               <button
-                onClick={() => setCurrentPage((page) => Math.min(Math.ceil(getSortedLeads(allLeads).length / itemsPerPage), page + 1))}
-                disabled={currentPage >= Math.ceil(getSortedLeads(allLeads).length / itemsPerPage)}
+                onClick={() => setCurrentPage((page) => Math.min(Math.ceil(getSortedLeads(getFilteredLeads(allLeads)).length / itemsPerPage), page + 1))}
+                disabled={currentPage >= Math.ceil(getSortedLeads(getFilteredLeads(allLeads)).length / itemsPerPage)}
                 className="rounded border px-3 py-1 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t("recruiter.table.next")}

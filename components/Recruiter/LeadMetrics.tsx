@@ -228,7 +228,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
           <div className="space-y-2">
             {Object.entries(leadsBySource)
               .sort(([, a], [, b]) => b - a)
-              .slice(0, 5)
+              .slice(0, 15)
               .map(([source, count]) => (
                 <div key={source} className="flex justify-between items-center text-sm">
                   <span className="text-gray-600 dark:text-gray-400 truncate max-w-[200px]">{source}</span>
