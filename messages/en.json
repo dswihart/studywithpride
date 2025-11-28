@@ -205,6 +205,20 @@
       "leads": "leads"
     },
     "table": {
+      "columns": {
+        "prospectName": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "country": "Country",
+        "campaign": "Campaign",
+        "status": "Status",
+        "quality": "Quality",
+        "lastContact": "Last Contact",
+        "notes": "Notes",
+        "duplicate": "Duplicate",
+        "barcelonaTimeline": "Barcelona Timeline",
+        "createdTime": "Created Time"
+      },
       "title": "Lead Management",
       "filterByCountry": "Filter by Country",
       "filterByStatus": "Filter by Status",

@@ -205,6 +205,20 @@
       "leads": "leads"
     },
     "table": {
+      "columns": {
+        "prospectName": "Nome",
+        "email": "Email",
+        "phone": "Telefone",
+        "country": "País",
+        "campaign": "Campanha",
+        "status": "Status",
+        "quality": "Qualidade",
+        "lastContact": "Último Contato",
+        "notes": "Notas",
+        "duplicate": "Duplicado",
+        "barcelonaTimeline": "Cronograma Barcelona",
+        "createdTime": "Data de Criação"
+      },
       "title": "Gestão de Leads",
       "filterByCountry": "Filtrar por País",
       "filterByStatus": "Filtrar por Status",

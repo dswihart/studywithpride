@@ -89,6 +89,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [parsedRows, setParsedRows] = useState<CsvRow[]>([])
   const [validRows, setValidRows] = useState(0)
+  const [duplicateRows, setDuplicateRows] = useState(0)
   const [invalidRows, setInvalidRows] = useState(0)
 
   const baseCountries = [
@@ -349,6 +350,13 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     return statusMap[normalized] || 'not_contacted'
   }
 
+  // Parse barcelona timeline from various formats (e.g., "6", "6 months", "Within 6 months")
+  const parseBarcelonaTimeline = (value: string | null): number | null => {
+    if (!value) return null
+    const match = value.toString().match(/\d+/)
+    return match ? parseInt(match[0]) : null
+  }
+
   const normalizeCountry = (country: string): string => {
     const trimmed = country.trim()
 
@@ -505,9 +513,11 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           setParsedRows(parsed)
 
           const valid = parsed.filter(r => r.errors.length === 0 && !r.isDuplicate).length
-          const invalid = parsed.filter(r => r.errors.length > 0 || r.isDuplicate).length
+          const duplicates = parsed.filter(r => r.errors.length === 0 && r.isDuplicate).length
+          const invalid = parsed.filter(r => r.errors.length > 0).length
 
           setValidRows(valid)
+          setDuplicateRows(duplicates)
           setInvalidRows(invalid)
           setLoading(false)
         }
@@ -523,9 +533,11 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           setParsedRows(parsed)
 
           const valid = parsed.filter(r => r.errors.length === 0 && !r.isDuplicate).length
-          const invalid = parsed.filter(r => r.errors.length > 0 || r.isDuplicate).length
+          const duplicates = parsed.filter(r => r.errors.length === 0 && r.isDuplicate).length
+          const invalid = parsed.filter(r => r.errors.length > 0).length
 
           setValidRows(valid)
+          setDuplicateRows(duplicates)
           setInvalidRows(invalid)
           setLoading(false)
         }
@@ -538,7 +550,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     }
   }
 
-const handleCSVImport = async () => {
+  const handleCSVImport = async () => {
     if (parsedRows.length === 0) return
 
     setLoading(true)
@@ -579,7 +591,7 @@ const handleCSVImport = async () => {
           lead_score: row.data.lead_score ? parseInt(row.data.lead_score) : null,
           lead_quality: row.data.lead_quality || null,
           notes: row.data.notes || '',
-          barcelona_timeline: row.data.barcelona_timeline ? parseInt(row.data.barcelona_timeline) : null,
+          barcelona_timeline: parseBarcelonaTimeline(row.data.barcelona_timeline),
           created_time: row.data.created_time || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -630,7 +642,7 @@ const handleCSVImport = async () => {
               updates.referral_source = row.data.referral_destination
             }
             if (!existingLead.barcelona_timeline && row.data.barcelona_timeline) {
-              updates.barcelona_timeline = parseInt(row.data.barcelona_timeline)
+              updates.barcelona_timeline = parseBarcelonaTimeline(row.data.barcelona_timeline)
             }
             if (!existingLead.created_time && row.data.created_time) {
               updates.created_time = row.data.created_time
@@ -680,7 +692,7 @@ const handleCSVImport = async () => {
       if (messages.length === 0) {
         setError('No changes made. All leads already exist with complete data.')
       } else {
-        setSuccess(`Successfully ${messages.join(' and ')}\!`)
+        setSuccess(`Successfully ${messages.join(' and ')}!`)
       }
 
       setTimeout(() => {
@@ -695,6 +707,7 @@ const handleCSVImport = async () => {
       setLoading(false)
     }
   }
+
   if (!isOpen) return null
 
   return (
@@ -972,10 +985,9 @@ const handleCSVImport = async () => {
                       Preview ({parsedRows.length} rows)
                     </h4>
                     <div className="flex gap-3 text-xs">
-                      <span className="text-green-600 font-medium">✓ {validRows} valid</span>
-                      {invalidRows > 0 && (
-                        <span className="text-red-600 font-medium">✗ {invalidRows} invalid/duplicate</span>
-                      )}
+                      {validRows > 0 && <span className="text-green-600 font-medium">✓ {validRows} new</span>}
+                      {duplicateRows > 0 && <span className="text-yellow-600 font-medium">⚠ {duplicateRows} to update</span>}
+                      {invalidRows > 0 && <span className="text-red-600 font-medium">✗ {invalidRows} invalid</span>}
                     </div>
                   </div>
                   <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
@@ -1055,10 +1067,10 @@ const handleCSVImport = async () => {
                 </button>
                 <button
                   onClick={handleCSVImport}
-                  disabled={!csvFile || validRows === 0 || loading}
+                  disabled={!csvFile || (validRows === 0 && duplicateRows === 0) || loading}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {loading ? 'Importing...' : `Import ${validRows} Valid Lead${validRows !== 1 ? 's' : ''}`}
+                  {loading ? 'Importing...' : `Import ${validRows > 0 ? `${validRows} new` : ''}${validRows > 0 && duplicateRows > 0 ? ' + ' : ''}${duplicateRows > 0 ? `${duplicateRows} update${duplicateRows !== 1 ? 's' : ''}` : ''}`}
                 </button>
               </div>
             </div>

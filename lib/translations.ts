@@ -202,7 +202,10 @@ export const translations = {
           quality: 'Lead Quality',
           lastContact: 'Last Contact Date',
           notes: 'Notes',
-          actions: 'Actions'
+          actions: 'Actions',
+          duplicate: 'Duplicate',
+          barcelonaTimeline: 'Barcelona Timeline',
+          createdTime: 'Created Time'
         },
         referralColumn: 'Referral Destination',
         na: 'N/A',
@@ -483,7 +486,10 @@ export const translations = {
           quality: 'Calidad del lead',
           lastContact: 'Último contacto',
           notes: 'Notas',
-          actions: 'Acciones'
+          actions: 'Acciones',
+          duplicate: 'Duplicado',
+          barcelonaTimeline: 'Cronograma Barcelona',
+          createdTime: 'Fecha de Creación'
         },
         referralColumn: 'Destino de referencia',
         na: 'N/D',
@@ -764,7 +770,10 @@ export const translations = {
           quality: 'Qualidade do lead',
           lastContact: 'Último contato',
           notes: 'Notas',
-          actions: 'Ações'
+          actions: 'Ações',
+          duplicate: 'Duplicado',
+          barcelonaTimeline: 'Cronograma Barcelona',
+          createdTime: 'Data de Criação'
         },
         referralColumn: 'Destino de referência',
         na: 'N/D',

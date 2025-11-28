@@ -205,6 +205,20 @@
       "leads": "prospectos"
     },
     "table": {
+      "columns": {
+        "prospectName": "Nombre",
+        "email": "Email",
+        "phone": "Teléfono",
+        "country": "País",
+        "campaign": "Campaña",
+        "status": "Estado",
+        "quality": "Calidad",
+        "lastContact": "Último Contacto",
+        "notes": "Notas",
+        "duplicate": "Duplicado",
+        "barcelonaTimeline": "Línea de Tiempo Barcelona",
+        "createdTime": "Fecha de Creación"
+      },
       "title": "Gestión de Prospectos",
       "filterByCountry": "Filtrar por País",
       "filterByStatus": "Filtrar por Estado",

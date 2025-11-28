@@ -106,8 +106,8 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "last_contact_date", labelKey: "recruiter.table.columns.lastContact", sortable: "last_contact_date" },
   { key: "notes", labelKey: "recruiter.table.columns.notes" },
   { key: "is_duplicate", labelKey: "recruiter.table.columns.duplicate", sortable: "is_duplicate" },
-  { key: "barcelona_timeline", labelKey: "recruiter.table.columns.barcelonaTimeline" },
-  { key: "created_time", labelKey: "recruiter.table.columns.createdTime" },
+  { key: "barcelona_timeline", labelKey: "recruiter.table.columns.barcelonaTimeline", sortable: "barcelona_timeline" },
+  { key: "created_time", labelKey: "recruiter.table.columns.createdTime", sortable: "created_time" },
 ]
 
 const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS.reduce(
@@ -345,6 +345,18 @@ export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange
           bValue = qualityOrder[b.lead_quality || ""] || 0
           break
         }
+        case "barcelona_timeline":
+          aValue = a.barcelona_timeline || 0
+          bValue = b.barcelona_timeline || 0
+          break
+        case "created_time":
+          aValue = a.created_time ? new Date(a.created_time).getTime() : 0
+          bValue = b.created_time ? new Date(b.created_time).getTime() : 0
+          break
+        case "is_duplicate":
+          aValue = a.is_duplicate ? 1 : 0
+          bValue = b.is_duplicate ? 1 : 0
+          break
         case "last_contact_date":
           aValue = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0
           bValue = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0
