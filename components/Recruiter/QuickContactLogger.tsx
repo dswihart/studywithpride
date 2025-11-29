@@ -44,10 +44,8 @@ type ContactOutcome =
   | "message_read"
 
 type FollowUpAction =
-  | "send_whatsapp"
   | "send_info"
   | "send_application"
-  | "schedule_meeting"
   | "call_back"
 
 interface ContactOutcomeOption {
@@ -60,27 +58,25 @@ interface ContactOutcomeOption {
 
 const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   // Most common flow: No answer -> WhatsApp
-  { value: "no_answer_whatsapp_sent", label: "No Answer + WhatsApp Sent", icon: "📵💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back_tomorrow" },
+  { value: "no_answer_whatsapp_sent", label: "No Answer + WhatsApp Sent", icon: "📵💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
   // WhatsApp reply outcomes
   { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
-  { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call_back_today" },
-  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_whatsapp" },
+  { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call_back" },
+  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
   // Original outcomes
-  { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "send_whatsapp" },
-  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "unqualified", suggestedFollowUp: "send_whatsapp" },
+  { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
+  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
   { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
-  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_whatsapp" },
-  { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call_back_tomorrow" },
+  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
+  { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
   { value: "answered_needs_info", label: "Call: Needs More Info", icon: "📞📋", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
-  { value: "message_sent", label: "WhatsApp Sent (only)", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back_3_days" },
-  { value: "message_read", label: "Message Read", icon: "👁️", suggestedStatus: "contacted", suggestedFollowUp: "call_back_tomorrow" },
+  { value: "message_sent", label: "WhatsApp Sent (only)", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
+  { value: "message_read", label: "Message Read", icon: "👁️", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
 ]
 
 const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null; taskType: string }[] = [
-  { value: "send_whatsapp", label: "Send WhatsApp message", days: 0, taskType: "whatsapp" },
   { value: "send_info", label: "Send program info", days: 0, taskType: "email" },
   { value: "send_application", label: "Send application link", days: 0, taskType: "email" },
-  { value: "schedule_meeting", label: "Schedule video call", days: 1, taskType: "meeting" },
   { value: "call_back", label: "Call back", days: 1, taskType: "call" },
 ]
 
@@ -115,15 +111,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [error, setError] = useState("")
 
   // Additional fields for WhatsApp reply details
-  const [replyDetails, setReplyDetails] = useState({
-    barcelonaTimeline: "",
-    programInterest: "",
-    budget: "",
-    additionalInfo: ""
-  })
-
-  // Check if this is a WhatsApp reply outcome that needs detail capture
-  const isWhatsAppReply = selectedOutcome && ["whatsapp_replied_interested", "whatsapp_replied_info", "whatsapp_replied_not_interested"].includes(selectedOutcome)
 
   const handleOutcomeSelect = (outcome: ContactOutcomeOption) => {
     setSelectedOutcome(outcome.value)
@@ -145,14 +132,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
       const timestamp = new Date().toLocaleString()
 
-      // Build reply details string if applicable
-      const replyDetailsStr = isWhatsAppReply ? [
-        replyDetails.barcelonaTimeline ? `Timeline: ${replyDetails.barcelonaTimeline}` : null,
-        replyDetails.programInterest ? `Interest: ${replyDetails.programInterest}` : null,
-        replyDetails.budget ? `Budget: ${replyDetails.budget}` : null,
-        replyDetails.additionalInfo ? `Info: ${replyDetails.additionalInfo}` : null,
-      ].filter(Boolean).join(" | ") : null
-
       // Build follow-up label
       let followUpLabel = followUpOption?.label
       if (selectedFollowUp === 'call_back') {
@@ -163,7 +142,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
       const noteEntry = [
         `[${timestamp}]`,
         `Contact: ${outcomeOption?.label || selectedOutcome}`,
-        replyDetailsStr,
         selectedFollowUp ? `Follow-up: ${followUpLabel}` : null,
         notes ? `Notes: ${notes}` : null,
       ].filter(Boolean).join(" | ")
@@ -251,28 +229,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             </button>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center gap-2 mt-4">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    step >= s ? "bg-white text-blue-600" : "bg-blue-400 text-white"
-                  }`}
-                >
-                  {s}
-                </div>
-                {s < 3 && (
-                  <div className={`w-12 h-1 ${step > s ? "bg-white" : "bg-blue-400"}`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-blue-100 mt-1 px-1">
-            <span>Outcome</span>
-            <span>Status</span>
-            <span>Follow-up</span>
-          </div>
+
         </div>
 
         {/* Content */}
@@ -467,74 +424,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
               )}
 
               {/* WhatsApp Reply Details Section */}
-              {isWhatsAppReply && (
-                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3">
-                    Capture Reply Details
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
-                        When do they want to come to Barcelona?
-                      </label>
-                      <select
-                        value={replyDetails.barcelonaTimeline}
-                        onChange={(e) => setReplyDetails({...replyDetails, barcelonaTimeline: e.target.value})}
-                        className="w-full px-2 py-1.5 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select...</option>
-                        <option value="ASAP / Next month">ASAP / Next month</option>
-                        <option value="In 2-3 months">In 2-3 months</option>
-                        <option value="In 6 months">In 6 months</option>
-                        <option value="In 12 months">In 12 months</option>
-                        <option value="Just exploring">Just exploring</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
-                        What are they interested in?
-                      </label>
-                      <select
-                        value={replyDetails.programInterest}
-                        onChange={(e) => setReplyDetails({...replyDetails, programInterest: e.target.value})}
-                        className="w-full px-2 py-1.5 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select...</option>
-                        <option value="Spanish language course">Spanish language course</option>
-                        <option value="University degree">University degree</option>
-                        <option value="Master program">Master program</option>
-                        <option value="Living/working in Barcelona">Living/working in Barcelona</option>
-                        <option value="Student visa">Student visa</option>
-                        <option value="Other/Not specified">Other/Not specified</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
-                        Budget mentioned?
-                      </label>
-                      <input
-                        type="text"
-                        value={replyDetails.budget}
-                        onChange={(e) => setReplyDetails({...replyDetails, budget: e.target.value})}
-                        placeholder="e.g., $5000, not sure, limited..."
-                        className="w-full px-2 py-1.5 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
-                        Other info from their reply
-                      </label>
-                      <input
-                        type="text"
-                        value={replyDetails.additionalInfo}
-                        onChange={(e) => setReplyDetails({...replyDetails, additionalInfo: e.target.value})}
-                        placeholder="Any other details they shared..."
-                        className="w-full px-2 py-1.5 text-sm border border-blue-300 dark:border-blue-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+              
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

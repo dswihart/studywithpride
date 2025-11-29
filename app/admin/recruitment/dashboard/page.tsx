@@ -15,6 +15,7 @@ import LeadMetrics from '@/components/Recruiter/LeadMetrics'
 import SendWhatsAppModal from "@/components/Recruiter/SendWhatsAppModal"
 import MessageHistoryModal from "@/components/Recruiter/MessageHistoryModal"
 import AddLeadModal from '@/components/Recruiter/AddLeadModal'
+import ViewLeadModal from '@/components/Recruiter/ViewLeadModal'
 import BulkSendWhatsAppModal from '@/components/Recruiter/BulkSendWhatsAppModal'
 import LeadActivityTimeline from '@/components/Recruiter/LeadActivityTimeline'
 import QuickContactLogger from '@/components/Recruiter/QuickContactLogger'
@@ -69,7 +70,7 @@ interface Task {
   } | null
 }
 
-type DashboardTab = 'leads' | 'tasks' | 'activity'
+type DashboardTab = 'leads' | 'tasks' | 'activity' 
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -527,7 +528,21 @@ function RecruiterDashboardContent() {
                 Tasks
               </span>
             </button>
-
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+                activeTab === 'activity'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Activity
+              </span>
+            </button>
 
           </nav>
         </div>
@@ -601,20 +616,93 @@ function RecruiterDashboardContent() {
           />
         )}
 
-        {activeTab === 'pipeline' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <PipelineKanban
-              onLeadClick={(lead) => handleViewTimeline(lead as Lead)}
-              onMoveLeads={(leadIds, targetStage) => {
-                console.log('Moved leads:', leadIds, 'to', targetStage)
-              }}
-            />
+        {activeTab === 'activity' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your recent contact log entries</p>
+            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+              {leads
+                .filter(lead => lead.notes && lead.notes.trim())
+                .sort((a, b) => {
+                  const dateA = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0
+                  const dateB = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0
+                  return dateB - dateA
+                })
+                .slice(0, 50)
+                .map((lead) => {
+                  const latestNote = lead.notes?.split('\n---\n')[0] || ''
+                  const timestampMatch = latestNote.match(/\[(.+?)\]/)
+                  const timestamp = timestampMatch ? timestampMatch[1] : ''
+
+                  return (
+                    <div
+                      key={lead.id}
+                      className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition"
+                      onClick={() => {
+                        setHighlightedLeadId(lead.id)
+                        setActiveTab('leads')
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg">
+                              {latestNote.includes('Interested') ? '🎯' :
+                               latestNote.includes('WhatsApp') ? '💬' :
+                               latestNote.includes('Call') ? '📞' :
+                               latestNote.includes('Not Interested') ? '👎' : '📋'}
+                            </span>
+                            <p className="font-semibold text-gray-900 dark:text-white">
+                              {lead.prospect_name || lead.prospect_email || 'Unknown Lead'}
+                            </p>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                            {latestNote.replace(/\[.+?\]\s*\|?\s*/, '').substring(0, 150)}
+                            {latestNote.length > 150 ? '...' : ''}
+                          </p>
+                        </div>
+                        <div className="text-right ml-4 flex-shrink-0">
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                            lead.contact_status === 'interested' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                            lead.contact_status === 'qualified' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                            lead.contact_status === 'converted' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                            lead.contact_status === 'contacted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
+                          }`}>
+                            {lead.contact_status}
+                          </span>
+                          {timestamp && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{timestamp}</p>
+                          )}
+                          {lead.recruit_priority && (
+                            <p className="text-yellow-500 mt-1">{'⭐'.repeat(lead.recruit_priority)}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              {leads.filter(lead => lead.notes && lead.notes.trim()).length === 0 && (
+                <div className="text-center py-12">
+                  <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Start logging contacts to see your activity here.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-
-
         {/* Modals */}
+        <ViewLeadModal
+          isOpen={isViewLeadModalOpen}
+          onClose={handleCloseViewModal}
+          lead={viewingLead}
+          onEdit={handleEditFromView}
+        />
+
         <AddLeadModal
           isOpen={isAddLeadModalOpen}
           onClose={handleCloseModal}

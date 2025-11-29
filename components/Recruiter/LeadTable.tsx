@@ -569,7 +569,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
       return
     }
 
-    onEditLead?.(lead)
+    onViewLead?.(lead)
   }
 
   const renderCellContent = (lead: Lead, columnKey: ColumnKey) => {
@@ -970,7 +970,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                       <button
                         onClick={(event) => {
                           event.stopPropagation()
-                          onEditLead?.(lead)
+                          onViewLead?.(lead)
                         }}
                         className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
                       >

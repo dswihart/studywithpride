@@ -22,10 +22,11 @@ interface Lead {
   name_score: number | null
   email_score: number | null
   phone_valid: boolean | null
-  is_duplicate: boolean | null
+  is_duplicate: boolean
   recency_score: number | null
   lead_score: number | null
   lead_quality: string | null
+  recruit_priority: number | null
 }
 
 interface ContactHistory {

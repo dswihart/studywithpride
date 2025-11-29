@@ -16,6 +16,7 @@ interface Lead {
   notes: string | null
   created_at: string
   lead_quality?: string | null
+  recruit_priority?: number | null
   lead_score?: number | null
   phone_valid?: boolean | null
   referral_source?: string | null
@@ -222,11 +223,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
             </div>
           </div>
 
-          <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-          </h4>
-          <div className="space-y-2">
-              ))}
-          </div>
+
         </div>
       </div>
 
