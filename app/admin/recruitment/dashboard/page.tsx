@@ -247,6 +247,8 @@ function RecruiterDashboardContent() {
       'Last Contact': lead.last_contact_date || '',
       'Notes': lead.notes || '',
       'Created At': lead.created_at || '',
+      'Barcelona Timeline': lead.barcelona_timeline || '',
+      'Created Time': lead.created_time || '',
       'Date Imported': lead.date_imported || ''
     }))
 

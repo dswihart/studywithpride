@@ -4,10 +4,12 @@
  * POST /api/recruiter/tasks - Create task
  * PUT /api/recruiter/tasks - Update task
  * DELETE /api/recruiter/tasks - Delete task
+ *
+ * Uses service role key to bypass RLS - authorization is handled by requireRole
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { requireRole } from '@/lib/auth/role-guard'
 
 interface Task {
@@ -35,6 +37,18 @@ interface TaskWithLead extends Task {
   } | null
 }
 
+// Create Supabase client with service role key (bypasses RLS)
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing')
+  }
+
+  return createServiceClient(supabaseUrl, supabaseServiceKey)
+}
+
 // GET - List tasks with optional filters
 export async function GET(request: NextRequest) {
   try {
@@ -54,7 +68,7 @@ export async function GET(request: NextRequest) {
     const overdue = searchParams.get('overdue')
     const limit = parseInt(searchParams.get('limit') || '50')
 
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
 
     let query = supabase
       .from('tasks')
@@ -143,7 +157,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
 
     const taskData = {
       lead_id: lead_id || null,
@@ -212,7 +226,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
 
     const updateData: Record<string, any> = {}
 
@@ -224,6 +238,9 @@ export async function PUT(request: NextRequest) {
       updateData.status = status
       if (status === 'completed') {
         updateData.completed_at = new Date().toISOString()
+      } else {
+        // Reset completed_at when status is changed away from completed
+        updateData.completed_at = null
       }
     }
     if (due_date !== undefined) updateData.due_date = due_date
@@ -285,7 +302,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
 
     const { error } = await supabase
       .from('tasks')
