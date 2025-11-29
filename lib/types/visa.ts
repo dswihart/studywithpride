@@ -1,3 +1,26 @@
+export interface PassportRequirement {
+  validityMonths: number
+  blankPages: number
+  passportOffice: string
+  passportOfficeWebsite: string
+  renewalProcessingDays: string
+  renewalFee: string
+  renewalDocuments: string[]
+  consulateInSpain: {
+    city: string
+    address: string
+    phone: string
+    email: string
+    website: string
+  }
+  apostilleAuthority: string
+  apostilleProcessingDays: string
+  apostilleFee: string
+  apostilleDocuments: string[]
+  notes: string[]
+  notesEs: string[]
+}
+
 export interface VisaRequirement {
   countryCode: string
   countryName: string
@@ -13,6 +36,7 @@ export interface VisaRequirement {
   documents: VisaDocument[]
   additionalNotes: string
   additionalNotesEs: string
+  passport: PassportRequirement
 }
 
 export interface VisaDocument {
