@@ -293,15 +293,45 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   }
 
   const getFilteredLeads = useCallback((leadsToFilter: Lead[]) => {
-    if (!searchQuery.trim()) return leadsToFilter
-    const query = searchQuery.toLowerCase().trim()
-    return leadsToFilter.filter((lead) => {
-      const name = (lead.prospect_name || "").toLowerCase()
-      const email = (lead.prospect_email || "").toLowerCase()
-      const phone = (lead.phone || "").toLowerCase()
-      return name.includes(query) || email.includes(query) || phone.includes(query)
-    })
-  }, [searchQuery])
+    let filtered = leadsToFilter
+
+    // Text search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter((lead) => {
+        const name = (lead.prospect_name || "").toLowerCase()
+        const email = (lead.prospect_email || "").toLowerCase()
+        const phone = (lead.phone || "").toLowerCase()
+        return name.includes(query) || email.includes(query) || phone.includes(query)
+      })
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter((lead) => {
+        const leadDate = lead.date_imported || lead.created_at
+        if (!leadDate) return false
+        const leadDateObj = new Date(leadDate)
+        leadDateObj.setHours(0, 0, 0, 0)
+
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom)
+          fromDate.setHours(0, 0, 0, 0)
+          if (leadDateObj < fromDate) return false
+        }
+
+        if (dateTo) {
+          const toDate = new Date(dateTo)
+          toDate.setHours(23, 59, 59, 999)
+          if (leadDateObj > toDate) return false
+        }
+
+        return true
+      })
+    }
+
+    return filtered
+  }, [searchQuery, dateFrom, dateTo])
 
   const getSortedLeads = (leadsToSort: Lead[]) => {
     if (!sortColumn || !sortDirection) return leadsToSort

@@ -739,21 +739,22 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               updates.phone_valid = scoreData.phoneValid
             }
 
-            // Only update if there are changes
-            if (Object.keys(updates).length > 0) {
-              updates.updated_at = new Date().toISOString()
+            // Mark as duplicate and update
+            // Always mark as duplicate since we found a matching lead during import
+            updates.is_duplicate = true
+            updates.duplicate_detected_at = new Date().toISOString()
+            updates.updated_at = new Date().toISOString()
 
-              const { error: updateError } = await supabase
-                .from('leads')
-                .update(updates)
-                .eq('id', existingLead.id)
+            const { error: updateError } = await supabase
+              .from('leads')
+              .update(updates)
+              .eq('id', existingLead.id)
 
-              if (!updateError) {
-                totalUpdated++
-              } else {
+            if (!updateError) {
+              totalUpdated++
+            } else {
                 console.error(`Failed to update lead ${existingLead.id}:`, updateError)
               }
-            }
           }
         }
       }
