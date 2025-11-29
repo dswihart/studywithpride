@@ -21,7 +21,7 @@ interface ScoringRule {
 interface LeadScoreBreakdown {
   lead_id: string
   total_score: number
-  quality_tier: "hot" | "warm" | "cold"
+  quality_tier: "High" | "Medium" | "Low" | "Very Low"
   breakdown: {
     category: string
     rule: string
@@ -30,7 +30,7 @@ interface LeadScoreBreakdown {
   recommendations: string[]
 }
 
-// Default scoring rules
+// Default scoring rules - adjusted for better distribution
 const scoringRules: ScoringRule[] = [
   // Engagement scores
   {
@@ -38,15 +38,23 @@ const scoringRules: ScoringRule[] = [
     name: "Responded to message",
     category: "engagement",
     condition: "has_responded",
+    points: 15,
+    is_active: true,
+  },
+  {
+    id: "eng_interested",
+    name: "Marked as interested",
+    category: "engagement",
+    condition: "contact_status = interested",
     points: 20,
     is_active: true,
   },
   {
-    id: "eng_multiple_interactions",
-    name: "Multiple interactions",
+    id: "eng_qualified",
+    name: "Marked as qualified",
     category: "engagement",
-    condition: "interaction_count > 3",
-    points: 15,
+    condition: "contact_status = qualified",
+    points: 25,
     is_active: true,
   },
   {
@@ -64,7 +72,7 @@ const scoringRules: ScoringRule[] = [
     name: "Valid email",
     category: "profile",
     condition: "email_score >= 80",
-    points: 10,
+    points: 5,
     is_active: true,
   },
   {
@@ -72,7 +80,7 @@ const scoringRules: ScoringRule[] = [
     name: "Valid phone number",
     category: "profile",
     condition: "phone_valid = true",
-    points: 15,
+    points: 10,
     is_active: true,
   },
   {
@@ -90,7 +98,7 @@ const scoringRules: ScoringRule[] = [
     name: "Urgent timeline (1-3 months)",
     category: "behavior",
     condition: "barcelona_timeline <= 3",
-    points: 25,
+    points: 20,
     is_active: true,
   },
   {
@@ -98,7 +106,7 @@ const scoringRules: ScoringRule[] = [
     name: "Near timeline (4-6 months)",
     category: "behavior",
     condition: "barcelona_timeline <= 6",
-    points: 15,
+    points: 10,
     is_active: true,
   },
   {
@@ -106,7 +114,7 @@ const scoringRules: ScoringRule[] = [
     name: "Referred lead",
     category: "behavior",
     condition: "referral_source IS NOT NULL",
-    points: 10,
+    points: 5,
     is_active: true,
   },
 
@@ -116,7 +124,7 @@ const scoringRules: ScoringRule[] = [
     name: "Recent lead (< 14 days)",
     category: "timing",
     condition: "created_days <= 14",
-    points: 10,
+    points: 5,
     is_active: true,
   },
   {
@@ -124,6 +132,14 @@ const scoringRules: ScoringRule[] = [
     name: "Stale lead (> 30 days no contact)",
     category: "timing",
     condition: "last_contact_days > 30",
+    points: -10,
+    is_active: true,
+  },
+  {
+    id: "time_very_stale",
+    name: "Very stale lead (> 60 days no contact)",
+    category: "timing",
+    condition: "last_contact_days > 60",
     points: -15,
     is_active: true,
   },
@@ -147,10 +163,17 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
 
     switch (rule.id) {
       case "eng_responded":
-        applies = lead.contact_status !== "not_contacted"
+        // Only give points for actual response, not just being contacted
+        applies = ["interested", "qualified", "converted", "referral"].includes(lead.contact_status)
+        break
+      case "eng_interested":
+        applies = lead.contact_status === "interested"
+        break
+      case "eng_qualified":
+        applies = lead.contact_status === "qualified" || lead.contact_status === "converted"
         break
       case "eng_recent_activity":
-        applies = lastContactDays <= 7
+        applies = lastContactDays <= 7 && lastContactDays !== 999
         break
       case "prof_email_valid":
         applies = (lead.email_score || 0) >= 80
@@ -165,6 +188,7 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
         applies = lead.barcelona_timeline !== null && lead.barcelona_timeline <= 3
         break
       case "beh_timeline_soon":
+        // Only apply if not already urgent (exclusive ranges)
         applies =
           lead.barcelona_timeline !== null &&
           lead.barcelona_timeline > 3 &&
@@ -177,7 +201,11 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
         applies = createdDays <= 14
         break
       case "time_stale":
-        applies = lastContactDays > 30
+        // Only apply stale penalty if not contacted and not very stale
+        applies = lastContactDays > 30 && lastContactDays <= 60 && lead.contact_status === "not_contacted"
+        break
+      case "time_very_stale":
+        applies = lastContactDays > 60 && lead.contact_status === "not_contacted"
         break
     }
 
@@ -191,22 +219,20 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
     }
   }
 
-  // Add base score from existing lead_score if available
-  if (lead.lead_score) {
-    totalScore += Math.min(lead.lead_score * 0.5, 25) // Cap contribution from existing score
-  }
-
-  // Ensure score is within bounds
+  // Ensure score is within bounds (0-100)
   totalScore = Math.max(0, Math.min(100, totalScore))
 
-  // Determine quality tier
-  let qualityTier: "hot" | "warm" | "cold"
-  if (totalScore >= 70) {
-    qualityTier = "hot"
-  } else if (totalScore >= 40) {
-    qualityTier = "warm"
+  // Determine quality tier - Using High/Medium/Low/Very Low to match UI
+  // Adjusted thresholds for better distribution based on actual data
+  let qualityTier: "High" | "Medium" | "Low" | "Very Low"
+  if (totalScore >= 35) {
+    qualityTier = "High"
+  } else if (totalScore >= 20) {
+    qualityTier = "Medium"
+  } else if (totalScore >= 10) {
+    qualityTier = "Low"
   } else {
-    qualityTier = "cold"
+    qualityTier = "Very Low"
   }
 
   // Generate recommendations
@@ -218,14 +244,17 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
   if (lead.contact_status === "not_contacted") {
     recommendations.push("Make initial contact - lead hasn't been reached")
   }
-  if (lastContactDays > 14 && lead.contact_status !== "converted") {
+  if (lastContactDays > 14 && lastContactDays !== 999 && lead.contact_status !== "converted") {
     recommendations.push("Follow up - no contact in " + lastContactDays + " days")
   }
   if (lead.barcelona_timeline && lead.barcelona_timeline <= 3) {
     recommendations.push("PRIORITY: Urgent timeline - prioritize conversion")
   }
-  if (qualityTier === "cold" && lead.contact_status === "contacted") {
+  if (qualityTier === "Very Low" && lead.contact_status === "contacted") {
     recommendations.push("Consider re-engagement campaign")
+  }
+  if (qualityTier === "Low" && !lead.referral_source) {
+    recommendations.push("Ask for referrals to improve lead quality")
   }
 
   return {
@@ -253,9 +282,10 @@ export async function GET(request: NextRequest) {
       data: {
         rules: scoringRules,
         tiers: {
-          hot: { min: 70, max: 100, description: "High priority - ready to convert" },
-          warm: { min: 40, max: 69, description: "Engaged - needs nurturing" },
-          cold: { min: 0, max: 39, description: "Low engagement - consider re-activation" },
+          High: { min: 35, max: 100, description: "High priority - ready to convert" },
+          Medium: { min: 20, max: 34, description: "Engaged - needs nurturing" },
+          Low: { min: 10, max: 19, description: "Some potential - needs more effort" },
+          "Very Low": { min: 0, max: 9, description: "Cold leads - consider re-activation" },
         },
       },
     })
@@ -309,12 +339,13 @@ export async function POST(request: NextRequest) {
 
         // Group by tier for summary
         const summary = {
-          hot: scores.filter((s) => s.quality_tier === "hot").length,
-          warm: scores.filter((s) => s.quality_tier === "warm").length,
-          cold: scores.filter((s) => s.quality_tier === "cold").length,
-          average_score: Math.round(
+          High: scores.filter((s) => s.quality_tier === "High").length,
+          Medium: scores.filter((s) => s.quality_tier === "Medium").length,
+          Low: scores.filter((s) => s.quality_tier === "Low").length,
+          "Very Low": scores.filter((s) => s.quality_tier === "Very Low").length,
+          average_score: scores.length > 0 ? Math.round(
             scores.reduce((acc, s) => acc + s.total_score, 0) / scores.length
-          ),
+          ) : 0,
         }
 
         return NextResponse.json({
@@ -382,6 +413,42 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      case "recalculate_all": {
+        // Recalculate scores for all leads
+        const { data: leads, error: fetchError } = await supabase
+          .from("leads")
+          .select("*")
+
+        if (fetchError || !leads) {
+          return NextResponse.json(
+            { success: false, error: "Failed to fetch leads" },
+            { status: 500 }
+          )
+        }
+
+        let successCount = 0
+        for (const lead of leads) {
+          const scoreData = calculateLeadScore(lead)
+          const { error: updateError } = await supabase
+            .from("leads")
+            .update({
+              lead_score: scoreData.total_score,
+              lead_quality: scoreData.quality_tier,
+            })
+            .eq("id", lead.id)
+
+          if (!updateError) successCount++
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            updated: successCount,
+            total: leads.length,
+          },
+        })
+      }
+
       case "get_recommendations": {
         // Get prioritized recommendations for leads
         if (!leadIds || !Array.isArray(leadIds)) {
@@ -412,11 +479,13 @@ export async function POST(request: NextRequest) {
             tier: scoreData.quality_tier,
             recommendations: scoreData.recommendations,
             priority:
-              scoreData.quality_tier === "hot"
+              scoreData.quality_tier === "High"
                 ? 1
-                : scoreData.quality_tier === "warm"
+                : scoreData.quality_tier === "Medium"
                   ? 2
-                  : 3,
+                  : scoreData.quality_tier === "Low"
+                    ? 3
+                    : 4,
           }
         })
 

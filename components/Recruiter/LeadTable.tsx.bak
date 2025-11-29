@@ -36,7 +36,6 @@ interface Lead {
 interface LeadTableProps {
   onLeadsChange?: (leads: Lead[]) => void
   onEditLead?: (lead: Lead) => void
-  onViewLead?: (lead: Lead) => void
   onSelectionChange?: (selectedIds: string[]) => void
   onWhatsAppClick?: (lead: Lead) => void
   onMessageHistoryClick?: (lead: Lead) => void
@@ -68,7 +67,6 @@ type SortColumn =
   | "is_duplicate"
   | "barcelona_timeline"
   | "created_time"
-  | "date_added"
   | null
 
 type SortDirection = "asc" | "desc" | null
@@ -85,8 +83,10 @@ type ColumnKey =
   | "is_duplicate"
   | "barcelona_timeline"
   | "created_time"
-  | "date_added"
   | "notes"
+  | "is_duplicate"
+  | "barcelona_timeline"
+  | "created_time"
 
 type ColumnDefinition = {
   key: ColumnKey
@@ -104,7 +104,6 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "contact_status", labelKey: "recruiter.table.columns.status", sortable: "contact_status" },
   { key: "lead_quality", labelKey: "recruiter.table.columns.quality", sortable: "lead_quality" },
   { key: "last_contact_date", labelKey: "recruiter.table.columns.lastContact", sortable: "last_contact_date" },
-  { key: "date_added", labelKey: "recruiter.table.columns.dateAdded", sortable: "date_added" },
   { key: "notes", labelKey: "recruiter.table.columns.notes" },
   { key: "is_duplicate", labelKey: "recruiter.table.columns.duplicate", sortable: "is_duplicate" },
   { key: "barcelona_timeline", labelKey: "recruiter.table.columns.barcelonaTimeline", sortable: "barcelona_timeline" },
@@ -118,7 +117,7 @@ const DEFAULT_COLUMN_VISIBILITY: Record<ColumnKey, boolean> = COLUMN_DEFINITIONS
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "recruiter-lead-table-columns"
 
-export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick, onLogContactClick, highlightedLeadId }: LeadTableProps) {
+export default function LeadTable({ onLeadsChange, onEditLead, onSelectionChange, onWhatsAppClick, onMessageHistoryClick, onLogContactClick, highlightedLeadId }: LeadTableProps) {
   const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -137,8 +136,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const [columnVisibility, setColumnVisibility] = useState<Record<ColumnKey, boolean>>(DEFAULT_COLUMN_VISIBILITY)
   const [showColumnMenu, setShowColumnMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
   const columnMenuRef = useRef<HTMLDivElement | null>(null)
 
   // Use refs for callbacks to prevent infinite re-render loops
@@ -198,7 +195,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     if (!highlightedLeadId) return
 
     // Check if filters are currently active
-    const hasActiveFilters = selectedCountry !== "all" || selectedStatus !== "all" || dateFrom !== "" || dateTo !== ""
+    const hasActiveFilters = selectedCountry !== "all" || selectedStatus !== "all"
 
     if (hasActiveFilters && allLeads.length > 0) {
       // Check if the highlighted lead exists in allLeads
@@ -208,8 +205,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         console.log("Auto-clearing filters to show highlighted lead:", highlightedLeadId)
         setSelectedCountry("all")
         setSelectedStatus("all")
-        setDateFrom("")
-        setDateTo("")
       }
     }
   }, [highlightedLeadId, allLeads, selectedCountry, selectedStatus])
@@ -358,13 +353,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           aValue = a.created_time ? new Date(a.created_time).getTime() : 0
           bValue = b.created_time ? new Date(b.created_time).getTime() : 0
           break
-        case "date_added": {
-          const aDate = a.date_imported || a.created_at
-          const bDate = b.date_imported || b.created_at
-          aValue = aDate ? new Date(aDate).getTime() : 0
-          bValue = bDate ? new Date(bDate).getTime() : 0
-          break
-        }
         case "is_duplicate":
           aValue = a.is_duplicate ? 1 : 0
           bValue = b.is_duplicate ? 1 : 0
@@ -486,7 +474,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         return "bg-orange-100 text-orange-800"
       case "Very Low":
         return "bg-red-100 text-red-800"
-      default:
         return "bg-gray-100 text-gray-800"
     }
   }
@@ -531,17 +518,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const renderCellContent = (lead: Lead, columnKey: ColumnKey) => {
     switch (columnKey) {
       case "prospect_name":
-        return (
-          <span 
-            className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium"
-            onClick={(e) => {
-              e.stopPropagation()
-              onViewLead?.(lead)
-            }}
-          >
-            {lead.prospect_name || t("recruiter.table.na")}
-          </span>
-        )
+        return lead.prospect_name || t("recruiter.table.na")
       case "prospect_email":
         return lead.prospect_email || t("recruiter.table.na")
       case "phone":
@@ -567,8 +544,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         )
       case "last_contact_date":
         return formatDate(lead.last_contact_date)
-      case "date_added":
-        return formatDate(lead.date_imported || lead.created_at)
       case "notes":
         return (
           <div className="max-w-xs truncate" title={lead.notes || ""}>
@@ -698,39 +673,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Date Range Filter */}
-          <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="date-from">
-              Date Added From
-            </label>
-            <input
-              id="date-from"
-              type="date"
-              value={dateFrom}
-              onChange={(e) => {
-                setDateFrom(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white focus:border-transparent focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="date-to">
-              Date Added To
-            </label>
-            <input
-              id="date-to"
-              type="date"
-              value={dateTo}
-              onChange={(e) => {
-                setDateTo(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white focus:border-transparent focus:ring-2 focus:ring-blue-500"
-            />
           </div>
 
           <div className="flex-1" ref={columnMenuRef}>

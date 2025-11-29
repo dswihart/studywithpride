@@ -77,6 +77,8 @@ function RecruiterDashboardContent() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null)
+  const [isViewLeadModalOpen, setIsViewLeadModalOpen] = useState(false)
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -181,6 +183,22 @@ function RecruiterDashboardContent() {
   const handleEditLead = (lead: Lead) => {
     setEditingLead(lead)
     setIsAddLeadModalOpen(true)
+  }
+
+  const handleViewLead = (lead: Lead) => {
+    setViewingLead(lead)
+    setIsViewLeadModalOpen(true)
+  }
+
+  const handleCloseViewModal = () => {
+    setIsViewLeadModalOpen(false)
+    setViewingLead(null)
+  }
+
+  const handleEditFromView = (lead: Lead) => {
+    setIsViewLeadModalOpen(false)
+    setViewingLead(null)
+    handleEditLead(lead)
   }
 
   const handleCloseModal = () => {
@@ -600,6 +618,7 @@ function RecruiterDashboardContent() {
               <LeadTable
                 onLeadsChange={handleLeadsChange}
                 onEditLead={handleEditLead}
+                onViewLead={handleViewLead}
                 onSelectionChange={handleSelectionChange}
                 onWhatsAppClick={handleWhatsAppClick}
                 onMessageHistoryClick={handleMessageHistoryClick}
