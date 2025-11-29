@@ -3,9 +3,9 @@ export interface PassportRequirement {
   blankPages: number
   passportOffice: string
   passportOfficeWebsite: string
-  renewalProcessingDays: string
-  renewalFee: string
-  renewalDocuments: string[]
+  processingDays: string
+  passportFee: string
+  requiredDocuments: string[]
   consulateInSpain: {
     city: string
     address: string

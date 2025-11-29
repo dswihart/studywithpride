@@ -67,6 +67,8 @@ export default function VisaPage() {
   ]
 
   const renderPassportTab = () => {
+    console.log("Rendering passport tab, visaData:", visaData)
+    console.log("Passport object:", visaData?.passport)
     if (!visaData?.passport) return null
     const passport = visaData.passport
 
@@ -123,18 +125,18 @@ export default function VisaPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="border-l-4 border-purple-500 pl-4">
                 <p className="text-sm text-gray-600">{t("visa.renewalTime")}</p>
-                <p className="text-lg font-semibold text-gray-900">{passport.renewalProcessingDays} {t("visa.days")}</p>
+                <p className="text-lg font-semibold text-gray-900">{passport.processingDays} {t("visa.days")}</p>
               </div>
               <div className="border-l-4 border-purple-500 pl-4">
                 <p className="text-sm text-gray-600">{t("visa.renewalFee")}</p>
-                <p className="text-lg font-semibold text-gray-900">{passport.renewalFee}</p>
+                <p className="text-lg font-semibold text-gray-900">{passport.passportFee}</p>
               </div>
             </div>
 
             <div className="mt-6">
               <p className="text-sm font-medium text-gray-700 mb-3">{t("visa.renewalDocs")}:</p>
               <ul className="space-y-2">
-                {passport.renewalDocuments.map((doc, index) => (
+                {(passport.requiredDocuments || []).map((doc, index) => (
                   <li key={index} className="flex items-start">
                     <span className="text-purple-500 mr-2">•</span>
                     <span className="text-gray-700">{doc}</span>
@@ -189,7 +191,7 @@ export default function VisaPage() {
             <div>
               <p className="text-sm font-medium text-gray-700 mb-3">{t("visa.apostilleDocs")}:</p>
               <ul className="space-y-2">
-                {passport.apostilleDocuments.map((doc, index) => (
+                {(passport.apostilleDocuments || []).map((doc, index) => (
                   <li key={index} className="flex items-start">
                     <span className="text-green-500 mr-2">✓</span>
                     <span className="text-gray-700">{doc}</span>
@@ -205,7 +207,7 @@ export default function VisaPage() {
               {t("visa.passportNotes")}
             </h3>
             <ul className="space-y-2">
-              {passport.notes.map((note, index) => (
+              {(passport.notes || []).map((note, index) => (
                 <li key={index} className="flex items-start text-amber-800">
                   <span className="text-amber-500 mr-2">•</span>
                   <span>{note}</span>
@@ -347,7 +349,7 @@ export default function VisaPage() {
     const passportChecklist = visaData.passport ? [
       { id: 'passport-valid', label: `Passport valid for ${visaData.passport.validityMonths}+ months`, checked: false },
       { id: 'passport-pages', label: `${visaData.passport.blankPages}+ blank pages available`, checked: false },
-      ...visaData.passport.apostilleDocuments.map((doc, i) => ({
+      ...(visaData.passport.apostilleDocuments || []).map((doc, i) => ({
         id: `apostille-${i}`,
         label: `${doc} - Apostilled`,
         checked: false

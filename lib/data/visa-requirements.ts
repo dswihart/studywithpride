@@ -90,9 +90,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Secretaría de Relaciones Exteriores (SRE)',
       passportOfficeWebsite: 'https://www.gob.mx/sre/acciones-y-programas/pasaportes-702',
-      renewalProcessingDays: '3-10',
-      renewalFee: 'MXN $1,820 (3 years) / MXN $2,430 (6 years) / MXN $3,640 (10 years)',
-      renewalDocuments: [
+      processingDays: 'Same day (at SRE office in Mexico) or 4-6 weeks (abroad)',
+      passportFee: 'MXN $885 (1 year) / MXN $1,820 (3 years) / MXN $2,430 (6 years) / MXN $4,120 (10 years)',
+      requiredDocuments: [
         'Expired passport or valid ID (INE/IFE)',
         'Birth certificate (original or certified copy)',
         'CURP (Clave Única de Registro de Población)',
@@ -215,9 +215,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Ministerio de Relaciones Exteriores / Cancillería',
       passportOfficeWebsite: 'https://www.cancilleria.gov.co/tramites_servicios/pasaportes',
-      renewalProcessingDays: '1-8',
-      renewalFee: 'COP $231,000 (Regular) / COP $325,000 (Executive)',
-      renewalDocuments: [
+      processingDays: '24-48 hours (Colombia) / 8-15 days (abroad)',
+      passportFee: 'COP $186,000-$319,000 (varies by type and location)',
+      requiredDocuments: [
         'Valid Colombian ID (Cédula de Ciudadanía)',
         'Previous passport (if available)',
         'Digital photo meeting specifications',
@@ -340,9 +340,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Registro Nacional de las Personas (RENAPER)',
       passportOfficeWebsite: 'https://www.argentina.gob.ar/interior/renaper/pasaporte',
-      renewalProcessingDays: '7-15',
-      renewalFee: 'ARS $45,000 (Regular) / ARS $90,000 (Express)',
-      renewalDocuments: [
+      processingDays: '10-15 days (regular) or 15 min instant at airports',
+      passportFee: 'ARS 70,000 (regular) - 250,000 (instant) - rates change frequently',
+      requiredDocuments: [
         'DNI (Documento Nacional de Identidad)',
         'Previous passport (if available)',
         'Proof of payment',
@@ -467,9 +467,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Polícia Federal',
       passportOfficeWebsite: 'https://www.gov.br/pf/pt-br/assuntos/passaporte',
-      renewalProcessingDays: '6-15',
-      renewalFee: 'BRL R$257.25',
-      renewalDocuments: [
+      processingDays: '5-7 business days (Brazil) or 15-20 days (abroad)',
+      passportFee: 'BRL R$257.25',
+      requiredDocuments: [
         'CPF (Cadastro de Pessoas Físicas)',
         'RG or CNH (identity document)',
         'Previous passport (if available)',
@@ -595,9 +595,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Registro Civil e Identificación',
       passportOfficeWebsite: 'https://www.registrocivil.cl/principal/canal-tramites/pasaporte',
-      renewalProcessingDays: '5-10',
-      renewalFee: 'CLP $68,060 (32 pages) / CLP $102,100 (64 pages)',
-      renewalDocuments: [
+      processingDays: '5-10 business days',
+      passportFee: 'CLP 69,660 (32 pages) ~USD 75',
+      requiredDocuments: [
         'Chilean ID card (Cédula de Identidad)',
         'Previous passport (if available)',
         'Proof of payment',
@@ -722,9 +722,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Superintendencia Nacional de Migraciones',
       passportOfficeWebsite: 'https://www.migraciones.gob.pe/pasaporte/',
-      renewalProcessingDays: '1-7',
-      renewalFee: 'PEN S/98.50',
-      renewalDocuments: [
+      processingDays: 'Same day (in Peru) or 15-20 business days (abroad)',
+      passportFee: 'S/ 98.60 (5-year) or S/ 120.90 (10-year)',
+      requiredDocuments: [
         'DNI (Documento Nacional de Identidad) valid',
         'Previous passport (if available)',
         'Proof of payment at Banco de la Nación',
@@ -849,9 +849,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Registro Civil',
       passportOfficeWebsite: 'https://www.registrocivil.gob.ec/',
-      renewalProcessingDays: '3-8',
-      renewalFee: 'USD $70 (Regular) / USD $140 (Express)',
-      renewalDocuments: [
+      processingDays: '3-8 business days',
+      passportFee: 'USD $70 (Regular) / USD $140 (Express)',
+      requiredDocuments: [
         'Cédula de Identidad valid',
         'Previous passport (if available)',
         'Proof of payment',
@@ -975,9 +975,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'SAIME (Servicio Administrativo de Identificación, Migración y Extranjería)',
       passportOfficeWebsite: 'https://www.saime.gob.ve/',
-      renewalProcessingDays: '30-180',
-      renewalFee: 'USD $200 (varies by location)',
-      renewalDocuments: [
+      processingDays: '8-15 business days (regular) or 48 hours (express, Caracas only)' ,
+      passportFee: 'USD 216 (regular adult) - 350 (express) - among highest in world',
+      requiredDocuments: [
         'Cédula de Identidad valid',
         'Previous passport (if available)',
         'Constancia de residencia',
@@ -1102,9 +1102,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Dirección Nacional de Identificación Civil',
       passportOfficeWebsite: 'https://www.gub.uy/tramites/pasaporte-comun',
-      renewalProcessingDays: '28-42',
-      renewalFee: 'USD $36',
-      renewalDocuments: [
+      processingDays: '28-42',
+      passportFee: 'USD $36',
+      requiredDocuments: [
         'Cédula de Identidad valid',
         'Previous passport (expired or about to expire)',
         'Birth certificate (issued within last 30 days)',
@@ -1227,9 +1227,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Dirección General de Pasaportes',
       passportOfficeWebsite: 'https://www.pasaportes.gob.do/',
-      renewalProcessingDays: '7-15',
-      renewalFee: 'USD $133 (Standard) / USD $158 (VIP 6 years)',
-      renewalDocuments: [
+      processingDays: '10-15 days (regular) or 15 min instant at airports',
+      passportFee: 'USD $133 (Standard) / USD $158 (VIP 6 years)',
+      requiredDocuments: [
         'Cédula de Identidad valid',
         'Previous passport (expired)',
         'Proof of payment',
@@ -1351,9 +1351,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Dirección Nacional de Pasaportes (Tribunal Electoral)',
       passportOfficeWebsite: 'https://www.tribunal-electoral.gob.pa/',
-      renewalProcessingDays: '20-30',
-      renewalFee: 'USD $100 (Regular) / USD $50 (Retirees over 55/60)',
-      renewalDocuments: [
+      processingDays: '20-30',
+      passportFee: 'USD $100 (Regular) / USD $50 (Retirees over 55/60)',
+      requiredDocuments: [
         'Cédula de Identidad Panameña valid',
         'Previous passport (expired or about to expire)',
         'Three photographs meeting specifications',
@@ -1476,9 +1476,9 @@ export const visaRequirements: Record<string, VisaRequirement> = {
       blankPages: 2,
       passportOffice: 'Departamento de Identificaciones de la Policía Nacional',
       passportOfficeWebsite: 'https://www.policianacional.gov.py/',
-      renewalProcessingDays: '7-15',
-      renewalFee: 'USD $55 (Consular passport)',
-      renewalDocuments: [
+      processingDays: '10-15 days (regular) or 15 min instant at airports',
+      passportFee: 'USD $55 (Consular passport)',
+      requiredDocuments: [
         'Cédula de Identidad Civil Paraguaya',
         'Previous passport (or copy if expired)',
         'Proof of residence in consular jurisdiction',

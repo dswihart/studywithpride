@@ -18,7 +18,7 @@
     "worldClass": "World-Class Education",
     "worldClassDesc": "Access to prestigious universities like UPF with courses in LGBTQ+ studies, gender, and queer theory",
     "affordable": "Affordable Living",
-    "affordableDesc": "Cost of living from €800-1200/month including accommodation, making it accessible for Latin American students",
+    "affordableDesc": "Cost of living from \u20ac800-1200/month including accommodation, making it accessible for Latin American students",
     "planJourney": "Plan Your Journey",
     "visaGuide": "Passport/Visa Guide",
     "visaDesc": "Get country-specific passport and visa requirements for your Spanish student visa",
@@ -44,7 +44,7 @@
     "contactUs": "Contact Us",
     "connect": "Connect",
     "followUs": "Follow us for updates, tips, and community stories",
-    "copyright": "© 2025 Study With Pride. Independent recruitment agency for C3S Barcelona. Not affiliated with the institution."
+    "copyright": "\u00a9 2025 Study With Pride. Independent recruitment agency for C3S Barcelona. Not affiliated with the institution."
   },
   "dashboard": {
     "title": "Student Portal",
@@ -121,10 +121,10 @@
     "blankPages": "Blank pages required",
     "pages": "pages",
     "passportOffice": "Passport Office",
-    "renewalInfo": "Passport Renewal",
+    "renewalInfo": "Passport Application (First-time & Renewal)",
     "renewalTime": "Processing Time",
-    "renewalFee": "Renewal Fee",
-    "renewalDocs": "Documents Needed",
+    "renewalFee": "Passport Fee",
+    "renewalDocs": "Required Documents",
     "consulateInSpain": "Your Consulate in Spain",
     "consulateInSpainDesc": "For passport services while studying",
     "apostilleInfo": "Apostille Information",
@@ -209,7 +209,7 @@
     "note1": "These are estimated costs and actual expenses may vary",
     "note2": "Barcelona offers student discounts for public transportation and cultural activities",
     "note3": "Many neighborhoods have different price ranges - consider location carefully",
-    "note4": "Remember to budget for visa requirements (minimum €600/month proof of funds)",
+    "note4": "Remember to budget for visa requirements (minimum \u20ac600/month proof of funds)",
     "viewFinancialRequirements": "View Financial Requirements"
   },
   "recruiter": {
