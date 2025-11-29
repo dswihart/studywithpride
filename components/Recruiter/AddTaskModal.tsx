@@ -1,6 +1,6 @@
 /**
  * AddTaskModal Component
- * Modal for creating new follow-up tasks with lead search functionality
+ * Modal for creating and editing follow-up tasks with lead search functionality
  */
 
 'use client'
@@ -14,6 +14,18 @@ interface Lead {
   phone: string | null
 }
 
+interface Task {
+  id: string
+  lead_id: string | null
+  title: string
+  description: string | null
+  task_type: string
+  priority: string
+  status: string
+  due_date: string | null
+  leads?: Lead | null
+}
+
 interface AddTaskModalProps {
   isOpen: boolean
   onClose: () => void
@@ -21,6 +33,7 @@ interface AddTaskModalProps {
   leadId?: string
   leadName?: string
   leads?: Lead[]
+  editTask?: Task | null  // Task to edit (null = create new)
 }
 
 const TASK_TYPES = [
@@ -48,7 +61,7 @@ const QUICK_DUE_DATES = [
   { label: 'In 1 month', days: 30 }
 ]
 
-export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadName, leads }: AddTaskModalProps) {
+export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadName, leads, editTask }: AddTaskModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [taskType, setTaskType] = useState('follow_up')
@@ -66,21 +79,45 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
   const searchInputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Reset form when modal opens
+  const isEditMode = !!editTask
+
+  // Reset form when modal opens or when switching between create/edit
   useEffect(() => {
     if (isOpen) {
-      setTitle('')
-      setDescription('')
-      setTaskType('follow_up')
-      setPriority('medium')
-      setSelectedLeadId(leadId || '')
-      setSelectedLeadName(leadName || '')
-      setDueDate('')
+      if (editTask) {
+        // Populate form with existing task data
+        setTitle(editTask.title)
+        setDescription(editTask.description || '')
+        setTaskType(editTask.task_type)
+        setPriority(editTask.priority)
+        setSelectedLeadId(editTask.lead_id || '')
+        setSelectedLeadName(
+          editTask.leads?.prospect_name ||
+          editTask.leads?.prospect_email ||
+          ''
+        )
+        // Format date for input
+        if (editTask.due_date) {
+          const date = new Date(editTask.due_date)
+          setDueDate(date.toISOString().split('T')[0])
+        } else {
+          setDueDate('')
+        }
+      } else {
+        // Create mode - reset form
+        setTitle('')
+        setDescription('')
+        setTaskType('follow_up')
+        setPriority('medium')
+        setSelectedLeadId(leadId || '')
+        setSelectedLeadName(leadName || '')
+        setDueDate('')
+      }
       setError('')
       setLeadSearch('')
       setShowLeadDropdown(false)
     }
-  }, [isOpen, leadId, leadName])
+  }, [isOpen, leadId, leadName, editTask])
 
   // Filter leads based on search
   useEffect(() => {
@@ -150,32 +187,38 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
     setError('')
 
     try {
+      const taskData = {
+        lead_id: selectedLeadId || null,
+        title: title.trim(),
+        description: description.trim() || null,
+        task_type: taskType,
+        priority,
+        due_date: dueDate ? new Date(dueDate).toISOString() : null
+      }
+
       const response = await fetch('/api/recruiter/tasks', {
-        method: 'POST',
+        method: isEditMode ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          lead_id: selectedLeadId || null,
-          title: title.trim(),
-          description: description.trim() || null,
-          task_type: taskType,
-          priority,
-          due_date: dueDate ? new Date(dueDate).toISOString() : null
-        })
+        body: JSON.stringify(
+          isEditMode
+            ? { id: editTask.id, ...taskData }
+            : taskData
+        )
       })
 
       const result = await response.json()
 
       if (!result.success) {
-        setError(result.error || 'Failed to create task')
+        setError(result.error || `Failed to ${isEditMode ? 'update' : 'create'} task`)
         return
       }
 
       onSuccess()
       onClose()
     } catch (err) {
-      console.error('Failed to create task:', err)
-      setError('An error occurred while creating the task')
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} task:`, err)
+      setError(`An error occurred while ${isEditMode ? 'updating' : 'creating'} the task`)
     } finally {
       setLoading(false)
     }
@@ -187,7 +230,7 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Add New Task
+            {isEditMode ? 'Edit Task' : 'Add New Task'}
           </h2>
           <button
             onClick={onClose}
@@ -202,7 +245,7 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Lead Selection with Search */}
-          {leadId && leadName ? (
+          {leadId && leadName && !isEditMode ? (
             <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -305,7 +348,7 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Follow up on visa inquiry"
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              autoFocus
+              autoFocus={!isEditMode}
             />
           </div>
 
@@ -416,7 +459,10 @@ export default function AddTaskModal({ isOpen, onClose, onSuccess, leadId, leadN
               disabled={loading}
               className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Task'}
+              {loading
+                ? (isEditMode ? 'Saving...' : 'Creating...')
+                : (isEditMode ? 'Save Changes' : 'Create Task')
+              }
             </button>
           </div>
         </form>

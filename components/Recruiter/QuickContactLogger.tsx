@@ -16,6 +16,16 @@ interface QuickContactLoggerProps {
   lead: Lead
   onClose: () => void
   onSuccess: () => void
+  onCreateTask?: (taskData: TaskData) => void  // New callback for task creation
+}
+
+interface TaskData {
+  lead_id: string
+  lead_name: string
+  title: string
+  task_type: string
+  priority: string
+  due_days: number
 }
 
 type ContactOutcome =
@@ -63,15 +73,15 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   { value: "message_replied", label: "Got Reply!", icon: "✉️", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
 ]
 
-const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null }[] = [
-  { value: "call_back_today", label: "Call back today", days: 0 },
-  { value: "call_back_tomorrow", label: "Call back tomorrow", days: 1 },
-  { value: "call_back_3_days", label: "Call back in 3 days", days: 3 },
-  { value: "call_back_1_week", label: "Call back in 1 week", days: 7 },
-  { value: "send_info", label: "Send program info", days: null },
-  { value: "send_application", label: "Send application link", days: null },
-  { value: "schedule_meeting", label: "Schedule video call", days: null },
-  { value: "no_followup", label: "No follow-up needed", days: null },
+const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null; taskType: string }[] = [
+  { value: "call_back_today", label: "Call back today", days: 0, taskType: "call" },
+  { value: "call_back_tomorrow", label: "Call back tomorrow", days: 1, taskType: "call" },
+  { value: "call_back_3_days", label: "Call back in 3 days", days: 3, taskType: "call" },
+  { value: "call_back_1_week", label: "Call back in 1 week", days: 7, taskType: "call" },
+  { value: "send_info", label: "Send program info", days: 0, taskType: "email" },
+  { value: "send_application", label: "Send application link", days: 0, taskType: "email" },
+  { value: "schedule_meeting", label: "Schedule video call", days: 1, taskType: "meeting" },
+  { value: "no_followup", label: "No follow-up needed", days: null, taskType: "" },
 ]
 
 const STATUS_OPTIONS = [
@@ -84,13 +94,14 @@ const STATUS_OPTIONS = [
   { value: "unqualified", label: "Unqualified", color: "bg-red-500" },
 ]
 
-export default function QuickContactLogger({ lead, onClose, onSuccess }: QuickContactLoggerProps) {
+export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateTask }: QuickContactLoggerProps) {
   const { t } = useLanguage()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [selectedOutcome, setSelectedOutcome] = useState<ContactOutcome | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
   const [notes, setNotes] = useState("")
+  const [createTask, setCreateTask] = useState(true)  // New state for task creation toggle
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -98,6 +109,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess }: QuickCo
     setSelectedOutcome(outcome.value)
     setSelectedStatus(outcome.suggestedStatus)
     setSelectedFollowUp(outcome.suggestedFollowUp)
+    // Auto-disable task creation for "no_followup" actions
+    setCreateTask(outcome.suggestedFollowUp !== "no_followup")
     setStep(2)
   }
 
@@ -138,6 +151,22 @@ export default function QuickContactLogger({ lead, onClose, onSuccess }: QuickCo
       const result = await response.json()
 
       if (result.success) {
+        // Create follow-up task if enabled and there's a follow-up action
+        if (createTask && selectedFollowUp && selectedFollowUp !== "no_followup" && onCreateTask) {
+          const followUpData = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
+          if (followUpData && followUpData.days !== null) {
+            const leadName = lead.prospect_name || lead.prospect_email || 'Unknown'
+            onCreateTask({
+              lead_id: lead.id,
+              lead_name: leadName,
+              title: `${followUpData.label} - ${leadName}`,
+              task_type: followUpData.taskType,
+              priority: selectedStatus === 'interested' ? 'high' : 'medium',
+              due_days: followUpData.days
+            })
+          }
+        }
+
         onSuccess()
         onClose()
       } else {
@@ -283,7 +312,10 @@ export default function QuickContactLogger({ lead, onClose, onSuccess }: QuickCo
                 {FOLLOW_UP_ACTIONS.map((action) => (
                   <button
                     key={action.value}
-                    onClick={() => setSelectedFollowUp(action.value)}
+                    onClick={() => {
+                      setSelectedFollowUp(action.value)
+                      setCreateTask(action.value !== "no_followup")
+                    }}
                     className={`p-2 text-left rounded-lg border-2 transition text-sm ${
                       selectedFollowUp === action.value
                         ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
@@ -294,6 +326,28 @@ export default function QuickContactLogger({ lead, onClose, onSuccess }: QuickCo
                   </button>
                 ))}
               </div>
+
+              {/* Create Task Toggle */}
+              {selectedFollowUp && selectedFollowUp !== "no_followup" && onCreateTask && (
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={createTask}
+                      onChange={(e) => setCreateTask(e.target.checked)}
+                      className="w-5 h-5 rounded border-green-400 text-green-600 focus:ring-green-500"
+                    />
+                    <div>
+                      <span className="font-medium text-green-800 dark:text-green-300">
+                        Create follow-up task
+                      </span>
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        Automatically create a task for this follow-up action
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -332,6 +386,12 @@ export default function QuickContactLogger({ lead, onClose, onSuccess }: QuickCo
                       {FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)?.label}
                     </span>
                   </div>
+                  {createTask && selectedFollowUp !== "no_followup" && onCreateTask && (
+                    <div className="flex justify-between text-green-600 dark:text-green-400">
+                      <span>Task:</span>
+                      <span className="font-medium">Will be created</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

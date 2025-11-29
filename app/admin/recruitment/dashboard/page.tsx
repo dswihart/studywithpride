@@ -20,6 +20,7 @@ import PipelineKanban from '@/components/Recruiter/PipelineKanban'
 import RecruiterPerformanceDashboard from '@/components/Recruiter/RecruiterPerformanceDashboard'
 import LeadActivityTimeline from '@/components/Recruiter/LeadActivityTimeline'
 import QuickContactLogger from '@/components/Recruiter/QuickContactLogger'
+import QuickContact from '@/components/Recruiter/QuickContact'
 import TaskList from '@/components/Recruiter/TaskList'
 import AddTaskModal from '@/components/Recruiter/AddTaskModal'
 import { useTheme } from '@/components/ThemeProvider'
@@ -49,6 +50,23 @@ interface Lead {
   barcelona_timeline: number | null
 }
 
+interface Task {
+  id: string
+  lead_id: string | null
+  title: string
+  description: string | null
+  task_type: string
+  priority: string
+  status: string
+  due_date: string | null
+  leads?: {
+    id: string
+    prospect_name: string | null
+    prospect_email: string | null
+    phone: string | null
+  } | null
+}
+
 type DashboardTab = 'leads' | 'tasks' | 'pipeline' | 'performance'
 
 function RecruiterDashboardContent() {
@@ -75,6 +93,7 @@ function RecruiterDashboardContent() {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false)
   const [taskLeadId, setTaskLeadId] = useState<string | undefined>()
   const [taskLeadName, setTaskLeadName] = useState<string | undefined>()
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [taskListKey, setTaskListKey] = useState(0)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -212,6 +231,38 @@ function RecruiterDashboardContent() {
     window.location.reload()
   }
 
+  // Create task from QuickContactLogger
+  const handleCreateTaskFromContact = async (taskData: {
+    lead_id: string
+    lead_name: string
+    title: string
+    task_type: string
+    priority: string
+    due_days: number
+  }) => {
+    try {
+      const dueDate = new Date()
+      dueDate.setDate(dueDate.getDate() + taskData.due_days)
+
+      await fetch('/api/recruiter/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          lead_id: taskData.lead_id,
+          title: taskData.title,
+          task_type: taskData.task_type,
+          priority: taskData.priority,
+          due_date: dueDate.toISOString()
+        })
+      })
+
+      setTaskListKey(prev => prev + 1)
+    } catch (err) {
+      console.error('Failed to create task:', err)
+    }
+  }
+
   const handleAddTask = (leadId?: string) => {
     if (leadId) {
       const lead = leads.find(l => l.id === leadId)
@@ -221,11 +272,24 @@ function RecruiterDashboardContent() {
       setTaskLeadId(undefined)
       setTaskLeadName(undefined)
     }
+    setEditingTask(null)
+    setIsAddTaskModalOpen(true)
+  }
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task)
+    setTaskLeadId(task.lead_id || undefined)
+    setTaskLeadName(task.leads?.prospect_name || task.leads?.prospect_email || undefined)
     setIsAddTaskModalOpen(true)
   }
 
   const handleTaskSuccess = () => {
     setTaskListKey(prev => prev + 1) // Force TaskList to refresh
+  }
+
+  const handleQuickContactLogged = () => {
+    // Refresh leads
+    window.location.reload()
   }
 
   const handleExportSelected = () => {
@@ -525,6 +589,7 @@ function RecruiterDashboardContent() {
           <TaskList
             key={taskListKey}
             onAddTask={handleAddTask}
+            onEditTask={handleEditTask}
           />
         )}
 
@@ -577,11 +642,13 @@ function RecruiterDashboardContent() {
             setIsAddTaskModalOpen(false)
             setTaskLeadId(undefined)
             setTaskLeadName(undefined)
+            setEditingTask(null)
           }}
           onSuccess={handleTaskSuccess}
           leadId={taskLeadId}
           leadName={taskLeadName}
           leads={leads}
+          editTask={editingTask}
         />
 
         {/* Quick Contact Logger */}
@@ -593,8 +660,16 @@ function RecruiterDashboardContent() {
               setContactLoggerLead(null)
             }}
             onSuccess={handleContactLogSuccess}
+            onCreateTask={handleCreateTaskFromContact}
           />
         )}
+
+        {/* Quick Contact Floating Button */}
+        <QuickContact
+          leads={leads}
+          onContactLogged={handleQuickContactLogged}
+          onTaskCreated={handleTaskSuccess}
+        />
 
         {/* Activity Timeline Sidebar */}
         {showActivityTimeline && timelineLead && (

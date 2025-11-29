@@ -1,6 +1,6 @@
 /**
  * TaskList Component
- * Displays and manages follow-up tasks for leads
+ * Displays and manages follow-up tasks for leads with bulk operations and editing
  */
 
 'use client'
@@ -31,6 +31,7 @@ interface Task {
 interface TaskListProps {
   leadId?: string
   onAddTask?: (leadId?: string) => void
+  onEditTask?: (task: Task) => void
   compact?: boolean
 }
 
@@ -57,13 +58,17 @@ const STATUSES = [
   { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
 ]
 
-export default function TaskList({ leadId, onAddTask, compact = false }: TaskListProps) {
+export default function TaskList({ leadId, onAddTask, onEditTask, compact = false }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filterStatus, setFilterStatus] = useState('pending')
   const [filterPriority, setFilterPriority] = useState('all')
   const [showOverdue, setShowOverdue] = useState(false)
+
+  // Bulk selection state
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+  const [bulkActionLoading, setBulkActionLoading] = useState(false)
 
   const fetchTasks = useCallback(async () => {
     setLoading(true)
@@ -88,6 +93,8 @@ export default function TaskList({ leadId, onAddTask, compact = false }: TaskLis
       }
 
       setTasks(result.data.tasks)
+      // Clear selection when tasks change
+      setSelectedTaskIds(new Set())
     } catch (err) {
       console.error('Failed to fetch tasks:', err)
       setError('Failed to load tasks')
@@ -134,9 +141,90 @@ export default function TaskList({ leadId, onAddTask, compact = false }: TaskLis
 
       if (result.success) {
         setTasks(prev => prev.filter(t => t.id !== taskId))
+        setSelectedTaskIds(prev => {
+          const next = new Set(prev)
+          next.delete(taskId)
+          return next
+        })
       }
     } catch (err) {
       console.error('Failed to delete task:', err)
+    }
+  }
+
+  // Bulk operations
+  const handleSelectAll = () => {
+    if (selectedTaskIds.size === tasks.length) {
+      setSelectedTaskIds(new Set())
+    } else {
+      setSelectedTaskIds(new Set(tasks.map(t => t.id)))
+    }
+  }
+
+  const handleSelectTask = (taskId: string) => {
+    setSelectedTaskIds(prev => {
+      const next = new Set(prev)
+      if (next.has(taskId)) {
+        next.delete(taskId)
+      } else {
+        next.add(taskId)
+      }
+      return next
+    })
+  }
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    if (selectedTaskIds.size === 0) return
+
+    setBulkActionLoading(true)
+    try {
+      // Update each selected task
+      const promises = Array.from(selectedTaskIds).map(taskId =>
+        fetch('/api/recruiter/tasks', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id: taskId, status: newStatus })
+        })
+      )
+
+      await Promise.all(promises)
+
+      // Update local state
+      setTasks(prev => prev.map(t =>
+        selectedTaskIds.has(t.id)
+          ? { ...t, status: newStatus, completed_at: newStatus === 'completed' ? new Date().toISOString() : null }
+          : t
+      ))
+      setSelectedTaskIds(new Set())
+    } catch (err) {
+      console.error('Failed to bulk update tasks:', err)
+    } finally {
+      setBulkActionLoading(false)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return
+    if (!confirm(`Are you sure you want to delete ${selectedTaskIds.size} task(s)?`)) return
+
+    setBulkActionLoading(true)
+    try {
+      const promises = Array.from(selectedTaskIds).map(taskId =>
+        fetch(`/api/recruiter/tasks?id=${taskId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        })
+      )
+
+      await Promise.all(promises)
+
+      setTasks(prev => prev.filter(t => !selectedTaskIds.has(t.id)))
+      setSelectedTaskIds(new Set())
+    } catch (err) {
+      console.error('Failed to bulk delete tasks:', err)
+    } finally {
+      setBulkActionLoading(false)
     }
   }
 
@@ -238,6 +326,49 @@ export default function TaskList({ leadId, onAddTask, compact = false }: TaskLis
           )}
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedTaskIds.size > 0 && (
+          <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {selectedTaskIds.size} selected
+            </span>
+            <div className="flex-1" />
+            <button
+              onClick={() => handleBulkStatusChange('completed')}
+              disabled={bulkActionLoading}
+              className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Complete
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('cancelled')}
+              disabled={bulkActionLoading}
+              className="px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkActionLoading}
+              className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete
+            </button>
+            <button
+              onClick={() => setSelectedTaskIds(new Set())}
+              className="px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg font-medium transition"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
         {/* Summary Stats */}
         <div className="flex gap-4 mb-4">
           {overdueTasks > 0 && (
@@ -317,98 +448,126 @@ export default function TaskList({ leadId, onAddTask, compact = false }: TaskLis
             )}
           </div>
         ) : (
-          tasks.map(task => {
-            const dueInfo = formatDueDate(task.due_date)
-            return (
-              <div
-                key={task.id}
-                className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${
-                  task.status === 'completed' ? 'opacity-60' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={task.status === 'completed'}
-                    onChange={() => handleStatusChange(task.id, task.status === 'completed' ? 'pending' : 'completed')}
-                    className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-gray-600"
-                  />
+          <>
+            {/* Select All Header */}
+            {tasks.length > 0 && (
+              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedTaskIds.size === tasks.length && tasks.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Select all
+                </span>
+              </div>
+            )}
+            {tasks.map(task => {
+              const dueInfo = formatDueDate(task.due_date)
+              const isSelected = selectedTaskIds.has(task.id)
+              return (
+                <div
+                  key={task.id}
+                  className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition ${
+                    task.status === 'completed' ? 'opacity-60' : ''
+                  } ${isSelected ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Selection Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectTask(task.id)}
+                      className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-gray-600"
+                    />
 
-                  {/* Task Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{getTaskTypeIcon(task.task_type)}</span>
-                      <h3 className={`font-medium text-gray-900 dark:text-white ${
-                        task.status === 'completed' ? 'line-through' : ''
-                      }`}>
-                        {task.title}
-                      </h3>
-                    </div>
-
-                    {task.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {task.description}
-                      </p>
-                    )}
-
-                    {/* Lead info */}
-                    {task.leads && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span>{task.leads.prospect_name || task.leads.prospect_email || 'Unknown'}</span>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
-                        {PRIORITIES.find(p => p.value === task.priority)?.label}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusClass(task.status)}`}>
-                        {STATUSES.find(s => s.value === task.status)?.label}
-                      </span>
-                      {dueInfo && (
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          dueInfo.overdue
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                            : dueInfo.today
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    {/* Task Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">{getTaskTypeIcon(task.task_type)}</span>
+                        <h3 className={`font-medium text-gray-900 dark:text-white ${
+                          task.status === 'completed' ? 'line-through' : ''
                         }`}>
-                          {dueInfo.text}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                          {task.title}
+                        </h3>
+                      </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={task.status}
-                      onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                      className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      {STATUSES.map(s => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
-                      title="Delete task"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                      {task.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          {task.description}
+                        </p>
+                      )}
+
+                      {/* Lead info */}
+                      {task.leads && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span>{task.leads.prospect_name || task.leads.prospect_email || 'Unknown'}</span>
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPriorityClass(task.priority)}`}>
+                          {PRIORITIES.find(p => p.value === task.priority)?.label}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusClass(task.status)}`}>
+                          {STATUSES.find(s => s.value === task.status)?.label}
+                        </span>
+                        {dueInfo && (
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            dueInfo.overdue
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                              : dueInfo.today
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {dueInfo.text}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={task.status}
+                        onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                        className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        {STATUSES.map(s => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
+                      {onEditTask && (
+                        <button
+                          onClick={() => onEditTask(task)}
+                          className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                          title="Edit task"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(task.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                        title="Delete task"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })
+              )
+            })}
+          </>
         )}
       </div>
     </div>
