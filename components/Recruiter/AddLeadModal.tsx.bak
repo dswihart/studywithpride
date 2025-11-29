@@ -261,25 +261,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'student_name': 'name',
       'prospect_name': 'name',
       'full_name': 'name',
-      'nombre': 'name',
-      'first_name': 'name',
-      'firstname': 'name',
-      'last_name': 'name',
-      'lastname': 'name',
-      'contact_name': 'name',
-      'contactname': 'name',
-      'lead_name': 'name',
-      'leadname': 'name',
       'email': 'email',
       'student_email': 'email',
       'prospect_email': 'email',
       'email_address': 'email',
-      'correo': 'email',
-      'correo_electronico': 'email',
-      'e_mail': 'email',
-      'mail': 'email',
-      'contact_email': 'email',
-      'contactemail': 'email',
       'phone': 'phone',
       'campaign': 'campaign',
       'campaign_name': 'campaign_name',
@@ -287,15 +272,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'mobile': 'phone',
       'telephone': 'phone',
       'contact_number': 'phone',
-      'telefono': 'phone',
-      'cell': 'phone',
-      'cell_phone': 'phone',
-      'cellphone': 'phone',
-      'whatsapp': 'phone',
-      'phone_no': 'phone',
-      'phoneno': 'phone',
-      'mobile_number': 'phone',
-      'mobilenumber': 'phone',
       'country': 'country',
       'location': 'country',
       'status': 'status',
@@ -435,17 +411,9 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     const supabase = createClient()
     const { data: existingLeads } = await supabase
       .from('leads')
-      .select('prospect_email, phone')
+      .select('prospect_email')
 
     const existingEmails = new Set(
-n    // Normalize phone numbers for comparison (remove all non-digits)
-    const normalizePhone = (phone: string | null | undefined): string => {
-      if (!phone) return '\n      return phone.replace(/D/g, '')
-    }
-
-    const existingPhones = new Set(
-      existingLeads?.map(l => normalizePhone(l.phone)).filter(p => p.length >= 10) || []
-    )
       existingLeads?.map(l => l.prospect_email?.toLowerCase()).filter(Boolean) || []
     )
 
@@ -494,13 +462,9 @@ n    // Normalize phone numbers for comparison (remove all non-digits)
       }
 
       // Check for duplicate
-      const normalizedPhone = normalizePhone(rowData.phone)
-      const isDuplicateEmail = existingEmails.has(rowData.email.toLowerCase())
-      const isDuplicatePhone = normalizedPhone.length >= 10 && existingPhones.has(normalizedPhone)
-      const isDuplicate = isDuplicateEmail || isDuplicatePhone
+      const isDuplicate = existingEmails.has(rowData.email.toLowerCase())
       if (isDuplicate) {
-        if (isDuplicateEmail) warnings.push('Email already exists in database')
-      if (isDuplicatePhone) warnings.push('Phone number already exists in database')
+        warnings.push('Email already exists in database')
       }
 
       // Validate country

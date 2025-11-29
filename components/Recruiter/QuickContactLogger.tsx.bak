@@ -30,6 +30,8 @@ interface TaskData {
 
 type ContactOutcome =
   | "no_answer"
+  | "voicemail"
+  | "busy"
   | "wrong_number"
   | "answered_interested"
   | "answered_not_interested"
@@ -37,13 +39,13 @@ type ContactOutcome =
   | "answered_needs_info"
   | "message_sent"
   | "message_read"
+  | "message_replied"
 
 type FollowUpAction =
   | "call_back_today"
   | "call_back_tomorrow"
   | "call_back_3_days"
   | "call_back_1_week"
-  | "send_whatsapp"
   | "send_info"
   | "send_application"
   | "schedule_meeting"
@@ -59,6 +61,8 @@ interface ContactOutcomeOption {
 
 const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   { value: "no_answer", label: "No Answer", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "call_back_tomorrow" },
+  { value: "voicemail", label: "Left Voicemail", icon: "📬", suggestedStatus: "contacted", suggestedFollowUp: "call_back_3_days" },
+  { value: "busy", label: "Line Busy", icon: "📞", suggestedStatus: "contacted", suggestedFollowUp: "call_back_today" },
   { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "unqualified", suggestedFollowUp: "no_followup" },
   { value: "answered_interested", label: "Interested!", icon: "🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
   { value: "answered_not_interested", label: "Not Interested", icon: "👎", suggestedStatus: "unqualified", suggestedFollowUp: "no_followup" },
@@ -66,6 +70,7 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   { value: "answered_needs_info", label: "Needs More Info", icon: "📋", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
   { value: "message_sent", label: "WhatsApp Sent", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back_3_days" },
   { value: "message_read", label: "Message Read", icon: "👁️", suggestedStatus: "contacted", suggestedFollowUp: "call_back_tomorrow" },
+  { value: "message_replied", label: "Got Reply!", icon: "✉️", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
 ]
 
 const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null; taskType: string }[] = [
@@ -73,7 +78,6 @@ const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | 
   { value: "call_back_tomorrow", label: "Call back tomorrow", days: 1, taskType: "call" },
   { value: "call_back_3_days", label: "Call back in 3 days", days: 3, taskType: "call" },
   { value: "call_back_1_week", label: "Call back in 1 week", days: 7, taskType: "call" },
-  { value: "send_whatsapp", label: "Send WhatsApp message", days: 0, taskType: "whatsapp" },
   { value: "send_info", label: "Send program info", days: 0, taskType: "email" },
   { value: "send_application", label: "Send application link", days: 0, taskType: "email" },
   { value: "schedule_meeting", label: "Schedule video call", days: 1, taskType: "meeting" },

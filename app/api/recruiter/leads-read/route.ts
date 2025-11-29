@@ -9,7 +9,7 @@ import { requireRole } from '@/lib/auth/role-guard'
 
 interface LeadReadResponse {
   success: boolean
-  data?: {
+  data?: any[] | {
     leads: any[]
     total: number
     filtered: number
@@ -35,9 +35,16 @@ export async function GET(request: NextRequest) {
     const contactStatus = searchParams.get('contact_status')
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const search = searchParams.get('search')
     
     const supabase = await createClient()
     let query = supabase.from('leads').select('*', { count: 'exact' })
+    
+    // Search filter - check name, email, or phone
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase()
+      query = query.or(`prospect_name.ilike.%${searchTerm}%,prospect_email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+    }
     
     if (country && country !== 'all') {
       query = query.eq('country', country)
@@ -60,10 +67,21 @@ export async function GET(request: NextRequest) {
     }
     
     const elapsedTime = Date.now() - startTime
-    console.log()
+    console.log(`[leads-read] Completed in ${elapsedTime}ms`)
     
     if (elapsedTime > 250) {
-      console.warn()
+      console.warn(`[leads-read] Performance threshold exceeded (${elapsedTime}ms > 250ms)`)
+    }
+    
+    // If search is provided, return simplified format for the AddContactLogModal
+    if (search) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: leads || []
+        } as LeadReadResponse,
+        { status: 200 }
+      )
     }
     
     return NextResponse.json(

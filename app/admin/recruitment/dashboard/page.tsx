@@ -23,6 +23,8 @@ import QuickContactLogger from '@/components/Recruiter/QuickContactLogger'
 import QuickContact from '@/components/Recruiter/QuickContact'
 import TaskList from '@/components/Recruiter/TaskList'
 import AddTaskModal from '@/components/Recruiter/AddTaskModal'
+import AddContactLogModal from '@/components/Recruiter/AddContactLogModal'
+import UpcomingTasksWidget from '@/components/Recruiter/UpcomingTasksWidget'
 import { useTheme } from '@/components/ThemeProvider'
 import * as XLSX from 'xlsx'
 
@@ -95,6 +97,7 @@ function RecruiterDashboardContent() {
   const [taskLeadName, setTaskLeadName] = useState<string | undefined>()
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [taskListKey, setTaskListKey] = useState(0)
+  const [isAddContactLogModalOpen, setIsAddContactLogModalOpen] = useState(false)
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -222,7 +225,7 @@ function RecruiterDashboardContent() {
   }
 
   const handleLogContactClick = (lead: Lead) => {
-    setContactLoggerLead(lead)
+    setContactLoggerLead(lead as Lead)
     setShowContactLogger(true)
   }
 
@@ -419,6 +422,15 @@ function RecruiterDashboardContent() {
               </>
             )}
             <button
+              onClick={() => setIsAddContactLogModalOpen(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Add Log
+            </button>
+            <button
               onClick={() => {
                 setEditingLead(null)
                 setIsAddLeadModalOpen(true)
@@ -543,6 +555,19 @@ function RecruiterDashboardContent() {
           <>
             {/* Metrics */}
             <LeadMetrics leads={leads} />
+            
+            {/* Upcoming Tasks Widget */}
+            <UpcomingTasksWidget
+              onViewAllTasks={() => setActiveTab("tasks")}
+              onTaskClick={(task) => {
+                setEditingTask(task as Task)
+                setTaskLeadId(task.lead_id || undefined)
+                setTaskLeadName(task.leads?.prospect_name || task.leads?.prospect_email || undefined)
+                setIsAddTaskModalOpen(true)
+              }}
+              refreshKey={taskListKey}
+            />
+
 
             {/* Notification Banner */}
             {highlightedLeadName && (
@@ -664,6 +689,17 @@ function RecruiterDashboardContent() {
           />
         )}
 
+        {/* Add Contact Log Modal */}
+        {isAddContactLogModalOpen && (
+          <AddContactLogModal
+            onClose={() => setIsAddContactLogModalOpen(false)}
+            onSelectLead={(lead) => {
+              setIsAddContactLogModalOpen(false)
+              setContactLoggerLead(lead as Lead)
+              setShowContactLogger(true)
+            }}
+          />
+        )}
         {/* Quick Contact Floating Button */}
         <QuickContact
           leads={leads}
