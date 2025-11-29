@@ -10,8 +10,8 @@ import { requireRole } from '@/lib/auth/role-guard'
 // Request payload interface
 interface LeadWriteRequest {
   id?: string
-  user_id: string
-  country: string
+  user_id?: string
+  country?: string
   contact_status: 'not_contacted' | 'referral' | 'contacted' | 'interested' | 'qualified' | 'converted' | 'unqualified'
   last_contact_date?: string
   notes?: string
@@ -57,12 +57,12 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body: LeadWriteRequest = await request.json()
 
-    // Validate required fields
-    if (!body.user_id || !body.country || !body.contact_status) {
+    // Validate contact_status is provided
+    if (!body.contact_status) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Bad Request: Missing required fields (user_id, country, contact_status)'
+          error: 'Bad Request: Missing required field (contact_status)'
         } as LeadWriteResponse,
         { status: 400 }
       )
@@ -80,28 +80,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // For new leads, require user_id and country
+    if (!body.id && (!body.user_id || !body.country)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Bad Request: Missing required fields for new lead (user_id, country)'
+        } as LeadWriteResponse,
+        { status: 400 }
+      )
+    }
+
     // Database insertion with performance tracking
     const supabase = await createClient()
 
     let result
 
     if (body.id) {
-      // Update existing lead by ID
+      // Update existing lead by ID - build update object dynamically
+      const updateFields: Record<string, any> = {
+        contact_status: body.contact_status,
+        last_contact_date: body.last_contact_date || null,
+      }
+
+      // Only update fields that are provided
+      if (body.country !== undefined) updateFields.country = body.country
+      if (body.notes !== undefined) updateFields.notes = body.notes
+      if (body.prospect_email !== undefined) updateFields.prospect_email = body.prospect_email
+      if (body.prospect_name !== undefined) updateFields.prospect_name = body.prospect_name
+      if (body.referral_source !== undefined) updateFields.referral_source = body.referral_source
+      if (body.phone !== undefined) updateFields.phone = body.phone
+      if (body.lead_quality !== undefined) updateFields.lead_quality = body.lead_quality
+      if (body.campaign !== undefined) updateFields.campaign = body.campaign
+      if (body.created_time !== undefined) updateFields.created_time = body.created_time
+
       const { data, error } = await supabase
         .from('leads')
-        .update({
-          country: body.country,
-          contact_status: body.contact_status,
-          last_contact_date: body.last_contact_date || null,
-      created_time: body.created_time || null,
-          notes: body.notes || null,
-          prospect_email: body.prospect_email || null,
-          prospect_name: body.prospect_name || null,
-          referral_source: body.referral_source || null,
-          phone: body.phone || null,
-          lead_quality: body.lead_quality || null,
-          campaign: body.campaign || null,
-        })
+        .update(updateFields)
         .eq('id', body.id)
         .select('id, created_at')
         .single()

@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Lead {
   id: string
@@ -60,6 +60,7 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
   const [createTask, setCreateTask] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -109,6 +110,7 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
     setSearch('')
     setFilteredLeads([])
     setIsExpanded(true)
+    setError(null)
   }
 
   const handleClearLead = () => {
@@ -116,12 +118,15 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
     setSelectedOutcome(null)
     setNotes('')
     setIsExpanded(false)
+    setError(null)
   }
 
   const handleSave = async () => {
     if (!selectedLead || !selectedOutcome) return
 
     setSaving(true)
+    setError(null)
+
     try {
       const outcomeOption = QUICK_OUTCOMES.find(o => o.value === selectedOutcome)
 
@@ -136,10 +141,11 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
         ? `${noteEntry}\n---\n${selectedLead.notes}`
         : noteEntry
 
-      // Update lead
+      // Update lead - only pass id and the fields we want to update
       const response = await fetch('/api/recruiter/leads-write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           id: selectedLead.id,
           contact_status: outcomeOption?.suggestedStatus || selectedLead.contact_status,
@@ -183,9 +189,12 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
           setIsOpen(false)
           onContactLogged()
         }, 1000)
+      } else {
+        setError(result.error || 'Failed to log contact')
       }
     } catch (err) {
       console.error('Failed to log contact:', err)
+      setError('Network error. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -269,6 +278,13 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
       {/* Content */}
       {!success && (
         <div className="p-4">
+          {/* Error Display */}
+          {error && (
+            <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
           {/* Search / Selected Lead */}
           {!selectedLead ? (
             <div className="relative">
