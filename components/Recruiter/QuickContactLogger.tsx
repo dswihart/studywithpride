@@ -10,6 +10,7 @@ interface Lead {
   phone: string | null
   contact_status: string
   notes: string | null
+  recruit_priority: number | null
 }
 
 interface QuickContactLoggerProps {
@@ -43,15 +44,11 @@ type ContactOutcome =
   | "message_read"
 
 type FollowUpAction =
-  | "call_back_today"
-  | "call_back_tomorrow"
-  | "call_back_3_days"
-  | "call_back_1_week"
   | "send_whatsapp"
   | "send_info"
   | "send_application"
   | "schedule_meeting"
-  | "no_followup"
+  | "call_back"
 
 interface ContactOutcomeOption {
   value: ContactOutcome
@@ -67,12 +64,12 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   // WhatsApp reply outcomes
   { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
   { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call_back_today" },
-  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "unqualified", suggestedFollowUp: "no_followup" },
+  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_whatsapp" },
   // Original outcomes
   { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "send_whatsapp" },
-  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "unqualified", suggestedFollowUp: "no_followup" },
+  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "unqualified", suggestedFollowUp: "send_whatsapp" },
   { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
-  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "unqualified", suggestedFollowUp: "no_followup" },
+  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_whatsapp" },
   { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call_back_tomorrow" },
   { value: "answered_needs_info", label: "Call: Needs More Info", icon: "📞📋", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
   { value: "message_sent", label: "WhatsApp Sent (only)", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back_3_days" },
@@ -80,15 +77,18 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
 ]
 
 const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null; taskType: string }[] = [
-  { value: "call_back_today", label: "Call back today", days: 0, taskType: "call" },
-  { value: "call_back_tomorrow", label: "Call back tomorrow", days: 1, taskType: "call" },
-  { value: "call_back_3_days", label: "Call back in 3 days", days: 3, taskType: "call" },
-  { value: "call_back_1_week", label: "Call back in 1 week", days: 7, taskType: "call" },
   { value: "send_whatsapp", label: "Send WhatsApp message", days: 0, taskType: "whatsapp" },
   { value: "send_info", label: "Send program info", days: 0, taskType: "email" },
   { value: "send_application", label: "Send application link", days: 0, taskType: "email" },
   { value: "schedule_meeting", label: "Schedule video call", days: 1, taskType: "meeting" },
-  { value: "no_followup", label: "No follow-up needed", days: null, taskType: "" },
+  { value: "call_back", label: "Call back", days: 1, taskType: "call" },
+]
+
+const CALLBACK_TIMES = [
+  { value: "today", label: "Today", days: 0 },
+  { value: "tomorrow", label: "Tomorrow", days: 1 },
+  { value: "3_days", label: "In 3 days", days: 3 },
+  { value: "1_week", label: "In 1 week", days: 7 },
 ]
 
 const STATUS_OPTIONS = [
@@ -107,8 +107,10 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [selectedOutcome, setSelectedOutcome] = useState<ContactOutcome | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
+  const [callbackTime, setCallbackTime] = useState<string>("tomorrow")
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(true)  // New state for task creation toggle
+  const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -127,8 +129,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     setSelectedOutcome(outcome.value)
     setSelectedStatus(outcome.suggestedStatus)
     setSelectedFollowUp(outcome.suggestedFollowUp)
-    // Auto-disable task creation for "no_followup" actions
-    setCreateTask(outcome.suggestedFollowUp !== "no_followup")
+    // Enable task creation for all follow-up actions
+    setCreateTask(true)
     setStep(2)
   }
 
@@ -151,11 +153,18 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
         replyDetails.additionalInfo ? `Info: ${replyDetails.additionalInfo}` : null,
       ].filter(Boolean).join(" | ") : null
 
+      // Build follow-up label
+      let followUpLabel = followUpOption?.label
+      if (selectedFollowUp === 'call_back') {
+        const timeOption = CALLBACK_TIMES.find(t => t.value === callbackTime)
+        followUpLabel = `Call back ${timeOption?.label.toLowerCase()}`
+      }
+
       const noteEntry = [
         `[${timestamp}]`,
         `Contact: ${outcomeOption?.label || selectedOutcome}`,
         replyDetailsStr,
-        selectedFollowUp !== "no_followup" ? `Follow-up: ${followUpOption?.label}` : null,
+        selectedFollowUp ? `Follow-up: ${followUpLabel}` : null,
         notes ? `Notes: ${notes}` : null,
       ].filter(Boolean).join(" | ")
 
@@ -173,6 +182,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           contact_status: selectedStatus,
           last_contact_date: new Date().toISOString(),
           notes: updatedNotes,
+          recruit_priority: recruitPriority,
         }),
       })
 
@@ -180,19 +190,31 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
       if (result.success) {
         // Create follow-up task if enabled and there's a follow-up action
-        if (createTask && selectedFollowUp && selectedFollowUp !== "no_followup" && onCreateTask) {
-          const followUpData = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
-          if (followUpData && followUpData.days !== null) {
-            const leadName = lead.prospect_name || lead.prospect_email || 'Unknown'
-            onCreateTask({
-              lead_id: lead.id,
-              lead_name: leadName,
-              title: `${followUpData.label} - ${leadName}`,
-              task_type: followUpData.taskType,
-              priority: selectedStatus === 'interested' ? 'high' : 'medium',
-              due_days: followUpData.days
-            })
+        if (createTask && selectedFollowUp && onCreateTask) {
+          let taskDays = 0
+          let taskTitle = ''
+          let taskType = 'call'
+
+          if (selectedFollowUp === 'call_back') {
+            const timeOption = CALLBACK_TIMES.find(t => t.value === callbackTime)
+            taskDays = timeOption?.days ?? 1
+            taskTitle = `Call back ${timeOption?.label.toLowerCase()} - `
+          } else {
+            const followUpData = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
+            taskDays = followUpData?.days ?? 0
+            taskTitle = `${followUpData?.label} - `
+            taskType = followUpData?.taskType ?? 'call'
           }
+
+          const leadName = lead.prospect_name || lead.prospect_email || 'Unknown'
+          onCreateTask({
+            lead_id: lead.id,
+            lead_name: leadName,
+            title: taskTitle + leadName,
+            task_type: taskType,
+            priority: selectedStatus === 'interested' ? 'high' : 'medium',
+            due_days: taskDays
+          })
         }
 
         onSuccess()
@@ -337,12 +359,12 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 What's the next action?
               </h3>
               <div className="grid grid-cols-2 gap-2 mb-4">
-                {FOLLOW_UP_ACTIONS.map((action) => (
+                {FOLLOW_UP_ACTIONS.filter(a => a.value !== "call_back").map((action) => (
                   <button
                     key={action.value}
                     onClick={() => {
                       setSelectedFollowUp(action.value)
-                      setCreateTask(action.value !== "no_followup")
+                      setCreateTask(true)
                     }}
                     className={`p-2 text-left rounded-lg border-2 transition text-sm ${
                       selectedFollowUp === action.value
@@ -355,8 +377,75 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 ))}
               </div>
 
+              {/* Call back option with time selection */}
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    setSelectedFollowUp("call_back")
+                    setCreateTask(true)
+                  }}
+                  className={`w-full p-3 text-left rounded-lg border-2 transition ${
+                    selectedFollowUp === "call_back"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="font-medium text-gray-700 dark:text-gray-300">📞 Call back</span>
+                </button>
+
+                {selectedFollowUp === "call_back" && (
+                  <div className="mt-2 ml-4 space-y-2">
+                    {CALLBACK_TIMES.map((time) => (
+                      <label key={time.value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="callbackTime"
+                          value={time.value}
+                          checked={callbackTime === time.value}
+                          onChange={(e) => setCallbackTime(e.target.value)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{time.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Recruit Priority Rating */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Rate this recruit (1-5 stars)
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRecruitPriority(recruitPriority === star ? null : star)}
+                      className={`p-2 text-3xl transition-transform hover:scale-110 ${
+                        recruitPriority && recruitPriority >= star
+                          ? "text-yellow-400"
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                  {recruitPriority && (
+                    <span className="ml-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      {recruitPriority === 5 && "🔥 Hot lead!"}
+                      {recruitPriority === 4 && "Very interested"}
+                      {recruitPriority === 3 && "Good potential"}
+                      {recruitPriority === 2 && "Needs follow-up"}
+                      {recruitPriority === 1 && "Low priority"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Create Task Toggle */}
-              {selectedFollowUp && selectedFollowUp !== "no_followup" && onCreateTask && (
+              {selectedFollowUp && onCreateTask && (
                 <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
@@ -481,10 +570,18 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Follow-up:</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)?.label}
+                      {selectedFollowUp === "call_back"
+                        ? `Call back ${CALLBACK_TIMES.find(t => t.value === callbackTime)?.label.toLowerCase()}`
+                        : FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)?.label}
                     </span>
                   </div>
-                  {createTask && selectedFollowUp !== "no_followup" && onCreateTask && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Priority:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {recruitPriority ? "⭐".repeat(recruitPriority) : "Not set"}
+                    </span>
+                  </div>
+                  {createTask && selectedFollowUp && onCreateTask && (
                     <div className="flex justify-between text-green-600 dark:text-green-400">
                       <span>Task:</span>
                       <span className="font-medium">Will be created</span>

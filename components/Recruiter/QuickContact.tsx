@@ -15,6 +15,7 @@ interface Lead {
   phone: string | null
   contact_status: string
   notes: string | null
+  recruit_priority: number | null
 }
 
 interface QuickContactProps {

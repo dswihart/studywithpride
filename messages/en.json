@@ -2,7 +2,7 @@
   "nav": {
     "safety": "Safety & Community",
     "housing": "Housing",
-    "visa": "Passport/Visa Guide",
+    "visa": "Guide",
     "costCalculator": "Cost Calculator",
     "partners": "Partner Schools",
     "studentPortal": "Student Portal"
@@ -34,6 +34,7 @@
     "tagline": "Your trusted recruitment agency connecting LGBTQ+ Latin American students with educational opportunities in Barcelona.",
     "resources": "Resources",
     "safetyInfo": "Safety Information",
+    "community": "Community",
     "visaReqs": "Passport & Visa Guide",
     "budgetCalc": "Budget Calculator",
     "partnerSchools": "Partner Schools",
@@ -241,7 +242,7 @@
         "notes": "Notes",
         "duplicate": "Duplicate",
         "barcelonaTimeline": "Barcelona Timeline",
-        "createdTime": "Created Time"
+        "createdTime": "Lead Clicked Time"
       },
       "title": "Lead Management",
       "filterByCountry": "Filter by Country",

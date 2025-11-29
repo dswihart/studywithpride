@@ -64,7 +64,7 @@ export default function Home() {
           <h2 className="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">{t('home.whyBarcelona')}</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
-              <div className="text-5xl mb-4">🏳️‍🌈</div>
+              <div className="text-5xl mb-4">🌐</div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">{t('home.lgbtqFriendly')}</h3>
               <p className="text-gray-600 dark:text-gray-300">
                 {t('home.lgbtqDesc')}

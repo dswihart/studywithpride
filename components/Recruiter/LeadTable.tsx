@@ -25,7 +25,8 @@ interface Lead {
   name_score: number | null
   email_score: number | null
   phone_valid: boolean | null
-  is_duplicate: boolean | null
+  is_duplicate: boolean
+  recruit_priority: number | null | null
   duplicate_of: string | null
   duplicate_detected_at: string | null
   recency_score: number | null
@@ -66,6 +67,7 @@ type SortColumn =
   | "lead_quality"
   | "last_contact_date"
   | "is_duplicate"
+  | "recruit_priority"
   | "barcelona_timeline"
   | "created_time"
   | "date_added"
@@ -83,6 +85,7 @@ type ColumnKey =
   | "lead_quality"
   | "last_contact_date"
   | "is_duplicate"
+  | "recruit_priority"
   | "barcelona_timeline"
   | "created_time"
   | "date_added"
@@ -399,6 +402,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           aValue = a.is_duplicate ? 1 : 0
           bValue = b.is_duplicate ? 1 : 0
           break
+        case "recruit_priority":
+          aValue = a.recruit_priority || 0
+          bValue = b.recruit_priority || 0
+          break
         case "last_contact_date":
           aValue = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0
           bValue = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0
@@ -477,7 +484,14 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const formatDate = (dateString: string | null) => {
     if (!dateString) return t("recruiter.table.na")
     try {
-      return new Date(dateString).toLocaleDateString()
+      const date = new Date(dateString)
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     } catch {
       return t("recruiter.table.na")
     }
@@ -608,11 +622,18 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
       case "barcelona_timeline":
         return lead.barcelona_timeline ? lead.barcelona_timeline + " months" : t("recruiter.table.na")
       case "created_time":
-        return lead.created_time || t("recruiter.table.na")
+        return formatDate(lead.created_time)
       case "is_duplicate":
         return (
           <span className={"px-3 py-1 rounded-full text-xs font-semibold " + (lead.is_duplicate ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800")}>
             {lead.is_duplicate ? "Duplicate" : "Original"}
+          </span>
+        )
+      case "recruit_priority":
+        if (!lead.recruit_priority) return <span className="text-gray-400">-</span>
+        return (
+          <span className="text-yellow-400" title={`Priority: ${lead.recruit_priority}/5`}>
+            {"⭐".repeat(lead.recruit_priority)}
           </span>
         )
       default:

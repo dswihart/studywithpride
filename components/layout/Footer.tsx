@@ -45,7 +45,7 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold mb-4">{t('footer.resources')}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><Link href="/safety" className="hover:text-white transition">{t('footer.safetyInfo')}</Link></li>
+              <li><Link href="/safety" className="hover:text-white transition">{t('footer.community')}</Link></li>
               <li><Link href="/visa" className="hover:text-white transition">{t('footer.visaReqs')}</Link></li>
               <li><Link href="/cost-calculator" className="hover:text-white transition">{t('footer.budgetCalc')}</Link></li>
               <li><Link href="/partners" className="hover:text-white transition">{t('footer.partnerSchools')}</Link></li>

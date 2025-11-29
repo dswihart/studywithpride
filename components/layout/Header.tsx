@@ -37,11 +37,10 @@ export default function Header() {
   }
 
   const desktopNavLinks = [
-    { href: '/safety', label: t('nav.safety') },
+    { href: '/safety', label: 'Community' },
     { href: '/visa', label: t('nav.visa') },
     { href: '/cost-calculator', label: t('nav.costCalculator') },
-    { href: '/partners', label: t('nav.partners') },
-    { href: '/news', label: 'News' }
+    { href: '/partners', label: t('nav.partners') }
   ]
 
   // Close user menu when clicking outside

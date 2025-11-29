@@ -202,7 +202,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
           </div>
         </div>
 
-        {/* Lead Quality & Sources */}
+        {/* Lead Quality Distribution */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-4">
             Lead Quality Distribution
@@ -223,17 +223,8 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
           </div>
 
           <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            Top Sources
           </h4>
           <div className="space-y-2">
-            {Object.entries(leadsBySource)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 15)
-              .map(([source, count]) => (
-                <div key={source} className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400 truncate max-w-[200px]">{source}</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{count}</span>
-                </div>
               ))}
           </div>
         </div>
