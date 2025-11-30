@@ -9,6 +9,7 @@ import { LanguageProvider } from '@/components/LanguageContext'
 import { ThemeProvider, type Theme } from '@/components/ThemeProvider'
 import { cookies } from 'next/headers'
 import Script from 'next/script'
+import WhatsAppButton from '@/components/WhatsAppButton'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -65,6 +66,7 @@ export default async function RootLayout({
                 <Header />
                 {children}
                 <Footer />
+                <WhatsAppButton />
               </AuthProvider>
             </IntlProvider>
           </LanguageProvider>

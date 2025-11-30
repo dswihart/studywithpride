@@ -76,7 +76,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     id: '',
     name: '',
     email: '',
-    campaign: '',
     phone: '',
     country: '',
     contact_status: 'not_contacted',
@@ -111,8 +110,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     { value: 'referral', label: 'Referral' },
     { value: 'contacted', label: 'Contacted' },
     { value: 'interested', label: 'Interested' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'converted', label: 'Converted' },
     { value: 'unqualified', label: 'Unqualified' }
   ]
 
@@ -126,7 +123,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         name: editLead.prospect_name || '',
         email: editLead.prospect_email || '',
         phone: editLead.phone || '',
-        campaign: editLead.campaign || '',
         country: editLead.country,
         contact_status: editLead.contact_status,
         referral_source: editLead.referral_source || '',
@@ -142,7 +138,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         id: '',
         name: '',
         email: '',
-        campaign: '',
         phone: '',
         country: '',
         contact_status: 'not_contacted',
@@ -181,7 +176,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           prospect_name: formData.name,
           referral_source: formData.referral_source || null,
           phone: formData.phone || null,
-          campaign: formData.campaign || null,
           notes: formData.notes,
           lead_quality: formData.lead_quality || null,
           last_contact_date: formData.last_contact_date || null,
@@ -362,11 +356,11 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'reached': 'contacted',
       'interested': 'interested',
       'warm': 'interested',
-      'qualified': 'qualified',
-      'hot': 'qualified',
-      'converted': 'converted',
-      'won': 'converted',
-      'enrolled': 'converted',
+      'qualified': 'interested',
+      'hot': 'interested',
+      'converted': 'interested',
+      'won': 'interested',
+      'enrolled': 'interested',
       'unqualified': 'unqualified',
       'lost': 'unqualified',
       'rejected': 'unqualified'
@@ -411,7 +405,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
   const parseXLSXToJson = (arrayBuffer: ArrayBuffer): Record<string, any>[] => {
     // Read the workbook
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+    const workbook = XLSX.read(arrayBuffer, { type: "array" })
 
     // Get the first sheet
     const firstSheetName = workbook.SheetNames[0]
@@ -422,6 +416,111 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
     return jsonData as Record<string, any>[]
   }
+  // Process XLSX rows directly from JSON (avoids CSV newline issues)
+  const processXLSXRows = async (jsonRows: Record<string, any>[]): Promise<CsvRow[]> => {
+    if (jsonRows.length === 0) return []
+
+    const rows: CsvRow[] = []
+
+    // Get existing leads to check for duplicates
+    const supabase = createClient()
+    const { data: existingLeads } = await supabase
+      .from("leads")
+      .select("prospect_email, phone")
+
+    const existingEmails = new Set(
+      existingLeads?.map(l => l.prospect_email?.toLowerCase()).filter(Boolean) || []
+    )
+
+    // Normalize phone numbers for comparison (remove all non-digits)
+    const normalizePhoneXlsx = (phone: string | null | undefined): string => {
+      if (!phone) return ""
+      return phone.replace(/\D/g, "")
+    }
+
+    const existingPhones = new Set(
+      existingLeads?.map(l => normalizePhoneXlsx(l.phone)).filter(p => p.length >= 10) || []
+    )
+
+    for (const row of jsonRows) {
+      const rowData: any = {
+        name: "",
+        email: "",
+        phone: "",
+        campaign: "",
+        campaign_name: "",
+        country: "",
+        status: "not_contacted",
+        referral_destination: "",
+        notes: "",
+        name_score: null,
+        email_score: null,
+        phone_valid: null,
+        recency_score: null,
+        lead_score: null,
+        lead_quality: null,
+        barcelona_timeline: null,
+        created_time: null
+      }
+
+      // Map values from JSON keys to our field names
+      for (const [key, value] of Object.entries(row)) {
+        const mappedKey = mapHeader(key)
+        if (mappedKey && value !== null && value !== undefined) {
+          // Convert value to string and clean up any embedded newlines/carriage returns
+          rowData[mappedKey] = String(value).replace(/\r/g, " ").replace(/\n/g, " ").trim()
+        }
+      }
+
+      const errors: string[] = []
+      const warnings: string[] = []
+
+      // Validate name
+      if (!rowData.name || rowData.name.trim().length === 0) {
+        errors.push("Name is required")
+      }
+
+      // Validate email
+      if (!rowData.email || rowData.email.trim().length === 0) {
+        errors.push("Email is required")
+      } else if (!validateEmail(rowData.email)) {
+        errors.push("Invalid email format")
+      }
+
+      // Check for duplicate
+      const normalizedPhone = normalizePhoneXlsx(rowData.phone)
+      const isDuplicateEmail = rowData.email && existingEmails.has(rowData.email.toLowerCase())
+      const isDuplicatePhone = normalizedPhone.length >= 10 && existingPhones.has(normalizedPhone)
+      const isDuplicate = isDuplicateEmail || isDuplicatePhone
+      if (isDuplicate) {
+        if (isDuplicateEmail) warnings.push("Email already exists in database")
+        if (isDuplicatePhone) warnings.push("Phone number already exists in database")
+      }
+
+      // Validate country
+      if (!rowData.country || rowData.country.trim().length === 0) {
+        warnings.push('Country is empty, will default to "Other"')
+        rowData.country = "Other"
+      } else {
+        rowData.country = normalizeCountry(rowData.country)
+      }
+
+      // Normalize status
+      if (rowData.status) {
+        rowData.status = normalizeStatus(rowData.status)
+      }
+
+      rows.push({
+        data: rowData,
+        errors,
+        warnings,
+        isDuplicate
+      })
+    }
+
+    return rows
+  }
+
 
   const parseCSV = async (text: string): Promise<CsvRow[]> => {
     const lines = text.split(/\r?\n/).filter(line => line.trim())
@@ -547,8 +646,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
         reader.onload = async (event) => {
           const arrayBuffer = event.target?.result as ArrayBuffer
-          const csvText = parseXLSX(arrayBuffer)
-          const parsed = await parseCSV(csvText)
+          const jsonRows = parseXLSXToJson(arrayBuffer)
+          const parsed = await processXLSXRows(jsonRows)
           setParsedRows(parsed)
 
           const valid = parsed.filter(r => r.errors.length === 0 && !r.isDuplicate).length
@@ -877,16 +976,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Campaign (Optional)</label>
-                <input
-                  type="text"
-                  value={formData.campaign}
-                  onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="e.g., Spring 2025, Facebook Ads"
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>

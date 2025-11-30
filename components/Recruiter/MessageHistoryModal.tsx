@@ -92,12 +92,7 @@ export default function MessageHistoryModal({ isOpen, onClose, lead }: MessageHi
                     className={`text-[11px] mt-1.5 flex items-center gap-1 ${message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                       }`}
                   >
-                    {new Date(message.sent_at).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit'
-                    })}
+                    {new Date(message.sent_at).toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
                     {message.direction === 'outbound' && (
                       <span className="ml-1">
                         {message.status === 'delivered' ? '✓✓' : message.status === 'sent' ? '✓' : '⏱'}

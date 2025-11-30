@@ -92,8 +92,6 @@ const STATUS_OPTIONS = [
   { value: "not_contacted", label: "Not Contacted", color: "bg-gray-500" },
   { value: "contacted", label: "Contacted", color: "bg-blue-500" },
   { value: "interested", label: "Interested", color: "bg-purple-500" },
-  { value: "qualified", label: "Qualified", color: "bg-amber-500" },
-  { value: "converted", label: "Converted", color: "bg-green-500" },
   { value: "unqualified", label: "Unqualified", color: "bg-red-500" },
 ]
 
@@ -130,7 +128,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
       const outcomeOption = CONTACT_OUTCOMES.find(o => o.value === selectedOutcome)
       const followUpOption = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
 
-      const timestamp = new Date().toLocaleString()
+      const timestamp = new Date().toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 
       // Build follow-up label
       let followUpLabel = followUpOption?.label

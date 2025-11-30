@@ -51,8 +51,6 @@ const CONTACT_STATUSES = [
   { value: "referral", label: "referral" },
   { value: "contacted", label: "contacted" },
   { value: "interested", label: "interested" },
-  { value: "qualified", label: "qualified" },
-  { value: "converted", label: "converted" },
   { value: "unqualified", label: "unqualified" },
 ]
 
@@ -102,7 +100,6 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "prospect_email", labelKey: "recruiter.table.columns.email", sortable: "prospect_email" },
   { key: "phone", labelKey: "recruiter.table.columns.phone", sortable: "phone" },
   { key: "country", labelKey: "recruiter.table.columns.country", sortable: "country" },
-  { key: "campaign", labelKey: "recruiter.table.columns.campaign", sortable: "campaign" },
   { key: "referral_source", labelKey: "recruiter.table.referralColumn", sortable: "referral_source" },
   { key: "contact_status", labelKey: "recruiter.table.columns.status", sortable: "contact_status" },
   { key: "lead_quality", labelKey: "recruiter.table.columns.quality", sortable: "lead_quality" },
@@ -360,10 +357,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           aValue = a.phone || ""
           bValue = b.phone || ""
           break
-        case "campaign":
-          aValue = a.campaign || ""
-          bValue = b.campaign || ""
-          break
         case "referral_source":
           aValue = a.referral_source?.toLowerCase() || ""
           bValue = b.referral_source?.toLowerCase() || ""
@@ -592,8 +585,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         return lead.phone || t("recruiter.table.na")
       case "country":
         return lead.country
-      case "campaign":
-        return lead.campaign || t("recruiter.table.na")
       case "referral_source":
         return lead.referral_source || t("recruiter.table.na")
       case "contact_status":

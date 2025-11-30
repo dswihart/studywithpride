@@ -324,13 +324,13 @@ function RecruiterDashboardContent() {
       'Email': lead.prospect_email || '',
       'Phone': lead.phone || '',
       'Country': lead.country || '',
-      'Campaign': lead.campaign || '',
-      'Campaign Name': lead.campaign_name || '',
+      
+      
       'Status': lead.contact_status || '',
       'Lead Quality': lead.lead_quality || '',
       'Lead Score': lead.lead_score || '',
-      'Referral Source': lead.referral_source || '',
-      'Last Contact': lead.last_contact_date || '',
+      
+      
       'Notes': lead.notes || '',
       'Created At': lead.created_at || '',
       'Barcelona Timeline': lead.barcelona_timeline || '',
@@ -342,9 +342,9 @@ function RecruiterDashboardContent() {
     const ws = XLSX.utils.json_to_sheet(exportData)
 
     ws['!cols'] = [
-      { wch: 25 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 20 },
-      { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 25 },
-      { wch: 15 }, { wch: 40 }, { wch: 20 }, { wch: 15 },
+      { wch: 25 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
+      { wch: 12 }, { wch: 10 }, { wch: 40 }, { wch: 20 }, { wch: 15 },
+      { wch: 20 }, { wch: 20 }
     ]
 
     XLSX.utils.book_append_sheet(wb, ws, 'Leads')

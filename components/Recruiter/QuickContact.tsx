@@ -132,7 +132,7 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
       const outcomeOption = QUICK_OUTCOMES.find(o => o.value === selectedOutcome)
 
       // Build note entry
-      const timestamp = new Date().toLocaleString()
+      const timestamp = new Date().toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
       const noteEntry = [
         `[${timestamp}] Quick Log: ${outcomeOption?.label}`,
         notes ? `- ${notes}` : null
