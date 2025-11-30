@@ -409,7 +409,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     return countryMap[trimmed.toLowerCase()] || trimmed || 'Other'
   }
 
-  const parseXLSX = (arrayBuffer: ArrayBuffer): string => {
+  const parseXLSXToJson = (arrayBuffer: ArrayBuffer): Record<string, any>[] => {
     // Read the workbook
     const workbook = XLSX.read(arrayBuffer, { type: 'array' })
 
@@ -417,10 +417,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     const firstSheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[firstSheetName]
 
-    // Convert to CSV format
-    const csv = XLSX.utils.sheet_to_csv(worksheet)
+    // Convert directly to JSON (handles newlines in cells properly)
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
 
-    return csv
+    return jsonData as Record<string, any>[]
   }
 
   const parseCSV = async (text: string): Promise<CsvRow[]> => {

@@ -8,6 +8,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import * as XLSX from 'xlsx'
+import { calculateLeadScore, detectCountryFromPhone } from '@/lib/leadScoring'
 
 interface Lead {
   id: string
@@ -438,15 +439,17 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       .select('prospect_email, phone')
 
     const existingEmails = new Set(
-n    // Normalize phone numbers for comparison (remove all non-digits)
+      existingLeads?.map(l => l.prospect_email?.toLowerCase()).filter(Boolean) || []
+    )
+
+    // Normalize phone numbers for comparison (remove all non-digits)
     const normalizePhone = (phone: string | null | undefined): string => {
-      if (!phone) return '\n      return phone.replace(/D/g, '')
+      if (!phone) return ''
+      return phone.replace(/\D/g, '')
     }
 
     const existingPhones = new Set(
       existingLeads?.map(l => normalizePhone(l.phone)).filter(p => p.length >= 10) || []
-    )
-      existingLeads?.map(l => l.prospect_email?.toLowerCase()).filter(Boolean) || []
     )
 
     for (let i = 1; i < lines.length; i++) {
@@ -611,27 +614,42 @@ n    // Normalize phone numbers for comparison (remove all non-digits)
 
       // Insert new leads
       if (newLeads.length > 0) {
-        const leadsToInsert = newLeads.map(row => ({
-          user_id: currentUser.id,
-          country: row.data.country || 'Other',
-          contact_status: row.data.status || 'not_contacted',
-          prospect_email: row.data.email,
-          prospect_name: row.data.name,
-          referral_source: row.data.referral_destination || null,
-          phone: row.data.phone || null,
-          campaign_name: row.data.campaign_name || row.data.campaign || null,
-          name_score: row.data.name_score ? parseInt(row.data.name_score) : null,
-          email_score: row.data.email_score ? parseInt(row.data.email_score) : null,
-          phone_valid: row.data.phone_valid === "TRUE" || row.data.phone_valid === true || row.data.phone_valid === "1",
-          recency_score: row.data.recency_score ? parseInt(row.data.recency_score) : null,
-          lead_score: row.data.lead_score ? parseInt(row.data.lead_score) : null,
-          lead_quality: row.data.lead_quality || null,
-          notes: row.data.notes || '',
-          barcelona_timeline: parseBarcelonaTimeline(row.data.barcelona_timeline),
-          created_time: row.data.created_time || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }))
+        const leadsToInsert = newLeads.map(row => {
+          // Calculate lead scores if not provided in the file
+          const scoreData = calculateLeadScore(row.data.name, row.data.email, row.data.phone)
+
+          // Detect country from phone if not provided or is 'Other'/'Unknown'
+          let country = row.data.country || 'Other'
+          if ((!country || country === 'Other' || country === 'Unknown') && row.data.phone) {
+            const detectedCountry = detectCountryFromPhone(row.data.phone)
+            if (detectedCountry && detectedCountry !== 'Unknown') {
+              country = detectedCountry
+            }
+          }
+
+          return {
+            user_id: currentUser.id,
+            country: country,
+            contact_status: row.data.status || 'not_contacted',
+            prospect_email: row.data.email,
+            prospect_name: row.data.name,
+            referral_source: row.data.referral_destination || null,
+            phone: row.data.phone || null,
+            campaign_name: row.data.campaign_name || row.data.campaign || null,
+            // Use provided scores or fall back to calculated scores
+            name_score: row.data.name_score ? parseInt(row.data.name_score) : scoreData.nameScore,
+            email_score: row.data.email_score ? parseInt(row.data.email_score) : scoreData.emailScore,
+            phone_valid: row.data.phone_valid === "TRUE" || row.data.phone_valid === true || row.data.phone_valid === "1" || scoreData.phoneValid,
+            recency_score: row.data.recency_score ? parseInt(row.data.recency_score) : scoreData.recencyScore,
+            lead_score: row.data.lead_score ? parseInt(row.data.lead_score) : scoreData.totalScore,
+            lead_quality: row.data.lead_quality || scoreData.quality,
+            notes: row.data.notes || '',
+            barcelona_timeline: parseBarcelonaTimeline(row.data.barcelona_timeline),
+            created_time: row.data.created_time || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        })
 
         const BATCH_SIZE = 100
         const batches = []
@@ -670,6 +688,13 @@ n    // Normalize phone numbers for comparison (remove all non-digits)
 
             if (!existingLead.phone && row.data.phone) {
               updates.phone = row.data.phone
+              // Detect country from new phone if current country is generic
+              if (existingLead.country === 'Other' || existingLead.country === 'Unknown' || !existingLead.country) {
+                const detectedCountry = detectCountryFromPhone(row.data.phone)
+                if (detectedCountry && detectedCountry !== 'Unknown') {
+                  updates.country = detectedCountry
+                }
+              }
             }
             if (!existingLead.campaign_name && (row.data.campaign_name || row.data.campaign)) {
               updates.campaign_name = row.data.campaign_name || row.data.campaign
@@ -686,37 +711,50 @@ n    // Normalize phone numbers for comparison (remove all non-digits)
             if (!existingLead.notes && row.data.notes) {
               updates.notes = row.data.notes
             }
-            if (!existingLead.name_score && row.data.name_score) {
-              updates.name_score = parseInt(row.data.name_score)
+
+            // Calculate scores if not already present in existing lead
+            const phoneToUse = updates.phone || existingLead.phone
+            const scoreData = calculateLeadScore(
+              existingLead.prospect_name,
+              existingLead.prospect_email,
+              phoneToUse
+            )
+
+            if (!existingLead.name_score) {
+              updates.name_score = row.data.name_score ? parseInt(row.data.name_score) : scoreData.nameScore
             }
-            if (!existingLead.email_score && row.data.email_score) {
-              updates.email_score = parseInt(row.data.email_score)
+            if (!existingLead.email_score) {
+              updates.email_score = row.data.email_score ? parseInt(row.data.email_score) : scoreData.emailScore
             }
-            if (!existingLead.lead_score && row.data.lead_score) {
-              updates.lead_score = parseInt(row.data.lead_score)
+            if (!existingLead.lead_score) {
+              updates.lead_score = row.data.lead_score ? parseInt(row.data.lead_score) : scoreData.totalScore
             }
-            if (!existingLead.lead_quality && row.data.lead_quality) {
-              updates.lead_quality = row.data.lead_quality
+            if (!existingLead.lead_quality) {
+              updates.lead_quality = row.data.lead_quality || scoreData.quality
             }
-            if (!existingLead.recency_score && row.data.recency_score) {
-              updates.recency_score = parseInt(row.data.recency_score)
+            if (!existingLead.recency_score) {
+              updates.recency_score = row.data.recency_score ? parseInt(row.data.recency_score) : scoreData.recencyScore
+            }
+            if (existingLead.phone_valid === null || existingLead.phone_valid === undefined) {
+              updates.phone_valid = scoreData.phoneValid
             }
 
-            // Only update if there are changes
-            if (Object.keys(updates).length > 0) {
-              updates.updated_at = new Date().toISOString()
+            // Mark as duplicate and update
+            // Always mark as duplicate since we found a matching lead during import
+            updates.is_duplicate = true
+            updates.duplicate_detected_at = new Date().toISOString()
+            updates.updated_at = new Date().toISOString()
 
-              const { error: updateError } = await supabase
-                .from('leads')
-                .update(updates)
-                .eq('id', existingLead.id)
+            const { error: updateError } = await supabase
+              .from('leads')
+              .update(updates)
+              .eq('id', existingLead.id)
 
-              if (!updateError) {
-                totalUpdated++
-              } else {
+            if (!updateError) {
+              totalUpdated++
+            } else {
                 console.error(`Failed to update lead ${existingLead.id}:`, updateError)
               }
-            }
           }
         }
       }
