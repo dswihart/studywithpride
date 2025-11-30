@@ -195,7 +195,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         id: '',
         name: '',
         email: '',
-        campaign: '',
         phone: '',
         country: '',
         contact_status: 'not_contacted',
@@ -447,7 +446,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         name: "",
         email: "",
         phone: "",
-        campaign: "",
         campaign_name: "",
         country: "",
         status: "not_contacted",
@@ -557,7 +555,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         name: '',
         email: '',
         phone: '',
-        campaign: '',
         campaign_name: '',
         country: '',
         status: 'not_contacted',
@@ -1047,7 +1044,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Acquired</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead Clicked Time</label>
                   <input
                     type="date"
                     value={formData.created_time}

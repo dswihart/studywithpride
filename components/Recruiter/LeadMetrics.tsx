@@ -44,11 +44,11 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
     unqualified: leads.filter(l => l.contact_status === 'unqualified').length,
   }
 
-  // Lead quality distribution
+  // Lead quality distribution (case-insensitive)
   const qualityDist = {
-    high: leads.filter(l => l.lead_quality === 'high').length,
-    medium: leads.filter(l => l.lead_quality === 'medium').length,
-    low: leads.filter(l => l.lead_quality === 'low').length,
+    high: leads.filter(l => l.lead_quality?.toLowerCase() === 'high').length,
+    medium: leads.filter(l => l.lead_quality?.toLowerCase() === 'medium').length,
+    low: leads.filter(l => l.lead_quality?.toLowerCase() === 'low' || l.lead_quality?.toLowerCase() === 'very low').length,
   }
 
   // Leads by country

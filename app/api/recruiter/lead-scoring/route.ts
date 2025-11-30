@@ -72,7 +72,7 @@ const scoringRules: ScoringRule[] = [
     name: "Valid email",
     category: "profile",
     condition: "email_score >= 80",
-    points: 5,
+    points: 10,
     is_active: true,
   },
   {
@@ -80,7 +80,7 @@ const scoringRules: ScoringRule[] = [
     name: "Valid phone number",
     category: "profile",
     condition: "phone_valid = true",
-    points: 10,
+    points: 15,
     is_active: true,
   },
   {
@@ -88,7 +88,7 @@ const scoringRules: ScoringRule[] = [
     name: "Quality name data",
     category: "profile",
     condition: "name_score >= 70",
-    points: 5,
+    points: 10,
     is_active: true,
   },
 
@@ -114,7 +114,7 @@ const scoringRules: ScoringRule[] = [
     name: "Referred lead",
     category: "behavior",
     condition: "referral_source IS NOT NULL",
-    points: 5,
+    points: 10,
     is_active: true,
   },
 
@@ -124,7 +124,7 @@ const scoringRules: ScoringRule[] = [
     name: "Recent lead (< 14 days)",
     category: "timing",
     condition: "created_days <= 14",
-    points: 5,
+    points: 10,
     is_active: true,
   },
   {
@@ -225,11 +225,11 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
   // Determine quality tier - Using High/Medium/Low/Very Low to match UI
   // Adjusted thresholds for better distribution based on actual data
   let qualityTier: "High" | "Medium" | "Low" | "Very Low"
-  if (totalScore >= 35) {
+  if (totalScore >= 50) {
     qualityTier = "High"
-  } else if (totalScore >= 20) {
+  } else if (totalScore >= 25) {
     qualityTier = "Medium"
-  } else if (totalScore >= 10) {
+  } else if (totalScore >= 15) {
     qualityTier = "Low"
   } else {
     qualityTier = "Very Low"

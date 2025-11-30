@@ -202,6 +202,13 @@ function RecruiterDashboardContent() {
     handleEditLead(lead)
   }
 
+  const handleLogContactFromView = (lead: Lead) => {
+    setIsViewLeadModalOpen(false)
+    setViewingLead(null)
+    setContactLoggerLead(lead)
+    setShowContactLogger(true)
+  }
+
   const handleCloseModal = () => {
     setIsAddLeadModalOpen(false)
     setEditingLead(null)
@@ -334,7 +341,7 @@ function RecruiterDashboardContent() {
       'Notes': lead.notes || '',
       'Created At': lead.created_at || '',
       'Barcelona Timeline': lead.barcelona_timeline || '',
-      'Created Time': lead.created_time || '',
+      'Lead Clicked Time': lead.created_time || '',
       'Date Imported': lead.date_imported || ''
     }))
 
@@ -701,6 +708,7 @@ function RecruiterDashboardContent() {
           onClose={handleCloseViewModal}
           lead={viewingLead}
           onEdit={handleEditFromView}
+          onLogContact={handleLogContactFromView}
         />
 
         <AddLeadModal

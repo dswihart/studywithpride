@@ -92,7 +92,7 @@ export default function Home() {
       <section className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">{t('home.planJourney')}</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             <Link href="/visa" className="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-xl transition">
               <h3 className="text-xl font-semibold mb-3 text-purple-600 dark:text-purple-400">📋 {t('home.visaGuide')}</h3>
               <p className="text-gray-600 dark:text-gray-300">
@@ -103,12 +103,6 @@ export default function Home() {
               <h3 className="text-xl font-semibold mb-3 text-purple-600 dark:text-purple-400">💵 {t('home.costCalc')}</h3>
               <p className="text-gray-600 dark:text-gray-300">
                 {t('home.costCalcDesc')}
-              </p>
-            </Link>
-            <Link href="/courses" className="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-xl transition">
-              <h3 className="text-xl font-semibold mb-3 text-purple-600 dark:text-purple-400">📚 {t('home.courses')}</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                {t('home.coursesDesc')}
               </p>
             </Link>
             <a href="/Barcelona_LGBTQ_Student_Guide.pdf" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 border-2 border-pink-200 dark:border-pink-700 p-6 rounded-lg shadow-md hover:shadow-xl transition hover:border-pink-400">
