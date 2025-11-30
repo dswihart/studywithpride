@@ -225,7 +225,7 @@ function calculateLeadScore(lead: any): LeadScoreBreakdown {
   // Determine quality tier - Using High/Medium/Low/Very Low to match UI
   // Adjusted thresholds for better distribution based on actual data
   let qualityTier: "High" | "Medium" | "Low" | "Very Low"
-  if (totalScore >= 50) {
+  if (totalScore >= 35) {
     qualityTier = "High"
   } else if (totalScore >= 25) {
     qualityTier = "Medium"

@@ -255,9 +255,13 @@ function RecruiterDashboardContent() {
     setShowContactLogger(true)
   }
 
-  const handleContactLogSuccess = () => {
-    // Refresh leads after logging contact
-    window.location.reload()
+  const handleContactLogSuccess = (updatedLead?: Lead) => {
+    // Update the lead in state instead of full page reload
+    if (updatedLead) {
+      setLeads(prevLeads => prevLeads.map(l => l.id === updatedLead.id ? { ...l, ...updatedLead } : l))
+    }
+    setShowContactLogger(false)
+    setContactLoggerLead(null)
   }
 
   // Create task from QuickContactLogger
@@ -316,9 +320,11 @@ function RecruiterDashboardContent() {
     setTaskListKey(prev => prev + 1) // Force TaskList to refresh
   }
 
-  const handleQuickContactLogged = () => {
-    // Refresh leads
-    window.location.reload()
+  const handleQuickContactLogged = (updatedLead?: Lead) => {
+    // Update the lead in state instead of full page reload  
+    if (updatedLead) {
+      setLeads(prevLeads => prevLeads.map(l => l.id === updatedLead.id ? { ...l, ...updatedLead } : l))
+    }
   }
 
   const handleExportSelected = () => {
