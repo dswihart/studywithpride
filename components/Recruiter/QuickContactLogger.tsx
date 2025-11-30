@@ -131,11 +131,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     setError("")
 
     try {
-      // Build the note entry
       const outcomeOption = CONTACT_OUTCOMES.find(o => o.value === selectedOutcome)
       const followUpOption = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
-
-      const timestamp = new Date().toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 
       // Build follow-up label
       let followUpLabel = followUpOption?.label
@@ -144,19 +141,25 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
         followUpLabel = `Call back ${timeOption?.label.toLowerCase()}`
       }
 
-      const noteEntry = [
-        `[${timestamp}]`,
-        `Contact: ${outcomeOption?.label || selectedOutcome}`,
-        selectedFollowUp ? `Follow-up: ${followUpLabel}` : null,
-        notes ? `Notes: ${notes}` : null,
-      ].filter(Boolean).join(" | ")
+      // 1. Save to contact_history table
+      const contactLogResponse = await fetch("/api/recruiter/contact-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead_id: lead.id,
+          contact_type: "call",
+          outcome: outcomeOption?.label || selectedOutcome,
+          notes: notes || null,
+          follow_up_action: followUpLabel || null,
+        }),
+      })
 
-      // Combine with existing notes
-      const updatedNotes = lead.notes
-        ? `${noteEntry}\n---\n${lead.notes}`
-        : noteEntry
+      if (!contactLogResponse.ok) {
+        const logError = await contactLogResponse.json()
+        throw new Error(logError.error || "Failed to save contact log")
+      }
 
-      // Update the lead
+      // 2. Update the lead status (without modifying notes)
       const response = await fetch("/api/recruiter/leads-write", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,7 +167,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           id: lead.id,
           contact_status: selectedStatus,
           last_contact_date: new Date().toISOString(),
-          notes: updatedNotes,
           recruit_priority: recruitPriority,
           ...(selectedStatus === "referral" && referralDestination ? { referral_source: referralDestination } : {}),
         }),
