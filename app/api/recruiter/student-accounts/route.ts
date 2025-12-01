@@ -1,15 +1,21 @@
 /**
- * Student Accounts API
+ * User Management API
  * GET /api/recruiter/student-accounts
  *
- * Fetches all student portal accounts with their linked CRM lead data
+ * Fetches ALL users from auth system with their profile data
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { requireRole } from "@/lib/auth/role-guard"
 
-interface StudentAccountData {
+// Use service role key for admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+interface UserAccountData {
   id: string
   email: string
   full_name: string | null
@@ -17,6 +23,8 @@ interface StudentAccountData {
   phone_number: string | null
   crm_lead_id: string | null
   created_at: string
+  role: string
+  has_profile: boolean
   // Joined from leads
   lead_prospect_name?: string
   lead_country?: string
@@ -32,68 +40,50 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 })
     }
 
-    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
 
-    // Optional filters from query params
+    // Optional filters
     const country = searchParams.get("country")
-    const intake = searchParams.get("intake")
-    const source = searchParams.get("source") // 'crm' or 'manual'
+    const roleFilter = searchParams.get("role")
+    const source = searchParams.get("source")
     const dateFrom = searchParams.get("date_from")
     const dateTo = searchParams.get("date_to")
 
-    // Fetch all user profiles (student accounts)
-    let query = supabase
-      .from("user_profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
+    // Fetch ALL users from auth.users via admin API
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000,
+    })
 
-    // Apply filters
-    if (country) {
-      query = query.ilike("country_of_origin", `%${country}%`)
-    }
-
-    if (source === "crm") {
-      query = query.not("crm_lead_id", "is", null)
-    } else if (source === "manual") {
-      query = query.is("crm_lead_id", null)
-    }
-
-    if (dateFrom) {
-      query = query.gte("created_at", dateFrom)
-    }
-
-    if (dateTo) {
-      query = query.lte("created_at", `${dateTo}T23:59:59.999Z`)
-    }
-
-    const { data: profiles, error: profilesError } = await query
-
-    if (profilesError) {
-      console.error("[student-accounts] Error fetching profiles:", profilesError)
+    if (authError) {
+      console.error("[user-management] Error fetching auth users:", authError)
       return NextResponse.json(
-        { success: false, error: "Failed to fetch student accounts" },
+        { success: false, error: "Failed to fetch users" },
         { status: 500 }
       )
     }
 
-    if (!profiles || profiles.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-        summary: { total: 0, from_crm: 0, manual: 0 }
-      })
+    const authUsers = authData.users || []
+
+    // Fetch all user profiles
+    const { data: profiles } = await supabaseAdmin
+      .from("user_profiles")
+      .select("*")
+
+    // Create profile lookup map
+    const profileMap: Record<string, any> = {}
+    for (const profile of profiles || []) {
+      profileMap[profile.id] = profile
     }
 
-    // Get lead IDs that are linked
-    const crmLeadIds = profiles
+    // Get all CRM lead IDs from profiles
+    const crmLeadIds = (profiles || [])
       .filter((p) => p.crm_lead_id)
       .map((p) => p.crm_lead_id)
 
     // Fetch linked leads data
     let leadsMap: Record<string, any> = {}
     if (crmLeadIds.length > 0) {
-      const { data: leads } = await supabase
+      const { data: leads } = await supabaseAdmin
         .from("leads")
         .select("id, prospect_name, country, converted_at, conversion_source")
         .in("id", crmLeadIds)
@@ -106,38 +96,44 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch application state for intake terms
-    const userIds = profiles.map((p) => p.id)
+    // Fetch application states
+    const userIds = authUsers.map((u) => u.id)
     let applicationMap: Record<string, any> = {}
-    try {
-      const { data: applications } = await supabase
-        .from("application_state")
-        .select("user_id, intake_term")
-        .in("user_id", userIds)
+    if (userIds.length > 0) {
+      try {
+        const { data: applications } = await supabaseAdmin
+          .from("application_state")
+          .select("user_id, intake_term")
+          .in("user_id", userIds)
 
-      if (applications) {
-        applicationMap = applications.reduce((acc, app) => {
-          acc[app.user_id] = app
-          return acc
-        }, {} as Record<string, any>)
+        if (applications) {
+          applicationMap = applications.reduce((acc, app) => {
+            acc[app.user_id] = app
+            return acc
+          }, {} as Record<string, any>)
+        }
+      } catch (e) {
+        // Table may not exist
       }
-    } catch (e) {
-      // Application state table may not exist
     }
 
-    // Combine data
-    const studentAccounts: StudentAccountData[] = profiles.map((profile) => {
-      const linkedLead = profile.crm_lead_id ? leadsMap[profile.crm_lead_id] : null
-      const applicationState = applicationMap[profile.id]
+    // Build combined user list from ALL auth users
+    let userAccounts: UserAccountData[] = authUsers.map((authUser) => {
+      const profile = profileMap[authUser.id]
+      const linkedLead = profile?.crm_lead_id ? leadsMap[profile.crm_lead_id] : null
+      const applicationState = applicationMap[authUser.id]
+      const role = authUser.user_metadata?.role || "student"
 
       return {
-        id: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        country_of_origin: profile.country_of_origin,
-        phone_number: profile.phone_number,
-        crm_lead_id: profile.crm_lead_id,
-        created_at: profile.created_at,
+        id: authUser.id,
+        email: authUser.email || "",
+        full_name: profile?.full_name || authUser.user_metadata?.full_name || null,
+        country_of_origin: profile?.country_of_origin || null,
+        phone_number: profile?.phone_number || null,
+        crm_lead_id: profile?.crm_lead_id || null,
+        created_at: authUser.created_at,
+        role: role,
+        has_profile: !!profile,
         // Lead data
         lead_prospect_name: linkedLead?.prospect_name,
         lead_country: linkedLead?.country,
@@ -148,28 +144,57 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Apply intake filter after joining
-    let filteredAccounts = studentAccounts
-    if (intake) {
-      filteredAccounts = filteredAccounts.filter(
-        (a) => a.intake_term?.toLowerCase() === intake.toLowerCase()
-      )
+    // Apply filters
+    if (roleFilter) {
+      userAccounts = userAccounts.filter((u) => u.role === roleFilter)
     }
+
+    if (country) {
+      userAccounts = userAccounts.filter((u) => {
+        const userCountry = u.country_of_origin || u.lead_country || ""
+        return userCountry.toLowerCase().includes(country.toLowerCase())
+      })
+    }
+
+    if (source === "crm_conversion") {
+      userAccounts = userAccounts.filter((u) => u.crm_lead_id !== null)
+    } else if (source === "manual") {
+      userAccounts = userAccounts.filter((u) => u.crm_lead_id === null)
+    }
+
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom)
+      userAccounts = userAccounts.filter((u) => new Date(u.created_at) >= fromDate)
+    }
+
+    if (dateTo) {
+      const toDate = new Date(dateTo)
+      toDate.setHours(23, 59, 59, 999)
+      userAccounts = userAccounts.filter((u) => new Date(u.created_at) <= toDate)
+    }
+
+    // Sort by created_at descending
+    userAccounts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
     // Summary stats
     const summary = {
-      total: filteredAccounts.length,
-      from_crm: filteredAccounts.filter((a) => a.crm_lead_id).length,
-      manual: filteredAccounts.filter((a) => !a.crm_lead_id).length,
+      total: userAccounts.length,
+      from_crm: userAccounts.filter((a) => a.crm_lead_id).length,
+      manual: userAccounts.filter((a) => !a.crm_lead_id).length,
+      by_role: {
+        student: userAccounts.filter((a) => a.role === "student").length,
+        recruiter: userAccounts.filter((a) => a.role === "recruiter").length,
+        admin: userAccounts.filter((a) => a.role === "admin").length,
+      },
     }
 
     return NextResponse.json({
       success: true,
-      data: filteredAccounts,
+      data: userAccounts,
       summary,
     })
   } catch (error) {
-    console.error("[student-accounts] Error:", error)
+    console.error("[user-management] Error:", error)
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
