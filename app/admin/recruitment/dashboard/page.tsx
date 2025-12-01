@@ -103,6 +103,8 @@ function RecruiterDashboardContent() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [taskListKey, setTaskListKey] = useState(0)
   const [isAddContactLogModalOpen, setIsAddContactLogModalOpen] = useState(false)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -143,6 +145,28 @@ function RecruiterDashboardContent() {
       }
     }
   }, [searchParams, leads, highlightedLeadId])
+
+  // Fetch recent activity when activity tab is selected
+  useEffect(() => {
+    if (activeTab === 'activity') {
+      fetchRecentActivity()
+    }
+  }, [activeTab])
+
+  const fetchRecentActivity = async () => {
+    setActivityLoading(true)
+    try {
+      const response = await fetch('/api/recruiter/recent-activity?limit=100')
+      const result = await response.json()
+      if (result.success) {
+        setRecentActivity(result.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch activity:', error)
+    } finally {
+      setActivityLoading(false)
+    }
+  }
 
   const checkAuthorization = async () => {
     try {
@@ -650,77 +674,120 @@ function RecruiterDashboardContent() {
 
         {activeTab === 'activity' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Your recent contact log entries</p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Activity</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">All contact log entries from recruiters</p>
+              </div>
+              <button
+                onClick={fetchRecentActivity}
+                className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Refresh
+              </button>
+            </div>
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {leads
-                .filter(lead => lead.notes && lead.notes.trim())
-                .sort((a, b) => {
-                  const dateA = a.last_contact_date ? new Date(a.last_contact_date).getTime() : 0
-                  const dateB = b.last_contact_date ? new Date(b.last_contact_date).getTime() : 0
-                  return dateB - dateA
-                })
-                .slice(0, 50)
-                .map((lead) => {
-                  const latestNote = lead.notes?.split('\n---\n')[0] || ''
-                  const timestampMatch = latestNote.match(/\[(.+?)\]/)
-                  const timestamp = timestampMatch ? timestampMatch[1] : ''
+              {activityLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                  <p className="text-gray-500 dark:text-gray-400 mt-4">Loading activity...</p>
+                </div>
+              ) : recentActivity.length > 0 ? (
+                recentActivity.map((activity) => {
+                  const getOutcomeIcon = (outcome: string) => {
+                    if (!outcome) return '📋'
+                    const lower = outcome.toLowerCase()
+                    if (lower.includes('interested') && !lower.includes('not')) return '🎯'
+                    if (lower.includes('whatsapp') || lower.includes('message')) return '💬'
+                    if (lower.includes('call') || lower.includes('answer')) return '📞'
+                    if (lower.includes('not interested') || lower.includes('unqualified')) return '👎'
+                    if (lower.includes('wrong')) return '❌'
+                    return '📋'
+                  }
+
+                  const formatDate = (dateStr: string) => {
+                    const date = new Date(dateStr)
+                    const now = new Date()
+                    const diffMs = now.getTime() - date.getTime()
+                    const diffMins = Math.floor(diffMs / 60000)
+                    const diffHours = Math.floor(diffMs / 3600000)
+                    const diffDays = Math.floor(diffMs / 86400000)
+
+                    if (diffMins < 1) return 'Just now'
+                    if (diffMins < 60) return `${diffMins}m ago`
+                    if (diffHours < 24) return `${diffHours}h ago`
+                    if (diffDays < 7) return `${diffDays}d ago`
+                    return date.toLocaleDateString()
+                  }
 
                   return (
                     <div
-                      key={lead.id}
+                      key={activity.id}
                       className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition"
                       onClick={() => {
-                        setHighlightedLeadId(lead.id)
-                        setActiveTab('leads')
+                        if (activity.lead_id) {
+                          setHighlightedLeadId(activity.lead_id)
+                          setActiveTab('leads')
+                        }
                       }}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">
-                              {latestNote.includes('Interested') ? '🎯' :
-                               latestNote.includes('WhatsApp') ? '💬' :
-                               latestNote.includes('Call') ? '📞' :
-                               latestNote.includes('Not Interested') ? '👎' : '📋'}
-                            </span>
+                            <span className="text-lg">{getOutcomeIcon(activity.outcome)}</span>
                             <p className="font-semibold text-gray-900 dark:text-white">
-                              {lead.prospect_name || lead.prospect_email || 'Unknown Lead'}
+                              {activity.lead_name}
                             </p>
+                            {activity.lead_country && (
+                              <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded">
+                                {activity.lead_country}
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 ml-7">
-                            {latestNote.replace(/\[.+?\]\s*\|?\s*/, '').substring(0, 150)}
-                            {latestNote.length > 150 ? '...' : ''}
+                            <span className="font-medium">{activity.outcome || 'Contact logged'}</span>
+                            {activity.follow_up_action && (
+                              <span className="text-purple-600 dark:text-purple-400"> → {activity.follow_up_action}</span>
+                            )}
                           </p>
+                          {activity.notes && (
+                            <p className="text-xs text-gray-500 dark:text-gray-500 ml-7 mt-1 italic">
+                              {activity.notes.substring(0, 100)}{activity.notes.length > 100 ? '...' : ''}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right ml-4 flex-shrink-0">
                           <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                            lead.contact_status === 'interested' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                            lead.contact_status === 'qualified' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                            lead.contact_status === 'converted' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                            lead.contact_status === 'contacted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                            activity.lead_status === 'interested' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                            activity.lead_status === 'qualified' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                            activity.lead_status === 'converted' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                            activity.lead_status === 'contacted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                            activity.lead_status === 'notinterested' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' :
+                            activity.lead_status === 'wrongnumber' ? 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300' :
                             'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
                           }`}>
-                            {lead.contact_status}
+                            {activity.lead_status || 'unknown'}
                           </span>
-                          {timestamp && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{timestamp}</p>
-                          )}
-                          {lead.recruit_priority && (
-                            <p className="text-yellow-500 mt-1">{'⭐'.repeat(lead.recruit_priority)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {formatDate(activity.contacted_at)}
+                          </p>
+                          {activity.ready_to_proceed && (
+                            <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-0.5 rounded">
+                              Ready to proceed
+                            </span>
                           )}
                         </div>
                       </div>
                     </div>
                   )
-                })}
-              {leads.filter(lead => lead.notes && lead.notes.trim()).length === 0 && (
+                })
+              ) : (
                 <div className="text-center py-12">
                   <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                   <p className="text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Start logging contacts to see your activity here.</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Start logging contacts to see activity here.</p>
                 </div>
               )}
             </div>

@@ -52,6 +52,8 @@ const CONTACT_STATUSES = [
   { value: "contacted", label: "contacted" },
   { value: "interested", label: "interested" },
   { value: "unqualified", label: "unqualified" },
+  { value: "notinterested", label: "notinterested" },
+  { value: "wrongnumber", label: "wrongnumber" },
 ]
 
 type SortColumn =
@@ -504,6 +506,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         return "bg-purple-100 text-purple-800"
       case "converted":
         return "bg-green-100 text-green-800"
+      case "notinterested":
+        return "bg-orange-100 text-orange-800"
+      case "wrongnumber":
+        return "bg-gray-200 text-gray-600"
       case "unqualified":
         return "bg-red-100 text-red-800"
       default:

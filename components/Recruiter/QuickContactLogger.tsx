@@ -41,7 +41,7 @@ type ContactOutcome =
   | "answered_callback"
   | "answered_needs_info"
   | "message_sent"
-  | "message_read"
+  | "unqualified_other"
 
 type FollowUpAction =
   | "send_info"
@@ -62,16 +62,16 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   // WhatsApp reply outcomes
   { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
   { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call_back" },
-  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
+  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "notinterested", suggestedFollowUp: "send_info" },
   // Original outcomes
   { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
-  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
+  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "wrongnumber", suggestedFollowUp: "send_info" },
   { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
-  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
+  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "notinterested", suggestedFollowUp: "send_info" },
   { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
   { value: "answered_needs_info", label: "Call: Needs More Info", icon: "📞📋", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
   { value: "message_sent", label: "WhatsApp Sent (only)", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
-  { value: "message_read", label: "Message Read", icon: "👁️", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
+  { value: "unqualified_other", label: "Unqualified - Other", icon: "🚫", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
 ]
 
 const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null; taskType: string }[] = [
@@ -94,6 +94,8 @@ const STATUS_OPTIONS = [
   { value: "interested", label: "Interested", color: "bg-purple-500" },
   { value: "qualified", label: "Qualified", color: "bg-green-500" },
   { value: "unqualified", label: "Unqualified", color: "bg-red-500" },
+  { value: "notinterested", label: "Not Interested", color: "bg-orange-500" },
+  { value: "wrongnumber", label: "Wrong Number", color: "bg-gray-600" },
 ]
 
 export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateTask }: QuickContactLoggerProps) {
@@ -137,7 +139,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     setSelectedFollowUp(outcome.suggestedFollowUp)
 
     // Terminal outcomes that complete immediately (no follow-up needed)
-    const terminalOutcomes = ['answered_not_interested', 'whatsapp_replied_not_interested', 'wrong_number']
+    const terminalOutcomes = ['answered_not_interested', 'whatsapp_replied_not_interested', 'wrong_number', 'unqualified_other']
 
     if (terminalOutcomes.includes(outcome.value)) {
       // Auto-save for terminal outcomes - no follow-up tasks needed

@@ -15,8 +15,10 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   try {
     const roleCheck = await requireRole("admin")
-    if (!roleCheck.authorized) {
-      // Also allow recruiters for basic profile edits
+    const isAdmin = roleCheck.authorized
+    
+    if (!isAdmin) {
+      // Also allow recruiters for basic profile edits (but not role changes)
       const recruiterCheck = await requireRole("recruiter")
       if (!recruiterCheck.authorized) {
         return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 })
@@ -24,12 +26,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { user_id, full_name, phone_number, country_of_origin } = body
+    const { user_id, full_name, phone_number, country_of_origin, role } = body
 
     if (!user_id) {
       return NextResponse.json(
         { success: false, error: "user_id is required" },
         { status: 400 }
+      )
+    }
+
+    // Only admins can change roles
+    if (role && !isAdmin) {
+      return NextResponse.json(
+        { success: false, error: "Only admins can change user roles" },
+        { status: 403 }
       )
     }
 
@@ -92,12 +102,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Also update user_metadata in auth
-    await supabaseAdmin.auth.admin.updateUserById(user_id, {
-      user_metadata: {
-        full_name: full_name,
-      },
+    // Build user_metadata update object
+    const metadataUpdate: Record<string, any> = {
+      full_name: full_name,
+    }
+
+    // Add role to metadata if provided (admin only)
+    if (role && isAdmin) {
+      metadataUpdate.role = role
+    }
+
+    // Update user_metadata in auth
+    const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+      user_metadata: metadataUpdate,
     })
+
+    if (authUpdateError) {
+      console.error("[update-user-profile] Auth update error:", authUpdateError)
+      return NextResponse.json(
+        { success: false, error: "Failed to update user auth data" },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

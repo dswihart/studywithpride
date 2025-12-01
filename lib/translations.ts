@@ -232,7 +232,9 @@ export const translations = {
         interested: 'Interested',
         qualified: 'Qualified',
         converted: 'Converted',
-        unqualified: 'Unqualified'
+        unqualified: 'Unqualified',
+        notinterested: 'Not Interested',
+        wrongnumber: 'Wrong Number'
       },
       qualities: {
         high: 'High',
@@ -517,7 +519,9 @@ export const translations = {
         interested: 'Interesado',
         qualified: 'Calificado',
         converted: 'Convertido',
-        unqualified: 'No calificado'
+        unqualified: 'No calificado',
+        notinterested: 'No interesado',
+        wrongnumber: 'Número equivocado'
       },
       qualities: {
         high: 'Alta',
@@ -801,7 +805,9 @@ export const translations = {
         interested: 'Interessado',
         qualified: 'Qualificado',
         converted: 'Convertido',
-        unqualified: 'Não qualificado'
+        unqualified: 'Não qualificado',
+        notinterested: 'Não interessado',
+        wrongnumber: 'Número errado'
       },
       qualities: {
         high: 'Alta',
