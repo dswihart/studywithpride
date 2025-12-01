@@ -230,17 +230,6 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
               </div>
             </div>
 
-            {/* Source Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Source</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Referral Source</label>
-                  <p className="text-gray-900 dark:text-white">{lead.referral_source || "N/A"}</p>
-                </div>
-              </div>
-            </div>
-
             {/* Dates */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dates</h3>

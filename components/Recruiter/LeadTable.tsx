@@ -532,6 +532,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     if (!quality) return t("recruiter.qualities.unscored")
 
     const map: Record<string, string> = {
+      high: "high",
+      medium: "medium",
+      low: "low",
       High: "high",
       Medium: "medium",
       Low: "low",
@@ -917,7 +920,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                   ))}
                   <td className="px-6 py-4 text-sm text-gray-500">
                     <div className="flex items-center gap-3">
-                      {lead.phone_valid && (
+                      {lead.phone && (
                         <button
                           onClick={(event) => {
                             event.stopPropagation()
