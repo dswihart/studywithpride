@@ -92,6 +92,7 @@ const STATUS_OPTIONS = [
   { value: "not_contacted", label: "Not Contacted", color: "bg-gray-500" },
   { value: "contacted", label: "Contacted", color: "bg-blue-500" },
   { value: "interested", label: "Interested", color: "bg-purple-500" },
+  { value: "qualified", label: "Qualified", color: "bg-green-500" },
   { value: "unqualified", label: "Unqualified", color: "bg-red-500" },
 ]
 
@@ -106,6 +107,25 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [createTask, setCreateTask] = useState(true)  // New state for task creation toggle
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
   const [referralDestination, setReferralDestination] = useState<string>("")
+  
+  // Step navigation (1: status, 2: checklist, 3: confirmation)
+  const [currentStep, setCurrentStep] = useState(1)
+  
+  // Readiness checklist states
+  const [hasFunds, setHasFunds] = useState(false)
+  const [meetsAgeRequirements, setMeetsAgeRequirements] = useState(false)
+  const [hasValidPassport, setHasValidPassport] = useState(false)
+  const [canObtainVisa, setCanObtainVisa] = useState(false)
+  const [canStartIntake, setCanStartIntake] = useState(false)
+  const [discussedWithFamily, setDiscussedWithFamily] = useState(false)
+  const [needsHousingSupport, setNeedsHousingSupport] = useState(false)
+  const [understandsWorkRules, setUnderstandsWorkRules] = useState(false)
+  const [hasRealisticExpectations, setHasRealisticExpectations] = useState(false)
+  const [intakePeriod, setIntakePeriod] = useState("")
+  
+  // Ready to proceed confirmation
+  const [readyToProceed, setReadyToProceed] = useState(false)
+  const [readinessComments, setReadinessComments] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -117,16 +137,11 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     setSelectedFollowUp(outcome.suggestedFollowUp)
     // Enable task creation for all follow-up actions
     setCreateTask(true)
+    // Go to step 2 (follow-up actions)
     setStep(2)
   }
 
   const handleSave = async () => {
-    // Validate referral destination if referral status selected
-    if (selectedStatus === "referral" && !referralDestination.trim()) {
-      setError("Please enter a referral destination")
-      return
-    }
-
     setSaving(true)
     setError("")
 
@@ -151,6 +166,18 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           outcome: outcomeOption?.label || selectedOutcome,
           notes: notes || null,
           follow_up_action: followUpLabel || null,
+          has_funds: hasFunds,
+          meets_age_requirements: meetsAgeRequirements,
+          has_valid_passport: hasValidPassport,
+          can_obtain_visa: canObtainVisa,
+          can_start_intake: canStartIntake,
+          discussed_with_family: discussedWithFamily,
+          needs_housing_support: needsHousingSupport,
+          understands_work_rules: understandsWorkRules,
+          has_realistic_expectations: hasRealisticExpectations,
+          ready_to_proceed: readyToProceed,
+          readiness_comments: readinessComments || null,
+          intake_period: intakePeriod || null,
         }),
       })
 
@@ -159,15 +186,23 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
         throw new Error(logError.error || "Failed to save contact log")
       }
 
-      // 2. Update the lead status (without modifying notes)
+      // 2. Determine final status - if ready to proceed, auto-upgrade to qualified
+      let finalStatus = selectedStatus
+      if (readyToProceed && selectedStatus !== "referral") {
+        finalStatus = "qualified"
+      } else if (selectedStatus === "referral") {
+        finalStatus = "archived_referral"
+      }
+
+      // Update the lead status (without modifying notes)
       const response = await fetch("/api/recruiter/leads-write", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: lead.id,
-          contact_status: selectedStatus === "referral" ? "archived_referral" : selectedStatus,
+          contact_status: finalStatus,
           last_contact_date: new Date().toISOString(),
-          recruit_priority: recruitPriority,
+          recruit_priority: readyToProceed ? 5 : recruitPriority, // Auto set to 5 stars if ready to proceed
           ...(selectedStatus === "referral" && referralDestination ? { referral_source: referralDestination } : {}),
         }),
       })
@@ -175,6 +210,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
       const result = await response.json()
 
       if (result.success) {
+        const leadName = lead.prospect_name || lead.prospect_email || 'Unknown'
+
         // Create follow-up task if enabled and there's a follow-up action
         if (createTask && selectedFollowUp && onCreateTask) {
           let taskDays = 0
@@ -192,7 +229,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             taskType = followUpData?.taskType ?? 'call'
           }
 
-          const leadName = lead.prospect_name || lead.prospect_email || 'Unknown'
           onCreateTask({
             lead_id: lead.id,
             lead_name: leadName,
@@ -200,6 +236,18 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             task_type: taskType,
             priority: selectedStatus === 'interested' ? 'high' : 'medium',
             due_days: taskDays
+          })
+        }
+
+        // Auto-create application task if ready to proceed
+        if (readyToProceed && onCreateTask) {
+          onCreateTask({
+            lead_id: lead.id,
+            lead_name: leadName,
+            title: `Send application - ${leadName}`,
+            task_type: 'application',
+            priority: 'high',
+            due_days: 0
           })
         }
 
@@ -271,74 +319,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             </div>
           )}
 
-          {/* Step 2: Confirm Status */}
+          {/* Step 2: Follow-up & Notes */}
           {step === 2 && (
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                Update lead status to:
-              </h3>
-              <div className="space-y-2 mb-4">
-                {STATUS_OPTIONS.map((status) => (
-                  <button
-                    key={status.value}
-                    onClick={() => setSelectedStatus(status.value)}
-                    className={`w-full p-3 text-left rounded-lg border-2 transition flex items-center gap-3 ${
-                      selectedStatus === status.value
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    <span className={`w-3 h-3 rounded-full ${status.color}`} />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      {status.label}
-                    </span>
-                    {selectedStatus === status.value && (
-                      <svg className="w-5 h-5 text-blue-500 ml-auto" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-
-              {/* Referral Destination Input - shown when referral status selected */}
-              {selectedStatus === "referral" && (
-                <div className="mt-4 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800">
-                  <label className="block text-sm font-medium text-pink-700 dark:text-pink-300 mb-2">
-                    Referral Destination <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={referralDestination}
-                    onChange={(e) => setReferralDestination(e.target.value)}
-                    placeholder="e.g., Partner School Name, Agency, etc."
-                    className="w-full px-3 py-2 border border-pink-300 dark:border-pink-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                    required
-                  />
-                  <p className="mt-1 text-xs text-pink-600 dark:text-pink-400">
-                    Where is this lead being referred to?
-                  </p>
-                </div>
-              )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setStep(1)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Follow-up & Notes */}
-          {step === 3 && (
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                 What's the next action?
@@ -509,6 +491,121 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
               </div>
 
               <div className="flex gap-2">
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                >
+                  Next: Readiness & Save
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Lead Readiness Checklist + Confirmation + Save */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Lead Readiness Checklist</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Optional - Check all that apply</p>
+              </div>
+
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={hasFunds} onChange={(e) => setHasFunds(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead has funds to study</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={meetsAgeRequirements} onChange={(e) => setMeetsAgeRequirements(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead meets minimum age requirements</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead has a valid passport</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={canObtainVisa} onChange={(e) => setCanObtainVisa(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead has or can obtain a student visa</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={canStartIntake} onChange={(e) => setCanStartIntake(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead can start in upcoming intake</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={discussedWithFamily} onChange={(e) => setDiscussedWithFamily(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead has discussed with family/support network</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={needsHousingSupport} onChange={(e) => setNeedsHousingSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead needs housing support</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={understandsWorkRules} onChange={(e) => setUnderstandsWorkRules(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead understands work-while-studying rules</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={hasRealisticExpectations} onChange={(e) => setHasRealisticExpectations(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead has realistic expectations about costs/timelines</span>
+                </label>
+
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Intake Period</label>
+                  <select
+                    value={intakePeriod}
+                    onChange={(e) => setIntakePeriod(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Select intake...</option>
+                    <option value="february">February</option>
+                    <option value="may">May</option>
+                    <option value="october">October</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Ready to Proceed Confirmation */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={readyToProceed}
+                    onChange={(e) => setReadyToProceed(e.target.checked)}
+                    className="w-5 h-5 mt-0.5 rounded text-blue-600"
+                  />
+                  <div>
+                    <span className="font-medium text-blue-800 dark:text-blue-200">Lead is ready to proceed to the next application stage</span>
+                    <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">Auto-upgrades to qualified status with application task</p>
+                  </div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Additional Comments (optional)
+                </label>
+                <textarea
+                  value={readinessComments}
+                  onChange={(e) => setReadinessComments(e.target.value)}
+                  placeholder="Any additional context about this lead's readiness..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
                 <button
                   onClick={() => setStep(2)}
                   disabled={saving}
