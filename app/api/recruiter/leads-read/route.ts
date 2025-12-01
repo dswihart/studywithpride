@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     
     const supabase = await createClient()
-    let query = supabase.from('leads').select('*', { count: 'exact' })
+    let query = supabase.from('leads').select('*', { count: 'exact' }).neq('contact_status', 'archived_referral')
     
     // Search filter - check name, email, or phone
     if (search && search.trim()) {
