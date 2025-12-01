@@ -251,6 +251,29 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           })
         }
 
+        // Trigger Lead-to-Student conversion if ready to proceed
+        if (readyToProceed) {
+          try {
+            const conversionResponse = await fetch("/api/recruiter/convert-to-student", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                lead_id: lead.id,
+                intake_period: intakePeriod || null,
+                readiness_comments: readinessComments || null
+              }),
+            })
+            const conversionResult = await conversionResponse.json()
+            if (!conversionResult.success) {
+              console.warn("Student conversion warning:", conversionResult.error)
+              // Don't fail the whole operation - log was saved successfully
+            }
+          } catch (convErr) {
+            console.warn("Student conversion failed:", convErr)
+            // Don't fail the whole operation - log was saved successfully
+          }
+        }
+
         onSuccess()
         onClose()
       } else {

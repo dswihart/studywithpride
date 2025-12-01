@@ -6,7 +6,7 @@
 "use client"
 
 import { useLanguage } from '@/components/LanguageContext'
-import { UsersIcon, CheckCircleIcon, PhoneIcon, StarIcon, ArrowTrendingUpIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { UsersIcon, ArrowTrendingUpIcon, ClockIcon } from '@heroicons/react/24/outline'
 
 interface Lead {
   id: string
@@ -31,31 +31,26 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
 
   // Basic metrics
   const totalLeads = leads.length
-  // Funnel stages - Interested/Qualified based on star rating (recruit_priority)
+
+  // Funnel stages - Based on contact_status
   const funnel = {
-    not_contacted: leads.filter(l => l.contact_status === 'not_contacted' && !l.referral_source).length,
-    contacted: leads.filter(l => l.contact_status === 'contacted' || (l.contact_status === 'not_contacted' && l.referral_source)).length,
-    interested: leads.filter(l => (l.recruit_priority ?? 0) >= 3 && (l.recruit_priority ?? 0) < 4).length,
-    qualified: leads.filter(l => (l.recruit_priority ?? 0) >= 4).length,
+    not_contacted: leads.filter(l => l.contact_status === 'not_contacted').length,
+    contacted: leads.filter(l => l.contact_status === 'contacted').length,
+    interested: leads.filter(l => l.contact_status === 'interested').length,
+    qualified: leads.filter(l => l.contact_status === 'qualified').length,
+    converted: leads.filter(l => l.contact_status === 'converted').length,
   }
 
   // Lead quality distribution (case-insensitive)
   const qualityDist = {
     high: leads.filter(l => l.lead_quality?.toLowerCase() === 'high').length,
     medium: leads.filter(l => l.lead_quality?.toLowerCase() === 'medium').length,
-    low: leads.filter(l => l.lead_quality?.toLowerCase() === 'low' || l.lead_quality?.toLowerCase() === 'very low').length,
+    low: leads.filter(l => l.lead_quality?.toLowerCase() === 'low').length,
   }
 
   // Leads by country
   const leadsByCountry = leads.reduce((acc, lead) => {
     acc[lead.country] = (acc[lead.country] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  // Leads by referral source
-  const leadsBySource = leads.reduce((acc, lead) => {
-    const source = lead.referral_source || 'Unknown'
-    acc[source] = (acc[source] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
@@ -65,7 +60,6 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
   const recentLeads = leads.filter(l => new Date(l.created_at) > weekAgo).length
   const recentContacted = leads.filter(l => l.last_contact_date && new Date(l.last_contact_date) > weekAgo).length
 
-  // Conversion rate
   // Average lead score
   const leadsWithScore = leads.filter(l => l.lead_score !== null && l.lead_score !== undefined)
   const avgLeadScore = leadsWithScore.length > 0
@@ -87,12 +81,6 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
             </div>
           </div>
         </div>
-
-        
-
-        
-
-        
 
         <div className="rounded-lg bg-white dark:bg-gray-800 p-4 shadow-md">
           <div className="flex items-center justify-between">
@@ -138,7 +126,8 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
               { label: 'Contacted', value: funnel.contacted, color: 'bg-blue-500' },
               { label: 'Interested', value: funnel.interested, color: 'bg-yellow-500' },
               { label: 'Qualified', value: funnel.qualified, color: 'bg-purple-500' },
-              ].map(stage => (
+              { label: 'Converted', value: funnel.converted, color: 'bg-green-500' },
+            ].map(stage => (
               <div key={stage.label} className="flex items-center gap-3">
                 <div className="w-28 text-sm text-gray-600 dark:text-gray-400">{stage.label}</div>
                 <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -163,19 +152,17 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{qualityDist.high}</div>
-              <div className="text-xs text-green-700 dark:text-green-400">High Quality</div>
+              <div className="text-xs text-green-700 dark:text-green-400">High (70+)</div>
             </div>
             <div className="flex-1 text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <div className="text-2xl font-bold text-yellow-600">{qualityDist.medium}</div>
-              <div className="text-xs text-yellow-700 dark:text-yellow-400">Medium</div>
+              <div className="text-xs text-yellow-700 dark:text-yellow-400">Medium (45-69)</div>
             </div>
             <div className="flex-1 text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <div className="text-2xl font-bold text-red-600">{qualityDist.low}</div>
-              <div className="text-xs text-red-700 dark:text-red-400">Low Quality</div>
+              <div className="text-xs text-red-700 dark:text-red-400">Low (&lt;45)</div>
             </div>
           </div>
-
-
         </div>
       </div>
 
