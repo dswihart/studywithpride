@@ -131,10 +131,54 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
   // Additional fields for WhatsApp reply details
 
-  const handleOutcomeSelect = (outcome: ContactOutcomeOption) => {
+  const handleOutcomeSelect = async (outcome: ContactOutcomeOption) => {
     setSelectedOutcome(outcome.value)
     setSelectedStatus(outcome.suggestedStatus)
     setSelectedFollowUp(outcome.suggestedFollowUp)
+
+    // Terminal outcomes that complete immediately (no follow-up needed)
+    const terminalOutcomes = ['answered_not_interested', 'whatsapp_replied_not_interested', 'wrong_number']
+
+    if (terminalOutcomes.includes(outcome.value)) {
+      // Auto-save for terminal outcomes - no follow-up tasks needed
+      setCreateTask(false)
+      setSaving(true)
+      setError("")
+
+      try {
+        // 1. Log the contact
+        await fetch("/api/recruiter/contact-log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lead_id: lead.id,
+            contact_type: "call",
+            outcome: outcome.label,
+            notes: null,
+            follow_up_action: null,
+          }),
+        })
+
+        // 2. Update lead status to unqualified
+        await fetch("/api/recruiter/leads-write", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: lead.id,
+            contact_status: outcome.suggestedStatus,
+            last_contact_date: new Date().toISOString(),
+          }),
+        })
+
+        onSuccess()
+        onClose()
+      } catch (err) {
+        setError("Failed to save. Please try again.")
+        setSaving(false)
+      }
+      return
+    }
+
     // Enable task creation for all follow-up actions
     setCreateTask(true)
     // Go to step 2 (follow-up actions)
@@ -288,7 +332,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
           <div className="flex items-center justify-between">
@@ -312,7 +356,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 flex-1 overflow-y-auto">
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
               {error}
