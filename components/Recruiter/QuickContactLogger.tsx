@@ -165,7 +165,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: lead.id,
-          contact_status: selectedStatus,
+          contact_status: selectedStatus === "referral" ? "archived_referral" : selectedStatus,
           last_contact_date: new Date().toISOString(),
           recruit_priority: recruitPriority,
           ...(selectedStatus === "referral" && referralDestination ? { referral_source: referralDestination } : {}),

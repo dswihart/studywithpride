@@ -31,14 +31,12 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
 
   // Basic metrics
   const totalLeads = leads.length
-  const totalContacted = leads.filter(lead => lead.contact_status !== 'not_contacted' || lead.referral_source).length
-  // Funnel stages
+  // Funnel stages - Interested/Qualified based on star rating (recruit_priority)
   const funnel = {
     not_contacted: leads.filter(l => l.contact_status === 'not_contacted' && !l.referral_source).length,
     contacted: leads.filter(l => l.contact_status === 'contacted' || (l.contact_status === 'not_contacted' && l.referral_source)).length,
-    interested: leads.filter(l => l.contact_status === 'interested').length,
-    qualified: leads.filter(l => l.contact_status === 'qualified').length,
-    unqualified: leads.filter(l => l.contact_status === 'unqualified').length,
+    interested: leads.filter(l => (l.recruit_priority ?? 0) >= 3 && (l.recruit_priority ?? 0) < 4).length,
+    qualified: leads.filter(l => (l.recruit_priority ?? 0) >= 4).length,
   }
 
   // Lead quality distribution (case-insensitive)
@@ -90,20 +88,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
           </div>
         </div>
 
-        <div className="rounded-lg bg-white dark:bg-gray-800 p-4 shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('recruiter.metrics.totalContacted')}</p>
-              <p className="text-2xl font-bold text-green-600">{totalContacted}</p>
-            </div>
-            <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-2 text-green-600 dark:text-green-400">
-              <CheckCircleIcon className="h-5 w-5" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {totalLeads > 0 ? Math.round((totalContacted / totalLeads) * 100) : 0}% reached
-          </p>
-        </div>
+        
 
         
 
@@ -153,8 +138,7 @@ export default function LeadMetrics({ leads }: LeadMetricsProps) {
               { label: 'Contacted', value: funnel.contacted, color: 'bg-blue-500' },
               { label: 'Interested', value: funnel.interested, color: 'bg-yellow-500' },
               { label: 'Qualified', value: funnel.qualified, color: 'bg-purple-500' },
-              { label: 'Unqualified', value: funnel.unqualified, color: 'bg-red-400' },
-            ].map(stage => (
+              ].map(stage => (
               <div key={stage.label} className="flex items-center gap-3">
                 <div className="w-28 text-sm text-gray-600 dark:text-gray-400">{stage.label}</div>
                 <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
