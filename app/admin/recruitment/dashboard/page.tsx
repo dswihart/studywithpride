@@ -25,6 +25,7 @@ import AddTaskModal from '@/components/Recruiter/AddTaskModal'
 import AddContactLogModal from '@/components/Recruiter/AddContactLogModal'
 import UpcomingTasksWidget from '@/components/Recruiter/UpcomingTasksWidget'
 import UserManagementPanel from '@/components/Recruiter/UserManagementPanel'
+import TemplatesLibrary from '@/components/Recruiter/TemplatesLibrary'
 import { useTheme } from '@/components/ThemeProvider'
 import * as XLSX from 'xlsx'
 
@@ -71,7 +72,7 @@ interface Task {
   } | null
 }
 
-type DashboardTab = 'leads' | 'tasks' | 'activity' | 'students' 
+type DashboardTab = 'leads' | 'tasks' | 'activity' | 'students' | 'templates' 
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -115,7 +116,7 @@ function RecruiterDashboardContent() {
     const leadId = searchParams.get('leadId')
     const tab = searchParams.get('tab') as DashboardTab | null
 
-    if (tab && ['leads', 'tasks', 'activity', 'students'].includes(tab)) {
+    if (tab && ['leads', 'tasks', 'activity', 'students', 'templates'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -573,6 +574,7 @@ function RecruiterDashboardContent() {
                 Users
               </span>
             </button>
+            <button              onClick={() => setActiveTab('templates')}              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${                activeTab === 'templates'                  ? 'border-teal-500 text-teal-600 dark:text-teal-400'                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'              }`}            >              <span className="flex items-center gap-2">                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />                </svg>                Templates              </span>            </button>
 
           </nav>
         </div>
@@ -736,6 +738,7 @@ function RecruiterDashboardContent() {
             }}
           />
         )}
+        {activeTab === 'templates' && (          <TemplatesLibrary            isAdmin={true}            selectedLead={viewingLead}            onSendComplete={() => {}}          />        )}
 
         {/* Modals */}
         <ViewLeadModal
