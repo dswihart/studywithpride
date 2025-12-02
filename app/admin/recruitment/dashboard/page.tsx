@@ -728,8 +728,13 @@ function RecruiterDashboardContent() {
                             alert('This lead has been archived')
                             return
                           }
-                          setHighlightedLeadId(activity.lead_id)
-                          setActiveTab('leads')
+                          const lead = leads.find(l => l.id === activity.lead_id)
+                          if (lead) {
+                            handleViewLead(lead)
+                          } else {
+                            setHighlightedLeadId(activity.lead_id)
+                            setActiveTab('leads')
+                          }
                         }
                       }}
                     >

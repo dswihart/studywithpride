@@ -45,6 +45,8 @@ type TabType = 'single' | 'import'
 interface CsvRow {
   data: {
     name: string
+    first_name: string
+    last_name: string
     email: string
     phone: string
     campaign: string
@@ -258,10 +260,10 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'prospect_name': 'name',
       'full_name': 'name',
       'nombre': 'name',
-      'first_name': 'name',
-      'firstname': 'name',
-      'last_name': 'name',
-      'lastname': 'name',
+      'first_name': 'first_name',
+      'firstname': 'first_name',
+      'last_name': 'last_name',
+      'lastname': 'last_name',
       'contact_name': 'name',
       'contactname': 'name',
       'lead_name': 'name',
@@ -444,13 +446,19 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
     // Get existing leads to check for duplicates
     const supabase = createClient()
-    const { data: existingLeads } = await supabase
+    const { data: existingLeads, error: queryError } = await supabase
       .from("leads")
       .select("prospect_email, phone")
+
+    if (queryError) {
+      console.error("Error fetching existing leads:", queryError)
+    }
+    console.log("Duplicate check: Found", existingLeads?.length || 0, "existing leads in database")
 
     const existingEmails = new Set(
       existingLeads?.map(l => l.prospect_email?.toLowerCase()).filter(Boolean) || []
     )
+    console.log("Duplicate check: Found", existingEmails.size, "unique emails in database")
 
     // Normalize phone numbers for comparison (remove all non-digits)
     const normalizePhoneXlsx = (phone: string | null | undefined): string => {
@@ -465,6 +473,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     for (const row of jsonRows) {
       const rowData: any = {
         name: "",
+        first_name: "",
+        last_name: "",
         email: "",
         phone: "",
         campaign_name: "",
@@ -489,6 +499,14 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         if (mappedKey && value !== null && value !== undefined) {
           // Convert value to string and clean up any embedded newlines/carriage returns
           rowData[mappedKey] = String(value).replace(/\r/g, " ").replace(/\n/g, " ").trim()
+        }
+      }
+
+      // Combine first_name and last_name if name is empty
+      if (!rowData.name || rowData.name.trim().length === 0) {
+        const combinedName = [rowData.first_name, rowData.last_name].filter(Boolean).join(" ").trim()
+        if (combinedName) {
+          rowData.name = combinedName
         }
       }
 
@@ -553,13 +571,19 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
     // Get existing leads to check for duplicates
     const supabase = createClient()
-    const { data: existingLeads } = await supabase
+    const { data: existingLeads, error: queryError } = await supabase
       .from('leads')
       .select('prospect_email, phone')
+
+    if (queryError) {
+      console.error("Error fetching existing leads:", queryError)
+    }
+    console.log("Duplicate check (CSV): Found", existingLeads?.length || 0, "existing leads in database")
 
     const existingEmails = new Set(
       existingLeads?.map(l => l.prospect_email?.toLowerCase()).filter(Boolean) || []
     )
+    console.log("Duplicate check (CSV): Found", existingEmails.size, "unique emails in database")
 
     // Normalize phone numbers for comparison (remove all non-digits)
     const normalizePhone = (phone: string | null | undefined): string => {
@@ -575,6 +599,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       const values = parseCSVLine(lines[i])
       const rowData: any = {
         name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         phone: '',
         campaign_name: '',
@@ -599,6 +625,14 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           rowData[header] = values[index]
         }
       })
+
+      // Combine first_name and last_name if name is empty
+      if (!rowData.name || rowData.name.trim().length === 0) {
+        const combinedName = [rowData.first_name, rowData.last_name].filter(Boolean).join(' ').trim()
+        if (combinedName) {
+          rowData.name = combinedName
+        }
+      }
 
       const errors: string[] = []
       const warnings: string[] = []
@@ -831,6 +865,11 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
           }
 
           if (existingLead) {
+            // If disableDuplicateFlag is checked, skip duplicates entirely
+            if (disableDuplicateFlag && existingLead.contact_status !== 'archived_referral') {
+              continue  // Skip this duplicate, don't update it
+            }
+
             // Build update object only for fields that are empty in existing but have values in import
             const updates: Record<string, any> = {}
 
@@ -1285,7 +1324,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Don't mark duplicates as duplicate (updates data but skips duplicate flag)
+                  Skip duplicates (only import new leads, ignore existing ones)
                 </span>
               </label>
 
