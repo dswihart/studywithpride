@@ -726,6 +726,10 @@ function RecruiterDashboardContent() {
                       className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition"
                       onClick={() => {
                         if (activity.lead_id) {
+                          if (activity.lead_status === 'archived_referral') {
+                            alert('This lead has been archived')
+                            return
+                          }
                           setHighlightedLeadId(activity.lead_id)
                           setActiveTab('leads')
                         }
