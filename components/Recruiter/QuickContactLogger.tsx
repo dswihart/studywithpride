@@ -61,13 +61,13 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   // Most common flow: No answer -> WhatsApp
   { value: "no_answer_whatsapp_sent", label: "No Answer + WhatsApp Sent", icon: "📵💬", suggestedStatus: "contacted", suggestedFollowUp: "call" },
   // WhatsApp reply outcomes
-  { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "interested", suggestedFollowUp: "call" },
-  { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call" },
+  { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "contacted", suggestedFollowUp: "call" },
+  { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "contacted", suggestedFollowUp: "call" },
   { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
   // Original outcomes
   { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "whatsapp" },
   { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "wrongnumber", suggestedFollowUp: "none" },
-  { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "interested", suggestedFollowUp: "email" },
+  { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "contacted", suggestedFollowUp: "email" },
   { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
   { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call" },
   { value: "answered_needs_info", label: "Call: Needs More Info", icon: "📞📋", suggestedStatus: "contacted", suggestedFollowUp: "email" },
@@ -266,7 +266,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             lead_name: leadName,
             title: taskTitle,
             task_type: taskType,
-            priority: selectedStatus === 'interested' ? 'high' : 'medium',
+            priority: selectedStatus === 'contacted' ? 'high' : 'medium',
             due_days: taskDays
           })
         }

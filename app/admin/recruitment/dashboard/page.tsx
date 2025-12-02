@@ -765,7 +765,7 @@ function RecruiterDashboardContent() {
                         </div>
                         <div className="text-right ml-4 flex-shrink-0">
                           <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                            activity.lead_status === 'interested' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
+                            activity.lead_status === 'contacted' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
                             activity.lead_status === 'qualified' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
                             activity.lead_status === 'converted' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                             activity.lead_status === 'contacted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :

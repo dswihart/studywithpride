@@ -44,10 +44,10 @@ interface OutcomeOption {
 const QUICK_OUTCOMES: OutcomeOption[] = [
   { value: "no_answer", label: "No Answer", icon: "📵", suggestedStatus: "contacted", taskType: "call", taskDays: 1 },
   { value: "voicemail", label: "Voicemail", icon: "📬", suggestedStatus: "contacted", taskType: "call", taskDays: 3 },
-  { value: "answered_interested", label: "Interested", icon: "🎯", suggestedStatus: "interested", taskType: "email", taskDays: 0 },
+  { value: "answered_interested", label: "Interested", icon: "🎯", suggestedStatus: "contacted", taskType: "email", taskDays: 0 },
   { value: "answered_callback", label: "Callback", icon: "🔄", suggestedStatus: "contacted", taskType: "call", taskDays: 1 },
   { value: "message_sent", label: "Messaged", icon: "💬", suggestedStatus: "contacted", taskType: "follow_up", taskDays: 2 },
-  { value: "message_replied", label: "Replied", icon: "✉️", suggestedStatus: "interested", taskType: "call", taskDays: 0 },
+  { value: "message_replied", label: "Replied", icon: "✉️", suggestedStatus: "contacted", taskType: "call", taskDays: 0 },
 ]
 
 export default function QuickContact({ leads, onContactLogged, onTaskCreated }: QuickContactProps) {
@@ -172,7 +172,7 @@ export default function QuickContact({ leads, onContactLogged, onTaskCreated }: 
               lead_id: selectedLead.id,
               title: `Follow up: ${leadName} (${outcomeOption.label})`,
               task_type: outcomeOption.taskType,
-              priority: outcomeOption.suggestedStatus === 'interested' ? 'high' : 'medium',
+              priority: outcomeOption.suggestedStatus === 'contacted' ? 'high' : 'medium',
               due_date: dueDate.toISOString()
             })
           })

@@ -113,7 +113,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     { value: 'not_contacted', label: 'Not Contacted' },
     { value: 'referral', label: 'Referral' },
     { value: 'contacted', label: 'Contacted' },
-    { value: 'interested', label: 'Interested' },
     { value: 'unqualified', label: 'Unqualified' }
   ]
 

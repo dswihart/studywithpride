@@ -51,7 +51,6 @@ const CONTACT_STATUSES = [
   { value: "not_contacted", label: "not_contacted" },
   { value: "referral", label: "referral" },
   { value: "contacted", label: "contacted" },
-  { value: "interested", label: "interested" },
   { value: "unqualified", label: "unqualified" },
   { value: "notinterested", label: "notinterested" },
   { value: "wrongnumber", label: "wrongnumber" },
@@ -841,10 +840,8 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
               className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white focus:border-transparent focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Timelines</option>
-              <option value="3">3 months</option>
               <option value="6">6 months</option>
               <option value="12">12 months</option>
-              <option value="24">24 months</option>
             </select>
           </div>
 
