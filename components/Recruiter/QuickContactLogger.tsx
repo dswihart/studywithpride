@@ -44,9 +44,10 @@ type ContactOutcome =
   | "unqualified_other"
 
 type FollowUpAction =
-  | "send_info"
-  | "send_application"
-  | "call_back"
+  | "call"
+  | "whatsapp"
+  | "email"
+  | "none"
 
 interface ContactOutcomeOption {
   value: ContactOutcome
@@ -58,29 +59,30 @@ interface ContactOutcomeOption {
 
 const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   // Most common flow: No answer -> WhatsApp
-  { value: "no_answer_whatsapp_sent", label: "No Answer + WhatsApp Sent", icon: "📵💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
+  { value: "no_answer_whatsapp_sent", label: "No Answer + WhatsApp Sent", icon: "📵💬", suggestedStatus: "contacted", suggestedFollowUp: "call" },
   // WhatsApp reply outcomes
-  { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
-  { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call_back" },
-  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "notinterested", suggestedFollowUp: "send_info" },
+  { value: "whatsapp_replied_interested", label: "WhatsApp Reply: Interested!", icon: "💬🎯", suggestedStatus: "interested", suggestedFollowUp: "call" },
+  { value: "whatsapp_replied_info", label: "WhatsApp Reply: Shared Info", icon: "💬📋", suggestedStatus: "interested", suggestedFollowUp: "call" },
+  { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
   // Original outcomes
-  { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
-  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "wrongnumber", suggestedFollowUp: "send_info" },
-  { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "interested", suggestedFollowUp: "send_info" },
-  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "notinterested", suggestedFollowUp: "send_info" },
-  { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
-  { value: "answered_needs_info", label: "Call: Needs More Info", icon: "📞📋", suggestedStatus: "contacted", suggestedFollowUp: "send_info" },
-  { value: "message_sent", label: "WhatsApp Sent (only)", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call_back" },
-  { value: "unqualified_other", label: "Unqualified - Other", icon: "🚫", suggestedStatus: "unqualified", suggestedFollowUp: "send_info" },
+  { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "whatsapp" },
+  { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "wrongnumber", suggestedFollowUp: "none" },
+  { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "interested", suggestedFollowUp: "email" },
+  { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
+  { value: "answered_callback", label: "Call: Callback Requested", icon: "📞🔄", suggestedStatus: "contacted", suggestedFollowUp: "call" },
+  { value: "answered_needs_info", label: "Call: Needs More Info", icon: "📞📋", suggestedStatus: "contacted", suggestedFollowUp: "email" },
+  { value: "message_sent", label: "WhatsApp Sent (only)", icon: "💬", suggestedStatus: "contacted", suggestedFollowUp: "call" },
+  { value: "unqualified_other", label: "Unqualified - Other", icon: "🚫", suggestedStatus: "unqualified", suggestedFollowUp: "none" },
 ]
 
-const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; days: number | null; taskType: string }[] = [
-  { value: "send_info", label: "Send program info", days: 0, taskType: "email" },
-  { value: "send_application", label: "Send application link", days: 0, taskType: "email" },
-  { value: "call_back", label: "Call back", days: 1, taskType: "call" },
+const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; icon: string; taskType: string }[] = [
+  { value: "call", label: "Call", icon: "📞", taskType: "call" },
+  { value: "whatsapp", label: "WhatsApp", icon: "💬", taskType: "whatsapp" },
+  { value: "email", label: "Email", icon: "📧", taskType: "email" },
+  { value: "none", label: "None", icon: "⏸️", taskType: "none" },
 ]
 
-const CALLBACK_TIMES = [
+const FOLLOW_UP_TIMES = [
   { value: "today", label: "Today", days: 0 },
   { value: "tomorrow", label: "Tomorrow", days: 1 },
   { value: "3_days", label: "In 3 days", days: 3 },
@@ -104,7 +106,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [selectedOutcome, setSelectedOutcome] = useState<ContactOutcome | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
-  const [callbackTime, setCallbackTime] = useState<string>("tomorrow")
+  const [followUpTime, setFollowUpTime] = useState<string>("tomorrow")
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(true)  // New state for task creation toggle
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
@@ -117,12 +119,9 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [hasFunds, setHasFunds] = useState(false)
   const [meetsAgeRequirements, setMeetsAgeRequirements] = useState(false)
   const [hasValidPassport, setHasValidPassport] = useState(false)
-  const [canObtainVisa, setCanObtainVisa] = useState(false)
-  const [canStartIntake, setCanStartIntake] = useState(false)
+  const [hasEducationDocs, setHasEducationDocs] = useState(false)
   const [discussedWithFamily, setDiscussedWithFamily] = useState(false)
   const [needsHousingSupport, setNeedsHousingSupport] = useState(false)
-  const [understandsWorkRules, setUnderstandsWorkRules] = useState(false)
-  const [hasRealisticExpectations, setHasRealisticExpectations] = useState(false)
   const [intakePeriod, setIntakePeriod] = useState("")
   
   // Ready to proceed confirmation
@@ -194,13 +193,12 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     try {
       const outcomeOption = CONTACT_OUTCOMES.find(o => o.value === selectedOutcome)
       const followUpOption = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
+      const timeOption = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
 
       // Build follow-up label
-      let followUpLabel = followUpOption?.label
-      if (selectedFollowUp === 'call_back') {
-        const timeOption = CALLBACK_TIMES.find(t => t.value === callbackTime)
-        followUpLabel = `Call back ${timeOption?.label.toLowerCase()}`
-      }
+      let followUpLabel = selectedFollowUp === 'none'
+        ? 'No follow-up'
+        : `${followUpOption?.label} - ${timeOption?.label}`
 
       // 1. Save to contact_history table
       const contactLogResponse = await fetch("/api/recruiter/contact-log", {
@@ -215,12 +213,9 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           has_funds: hasFunds,
           meets_age_requirements: meetsAgeRequirements,
           has_valid_passport: hasValidPassport,
-          can_obtain_visa: canObtainVisa,
-          can_start_intake: canStartIntake,
+          has_education_docs: hasEducationDocs,
           discussed_with_family: discussedWithFamily,
           needs_housing_support: needsHousingSupport,
-          understands_work_rules: understandsWorkRules,
-          has_realistic_expectations: hasRealisticExpectations,
           ready_to_proceed: readyToProceed,
           readiness_comments: readinessComments || null,
           intake_period: intakePeriod || null,
@@ -258,27 +253,18 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
       if (result.success) {
         const leadName = lead.prospect_name || lead.prospect_email || 'Unknown'
 
-        // Create follow-up task if enabled and there's a follow-up action
-        if (createTask && selectedFollowUp && onCreateTask) {
-          let taskDays = 0
-          let taskTitle = ''
-          let taskType = 'call'
-
-          if (selectedFollowUp === 'call_back') {
-            const timeOption = CALLBACK_TIMES.find(t => t.value === callbackTime)
-            taskDays = timeOption?.days ?? 1
-            taskTitle = `Call back ${timeOption?.label.toLowerCase()} - `
-          } else {
-            const followUpData = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
-            taskDays = followUpData?.days ?? 0
-            taskTitle = `${followUpData?.label} - `
-            taskType = followUpData?.taskType ?? 'call'
-          }
+        // Create follow-up task if enabled and there's a follow-up action (not 'none')
+        if (createTask && selectedFollowUp && selectedFollowUp !== 'none' && onCreateTask) {
+          const followUpData = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
+          const timeData = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
+          const taskDays = timeData?.days ?? 1
+          const taskType = followUpData?.taskType ?? 'call'
+          const taskTitle = `${followUpData?.label} ${timeData?.label.toLowerCase()} - ${leadName}`
 
           onCreateTask({
             lead_id: lead.id,
             lead_name: leadName,
-            title: taskTitle + leadName,
+            title: taskTitle,
             task_type: taskType,
             priority: selectedStatus === 'interested' ? 'high' : 'medium',
             due_days: taskDays
@@ -394,94 +380,54 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                 What's the next action?
               </h3>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {FOLLOW_UP_ACTIONS.filter(a => a.value !== "call_back").map((action) => (
+
+              {/* Follow-up Action Type */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {FOLLOW_UP_ACTIONS.map((action) => (
                   <button
                     key={action.value}
                     onClick={() => {
                       setSelectedFollowUp(action.value)
-                      setCreateTask(true)
+                      setCreateTask(action.value !== 'none')
                     }}
-                    className={`p-2 text-left rounded-lg border-2 transition text-sm ${
+                    className={`p-3 text-center rounded-lg border-2 transition ${
                       selectedFollowUp === action.value
                         ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                         : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
                     }`}
                   >
-                    <span className="text-gray-700 dark:text-gray-300">{action.label}</span>
+                    <span className="text-2xl block mb-1">{action.icon}</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{action.label}</span>
                   </button>
                 ))}
               </div>
 
-              {/* Call back option with time selection */}
-              <div className="mb-4">
-                <button
-                  onClick={() => {
-                    setSelectedFollowUp("call_back")
-                    setCreateTask(true)
-                  }}
-                  className={`w-full p-3 text-left rounded-lg border-2 transition ${
-                    selectedFollowUp === "call_back"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="font-medium text-gray-700 dark:text-gray-300">📞 Call back</span>
-                </button>
-
-                {selectedFollowUp === "call_back" && (
-                  <div className="mt-2 ml-4 space-y-2">
-                    {CALLBACK_TIMES.map((time) => (
-                      <label key={time.value} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="callbackTime"
-                          value={time.value}
-                          checked={callbackTime === time.value}
-                          onChange={(e) => setCallbackTime(e.target.value)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{time.label}</span>
-                      </label>
+              {/* Timeline Selection - shown for all except 'none' */}
+              {selectedFollowUp && selectedFollowUp !== 'none' && (
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    When?
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {FOLLOW_UP_TIMES.map((time) => (
+                      <button
+                        key={time.value}
+                        onClick={() => setFollowUpTime(time.value)}
+                        className={`p-2 text-center rounded-lg border-2 transition text-sm ${
+                          followUpTime === time.value
+                            ? "border-blue-500 bg-blue-100 dark:bg-blue-900/30"
+                            : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <span className="text-gray-700 dark:text-gray-300">{time.label}</span>
+                      </button>
                     ))}
                   </div>
-                )}
-              </div>
-
-              {/* Recruit Priority Rating */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Rate this recruit (1-5 stars)
-                </label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRecruitPriority(recruitPriority === star ? null : star)}
-                      className={`p-2 text-3xl transition-transform hover:scale-110 ${
-                        recruitPriority && recruitPriority >= star
-                          ? "text-yellow-400"
-                          : "text-gray-300 dark:text-gray-600"
-                      }`}
-                    >
-                      ⭐
-                    </button>
-                  ))}
-                  {recruitPriority && (
-                    <span className="ml-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      {recruitPriority === 5 && "🔥 Hot lead!"}
-                      {recruitPriority === 4 && "Very interested"}
-                      {recruitPriority === 3 && "Good potential"}
-                      {recruitPriority === 2 && "Needs follow-up"}
-                      {recruitPriority === 1 && "Low priority"}
-                    </span>
-                  )}
                 </div>
-              </div>
+              )}
 
               {/* Create Task Toggle */}
-              {selectedFollowUp && onCreateTask && (
+              {selectedFollowUp && selectedFollowUp !== 'none' && onCreateTask && (
                 <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
@@ -501,9 +447,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                   </label>
                 </div>
               )}
-
-              {/* WhatsApp Reply Details Section */}
-              
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -539,18 +482,12 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Follow-up:</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {selectedFollowUp === "call_back"
-                        ? `Call back ${CALLBACK_TIMES.find(t => t.value === callbackTime)?.label.toLowerCase()}`
-                        : FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)?.label}
+                      {selectedFollowUp === 'none'
+                        ? 'No follow-up'
+                        : `${FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)?.label} - ${FOLLOW_UP_TIMES.find(t => t.value === followUpTime)?.label}`}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Priority:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {recruitPriority ? "⭐".repeat(recruitPriority) : "Not set"}
-                    </span>
-                  </div>
-                  {createTask && selectedFollowUp && onCreateTask && (
+                  {createTask && selectedFollowUp && selectedFollowUp !== 'none' && onCreateTask && (
                     <div className="flex justify-between text-green-600 dark:text-green-400">
                       <span>Task:</span>
                       <span className="font-medium">Will be created</span>
@@ -601,13 +538,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 </label>
 
                 <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={canObtainVisa} onChange={(e) => setCanObtainVisa(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead has or can obtain a student visa</span>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={canStartIntake} onChange={(e) => setCanStartIntake(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead can start in upcoming intake</span>
+                  <input type="checkbox" checked={hasEducationDocs} onChange={(e) => setHasEducationDocs(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Lead has documents proving education requirements</span>
                 </label>
 
                 <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -620,16 +552,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                   <span className="text-gray-700 dark:text-gray-300">Lead needs housing support</span>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={understandsWorkRules} onChange={(e) => setUnderstandsWorkRules(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead understands work-while-studying rules</span>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={hasRealisticExpectations} onChange={(e) => setHasRealisticExpectations(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead has realistic expectations about costs/timelines</span>
-                </label>
-
                 <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Intake Period</label>
                   <select
@@ -638,9 +560,12 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   >
                     <option value="">Select intake...</option>
-                    <option value="february">February</option>
-                    <option value="may">May</option>
-                    <option value="october">October</option>
+                    <option value="february_2025">February 2025</option>
+                    <option value="may_2025">May 2025</option>
+                    <option value="october_2025">October 2025</option>
+                    <option value="february_2026">February 2026</option>
+                    <option value="may_2026">May 2026</option>
+                    <option value="october_2026">October 2026</option>
                   </select>
                 </div>
               </div>

@@ -61,6 +61,7 @@ interface CsvRow {
     lead_quality: string | null
     barcelona_timeline: string | null
     created_time: string | null
+    intake: string | null
   }
   errors: string[]
   warnings: string[]
@@ -325,7 +326,24 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       'when_do_you_want_to_come_to_barcelona': 'barcelona_timeline',
       'when_do_you_want_to_come_to_barcelona?': 'barcelona_timeline',
       'timeline': 'barcelona_timeline',
-      'barcelona': 'barcelona_timeline'
+      'barcelona': 'barcelona_timeline',
+      // Intake field mappings
+      'intake': 'intake',
+      'starting': 'intake',
+      'starting_date': 'intake',
+      'startingdate': 'intake',
+      'start_date': 'intake',
+      'startdate': 'intake',
+      'starting...': 'intake',
+      'starting_...': 'intake',
+      'starting_.._': 'intake',
+      'start_year': 'intake',
+      'startyear': 'intake',
+      'enrollment_date': 'intake',
+      'enrollmentdate': 'intake',
+      'enrollment': 'intake',
+      'intake_date': 'intake',
+      'intakedate': 'intake'
     }
 
     return headerMap[normalized] || null
@@ -458,7 +476,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         lead_score: null,
         lead_quality: null,
         barcelona_timeline: null,
-        created_time: null
+        created_time: null,
+        intake: null
       }
 
       // Map values from JSON keys to our field names
@@ -567,7 +586,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
         lead_score: null,
         lead_quality: null,
         barcelona_timeline: null,
-        created_time: null
+        created_time: null,
+        intake: null
       }
 
       // Map values to fields
@@ -742,6 +762,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
             notes: row.data.notes || '',
             barcelona_timeline: parseBarcelonaTimeline(row.data.barcelona_timeline),
             created_time: row.data.created_time || null,
+            intake: row.data.intake || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -770,13 +791,41 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
       // Update duplicates with missing data
       if (duplicateLeads.length > 0) {
+        // Helper to normalize phone for comparison
+        const normalizePhoneForLookup = (phone: string | null | undefined): string => {
+          if (!phone) return ''
+          return phone.replace(/\D/g, '')
+        }
+
         for (const row of duplicateLeads) {
-          // Find existing lead by email
-          const { data: existingLead } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('prospect_email', row.data.email.toLowerCase())
-            .single()
+          // Find existing lead by email first, then by phone if not found
+          let existingLead = null
+
+          // Try email first
+          if (row.data.email) {
+            const { data: emailMatch } = await supabase
+              .from('leads')
+              .select('*')
+              .eq('prospect_email', row.data.email.toLowerCase())
+              .single()
+            existingLead = emailMatch
+          }
+
+          // If no email match, try phone
+          if (!existingLead && row.data.phone) {
+            const normalizedPhone = normalizePhoneForLookup(row.data.phone)
+            if (normalizedPhone.length >= 10) {
+              // Get all leads and find by normalized phone
+              const { data: allLeads } = await supabase
+                .from('leads')
+                .select('*')
+
+              existingLead = allLeads?.find(lead => {
+                const leadPhone = normalizePhoneForLookup(lead.phone)
+                return leadPhone.length >= 10 && leadPhone === normalizedPhone
+              }) || null
+            }
+          }
 
           if (existingLead) {
             // Build update object only for fields that are empty in existing but have values in import
@@ -806,6 +855,9 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
             }
             if (!existingLead.notes && row.data.notes) {
               updates.notes = row.data.notes
+            }
+            if (!existingLead.intake && row.data.intake) {
+              updates.intake = row.data.intake
             }
 
             // Calculate scores if not already present in existing lead
