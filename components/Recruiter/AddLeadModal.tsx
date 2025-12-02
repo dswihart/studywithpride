@@ -890,7 +890,6 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
             }
 
             // Mark as duplicate and update
-            // Always mark as duplicate since we found a matching lead during import
             updates.is_duplicate = true
             updates.duplicate_detected_at = new Date().toISOString()
             updates.updated_at = new Date().toISOString()
