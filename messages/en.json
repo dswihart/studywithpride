@@ -243,7 +243,7 @@
         "duplicate": "Duplicate",
         "barcelonaTimeline": "Barcelona Timeline",
         "intake": "Intake",
-        "createdTime": "Lead Clicked Time"
+        "createdTime": "Lead Clicked Date"
       },
       "title": "Lead Management",
       "filterByCountry": "Filter by Country",

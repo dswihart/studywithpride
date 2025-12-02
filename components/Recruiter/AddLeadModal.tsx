@@ -768,7 +768,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
       if (newLeads.length > 0) {
         const leadsToInsert = newLeads.map(row => {
           // Calculate lead scores if not provided in the file
-          const scoreData = calculateLeadScore(row.data.name, row.data.email, row.data.phone)
+          const scoreData = calculateLeadScore(row.data.name, row.data.email, row.data.phone, row.data.intake)
 
           // Detect country from phone if not provided or is 'Other'/'Unknown'
           let country = row.data.country || 'Other'
@@ -906,7 +906,8 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
             const scoreData = calculateLeadScore(
               existingLead.prospect_name,
               existingLead.prospect_email,
-              phoneToUse
+              phoneToUse,
+              existingLead.intake || row.data.intake
             )
 
             if (!existingLead.name_score) {

@@ -297,27 +297,107 @@ export function scoreRecency(): number {
 }
 
 /**
+ * Score intake proximity (max 20 bonus points)
+ * Awards higher points when target intake is closer
+ * Intake months: February (2), May (5), October (10)
+ */
+export function scoreIntakeProximity(intake: string | null | undefined): number {
+  if (!intake) return 0
+  
+  // Parse intake string to get target month
+  // Expected formats: "February 2025", "Feb 2025", "2025-02", etc.
+  const intakeLower = intake.toLowerCase()
+  let targetMonth: number | null = null
+  let targetYear: number | null = null
+  
+  // Try to extract month
+  if (intakeLower.includes('feb')) targetMonth = 2
+  else if (intakeLower.includes('may')) targetMonth = 5
+  else if (intakeLower.includes('oct')) targetMonth = 10
+  else {
+    // Try numeric format like "2025-02" or "02/2025"
+    const monthMatch = intake.match(/(\d{4})[-\/](\d{1,2})|(\d{1,2})[-\/](\d{4})/)
+    if (monthMatch) {
+      if (monthMatch[1] && monthMatch[2]) {
+        targetYear = parseInt(monthMatch[1])
+        targetMonth = parseInt(monthMatch[2])
+      } else if (monthMatch[3] && monthMatch[4]) {
+        targetMonth = parseInt(monthMatch[3])
+        targetYear = parseInt(monthMatch[4])
+      }
+    }
+  }
+  
+  // Try to extract year
+  const yearMatch = intake.match(/(20\d{2})/)
+  if (yearMatch && !targetYear) {
+    targetYear = parseInt(yearMatch[1])
+  }
+  
+  // If we couldn't parse the intake, return 0
+  if (!targetMonth) return 0
+  
+  // Use current year if not specified, or next year if month has passed
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1 // 1-indexed
+  const currentYear = now.getFullYear()
+  
+  if (!targetYear) {
+    // Assume next occurrence of that intake month
+    if (targetMonth >= currentMonth) {
+      targetYear = currentYear
+    } else {
+      targetYear = currentYear + 1
+    }
+  }
+  
+  // Calculate months until intake
+  const monthsUntil = (targetYear - currentYear) * 12 + (targetMonth - currentMonth)
+  
+  // Score based on proximity
+  if (monthsUntil <= 0) {
+    // Intake already passed or this month - still valuable if recent
+    return monthsUntil >= -2 ? 15 : 0
+  } else if (monthsUntil <= 2) {
+    return 20 // Urgent - intake imminent
+  } else if (monthsUntil <= 4) {
+    return 15 // Soon - high priority
+  } else if (monthsUntil <= 6) {
+    return 10 // Moderate - active planning
+  } else if (monthsUntil <= 9) {
+    return 5  // Planning ahead
+  }
+  
+  return 0 // 10+ months away
+}
+
+/**
  * Get quality bucket from total score
+ * Updated thresholds to account for intake proximity bonus (max 120)
  */
 export function getQualityBucket(score: number): string {
-  if (score >= 70) return 'High'
-  if (score >= 45) return 'Medium'
-  return 'Low'
+  if (score >= 85) return 'High'
+  if (score >= 55) return 'Medium'
+  if (score >= 35) return 'Low'
+  return 'Very Low'
 }
 
 /**
  * Calculate full lead score
+ * Now includes intake proximity bonus for leads with upcoming intake dates
  */
 export function calculateLeadScore(
   name: string | null | undefined,
   email: string | null | undefined,
-  phone: string | null | undefined
+  phone: string | null | undefined,
+  intake?: string | null
 ): {
   nameScore: number
   emailScore: number
   phoneScore: number
   phoneValid: boolean
   recencyScore: number
+  intakeScore: number
   totalScore: number
   quality: string
   detectedCountry: string
@@ -326,8 +406,9 @@ export function calculateLeadScore(
   const { score: emailScore } = scoreEmail(email)
   const { score: phoneScore, valid: phoneValid, country: detectedCountry } = scorePhone(phone)
   const recencyScore = scoreRecency()
+  const intakeScore = scoreIntakeProximity(intake)
 
-  const totalScore = nameScore + emailScore + phoneScore + recencyScore
+  const totalScore = nameScore + emailScore + phoneScore + recencyScore + intakeScore
   const quality = getQualityBucket(totalScore)
 
   return {
@@ -336,6 +417,7 @@ export function calculateLeadScore(
     phoneScore,
     phoneValid,
     recencyScore,
+    intakeScore,
     totalScore,
     quality,
     detectedCountry

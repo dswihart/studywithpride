@@ -123,26 +123,80 @@ function calculateRecencyScore(createdTime: string | null, oldestTime: Date, new
   return Math.round(normalized * 10)
 }
 
+
+function calculateIntakeScore(intake: string | null): number {
+  if (!intake) return 0
+  
+  const intakeLower = intake.toLowerCase()
+  let targetMonth: number | null = null
+  let targetYear: number | null = null
+  
+  // Parse month from intake string
+  if (intakeLower.includes('feb')) targetMonth = 2
+  else if (intakeLower.includes('may')) targetMonth = 5
+  else if (intakeLower.includes('oct')) targetMonth = 10
+  else {
+    const monthMatch = intake.match(/(\d{4})[-\/](\d{1,2})|(\d{1,2})[-\/](\d{4})/)
+    if (monthMatch) {
+      if (monthMatch[1] && monthMatch[2]) {
+        targetYear = parseInt(monthMatch[1])
+        targetMonth = parseInt(monthMatch[2])
+      } else if (monthMatch[3] && monthMatch[4]) {
+        targetMonth = parseInt(monthMatch[3])
+        targetYear = parseInt(monthMatch[4])
+      }
+    }
+  }
+  
+  // Parse year
+  const yearMatch = intake.match(/(20\d{2})/)
+  if (yearMatch && !targetYear) {
+    targetYear = parseInt(yearMatch[1])
+  }
+  
+  if (!targetMonth) return 0
+  
+  const now = new Date()
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+  
+  if (!targetYear) {
+    targetYear = targetMonth >= currentMonth ? currentYear : currentYear + 1
+  }
+  
+  const monthsUntil = (targetYear - currentYear) * 12 + (targetMonth - currentMonth)
+  
+  if (monthsUntil <= 0) return monthsUntil >= -2 ? 15 : 0
+  if (monthsUntil <= 2) return 20
+  if (monthsUntil <= 4) return 15
+  if (monthsUntil <= 6) return 10
+  if (monthsUntil <= 9) return 5
+  return 0
+}
+
 function calculateLeadScore(
   lead: any,
   oldestTime: Date,
   newestTime: Date
-): { total_score: number; quality_tier: string; name_score: number; email_score: number; phone_score: number; recency_score: number } {
+): { total_score: number; quality_tier: string; name_score: number; email_score: number; phone_score: number; recency_score: number; intake_score: number } {
   const nameScore = calculateNameScore(lead.prospect_name, lead.prospect_email)
   const emailScore = calculateEmailScore(lead.prospect_email)
   const phoneScore = calculatePhoneScore(lead.phone)
   const recencyScore = calculateRecencyScore(lead.created_time || lead.created_at, oldestTime, newestTime)
+  const intakeScore = calculateIntakeScore(lead.intake)
 
-  const totalScore = nameScore + emailScore + phoneScore + recencyScore
+  const totalScore = nameScore + emailScore + phoneScore + recencyScore + intakeScore
 
-  // Quality buckets
+  // Quality buckets (updated for max 120 with intake bonus)
   let qualityTier: string
-  if (totalScore >= 70) {
+  if (totalScore >= 85) {
     qualityTier = "High"
-  } else if (totalScore >= 45) {
+  } else if (totalScore >= 55) {
     qualityTier = "Medium"
-  } else {
+  } else if (totalScore >= 35) {
     qualityTier = "Low"
+  } else {
+    qualityTier = "Very Low"
   }
 
   return {
@@ -151,7 +205,8 @@ function calculateLeadScore(
     name_score: nameScore,
     email_score: emailScore,
     phone_score: phoneScore,
-    recency_score: recencyScore
+    recency_score: recencyScore,
+    intake_score: intakeScore
   }
 }
 
@@ -169,12 +224,14 @@ export async function GET(request: NextRequest) {
           name: { max: 40, description: "Name quality scoring" },
           email: { max: 30, description: "Email validity" },
           phone: { max: 20, description: "Phone validity (DR NANP)" },
-          recency: { max: 10, description: "Recency linear scale" }
+          recency: { max: 10, description: "Recency linear scale" },
+          intake: { max: 20, description: "Intake proximity bonus (Feb/May/Oct)" }
         },
         tiers: {
-          High: { min: 70, max: 100 },
-          Medium: { min: 45, max: 69 },
-          Low: { min: 0, max: 44 }
+          High: { min: 85, max: 120 },
+          Medium: { min: 55, max: 84 },
+          Low: { min: 35, max: 54 },
+          "Very Low": { min: 0, max: 34 }
         }
       }
     })
