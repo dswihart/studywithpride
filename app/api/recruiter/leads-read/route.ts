@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     // Exclude archived leads unless explicitly requested
     if (!includeArchived) {
-      query = query.neq('contact_status', 'archived_referral')
+      query = query.not('contact_status', 'in', '(archived,archived_referral)')
     }
 
     // Search filter - check name, email, or phone

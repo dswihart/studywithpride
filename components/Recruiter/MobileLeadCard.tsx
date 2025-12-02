@@ -52,6 +52,7 @@ const STATUS_COLORS: Record<string, string> = {
   converted: "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
   unqualified: "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300",
   referral: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300",
+  archived: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400",
 }
 
 const QUALITY_COLORS: Record<string, string> = {

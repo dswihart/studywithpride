@@ -18,7 +18,7 @@
     "worldClass": "Educacion de Clase Mundial",
     "worldClassDesc": "Acceso a universidades prestigiosas como la UPF con cursos en estudios LGBTQ+, genero y teoria queer",
     "affordable": "Costo de Vida Accesible",
-    "affordableDesc": "Costo de vida desde \u20ac800-1200/mes incluyendo alojamiento, haciendolo accesible para estudiantes latinoamericanos",
+    "affordableDesc": "Costo de vida desde €800-1200/mes incluyendo alojamiento, haciendolo accesible para estudiantes latinoamericanos",
     "planJourney": "Planifica tu Viaje",
     "visaGuide": "Guia de Pasaporte/Visa",
     "visaDesc": "Obtiene requisitos de pasaporte y visa especificos por pais para tu visa de estudiante espanola",
@@ -45,7 +45,7 @@
     "contactUs": "Contactanos",
     "connect": "Conecta",
     "followUs": "Siguenos para actualizaciones, consejos e historias de la comunidad",
-    "copyright": "\u00a9 2025 Study With Pride. Agencia de reclutamiento independiente para C3S Barcelona. No afiliada a la institucion."
+    "copyright": "© 2025 Study With Pride. Agencia de reclutamiento independiente para C3S Barcelona. No afiliada a la institucion."
   },
   "dashboard": {
     "title": "Portal del Estudiante",
@@ -210,7 +210,7 @@
     "note1": "Estos son costos estimados y los gastos reales pueden variar",
     "note2": "Barcelona ofrece descuentos estudiantiles para transporte publico y actividades culturales",
     "note3": "Muchos barrios tienen rangos de precios diferentes - considera la ubicacion cuidadosamente",
-    "note4": "Recuerda presupuestar para los requisitos de visa (minimo \u20ac600/mes de prueba de fondos)",
+    "note4": "Recuerda presupuestar para los requisitos de visa (minimo €600/mes de prueba de fondos)",
     "viewFinancialRequirements": "Ver Requisitos Financieros"
   },
   "recruiter": {
@@ -259,13 +259,31 @@
       "noLeads": "No se encontraron prospectos",
       "noLeadsDescription": "No hay prospectos que coincidan con tus filtros actuales."
     },
+    "statuses": {
+      "not_contacted": "No Contactado",
+      "contacted": "Contactado",
+      "interested": "Interesado",
+      "qualified": "Calificado",
+      "converted": "Convertido",
+      "unqualified": "No Calificado",
+      "archived": "Archivado",
+      "referral": "Referido",
+      "notinterested": "No Interesado",
+      "wrongnumber": "Número Incorrecto",
+      "all": "Todos los Estados"
+    },
     "status": {
       "not_contacted": "No Contactado",
       "contacted": "Contactado",
       "interested": "Interesado",
       "qualified": "Calificado",
       "converted": "Convertido",
-      "unqualified": "No Calificado"
+      "unqualified": "No Calificado",
+      "archived": "Archivado",
+      "referral": "Referido",
+      "notinterested": "No Interesado",
+      "wrongnumber": "Número Incorrecto",
+      "all": "Todos los Estados"
     }
   }
 }

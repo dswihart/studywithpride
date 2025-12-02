@@ -220,10 +220,10 @@ export default function AdvancedFilters({
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-white"
               >
                 <option value="all">All Timelines</option>
-                <option value="3">3 months</option>
+                
                 <option value="6">6 months</option>
                 <option value="12">12 months</option>
-                <option value="18">18 months</option>
+                
               </select>
             </div>
 

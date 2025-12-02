@@ -574,6 +574,8 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         return "bg-orange-100 text-orange-800"
       case "wrongnumber":
         return "bg-gray-200 text-gray-600"
+      case "archived":
+        return "bg-slate-200 text-slate-600"
       case "unqualified":
         return "bg-red-100 text-red-800"
       default:
