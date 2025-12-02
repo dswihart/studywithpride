@@ -27,6 +27,7 @@ interface Lead {
   lead_score: number | null
   lead_quality: string | null
   recruit_priority: number | null
+  intake: string | null
 }
 
 interface ContactHistory {

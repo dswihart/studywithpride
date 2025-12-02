@@ -53,6 +53,7 @@ interface Lead {
   barcelona_timeline: number | null
   is_duplicate: boolean
   recruit_priority: number | null
+  intake: string | null
 }
 
 interface Task {
@@ -363,16 +364,13 @@ function RecruiterDashboardContent() {
       'Email': lead.prospect_email || '',
       'Phone': lead.phone || '',
       'Country': lead.country || '',
-      
-      
       'Status': lead.contact_status || '',
       'Lead Quality': lead.lead_quality || '',
       'Lead Score': lead.lead_score || '',
-      
-      
       'Notes': lead.notes || '',
-      'Created At': lead.created_at || '',
       'Barcelona Timeline': lead.barcelona_timeline || '',
+      'Intake': lead.intake || '',
+      'Is Duplicate': lead.is_duplicate ? 'Yes' : 'No',
       'Lead Clicked Time': lead.created_time || '',
       'Date Imported': lead.date_imported || ''
     }))
@@ -382,8 +380,8 @@ function RecruiterDashboardContent() {
 
     ws['!cols'] = [
       { wch: 25 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
-      { wch: 12 }, { wch: 10 }, { wch: 40 }, { wch: 20 }, { wch: 15 },
-      { wch: 20 }, { wch: 20 }
+      { wch: 12 }, { wch: 10 }, { wch: 40 }, { wch: 15 }, { wch: 15 },
+      { wch: 12 }, { wch: 20 }, { wch: 20 }
     ]
 
     XLSX.utils.book_append_sheet(wb, ws, 'Leads')

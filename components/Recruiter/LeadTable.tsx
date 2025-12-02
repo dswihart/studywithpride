@@ -148,6 +148,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const [selectedBarcelonaTimeline, setSelectedBarcelonaTimeline] = useState("all")
   const [selectedIntake, setSelectedIntake] = useState("all")
   const [intakes, setIntakes] = useState<string[]>([])
+  const [includeArchived, setIncludeArchived] = useState(false)
   const columnMenuRef = useRef<HTMLDivElement | null>(null)
 
   // Use refs for callbacks to prevent infinite re-render loops
@@ -239,6 +240,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
       const params = new URLSearchParams()
       if (selectedCountry !== "all") params.append("country", selectedCountry)
       if (selectedStatus !== "all") params.append("contact_status", selectedStatus)
+      if (includeArchived) params.append("include_archived", "true")
       params.append("limit", "10000")
 
       const response = await fetch(`/api/recruiter/leads-read?${params.toString()}`, {
@@ -275,7 +277,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     } finally {
       setLoading(false)
     }
-  }, [selectedCountry, selectedStatus, t])
+  }, [selectedCountry, selectedStatus, includeArchived, t])
 
   // Fetch leads when filters change
   useEffect(() => {
@@ -741,6 +743,18 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                 </button>
               )}
             </div>
+            <label className="mt-2 flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeArchived}
+                onChange={(e) => {
+                  setIncludeArchived(e.target.checked)
+                  setCurrentPage(1)
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-400">Include archived leads</span>
+            </label>
           </div>
 
           <div className="flex-1">

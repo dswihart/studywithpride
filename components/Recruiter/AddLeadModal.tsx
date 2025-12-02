@@ -92,6 +92,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
   const [validRows, setValidRows] = useState(0)
   const [duplicateRows, setDuplicateRows] = useState(0)
   const [invalidRows, setInvalidRows] = useState(0)
+  const [disableDuplicateFlag, setDisableDuplicateFlag] = useState(false)
 
   const baseCountries = [
     'USA', 'Canada', 'Mexico', 'Brazil', 'Spain', 'UK',
@@ -889,9 +890,15 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
               updates.phone_valid = scoreData.phoneValid
             }
 
-            // Mark as duplicate and update
-            updates.is_duplicate = true
-            updates.duplicate_detected_at = new Date().toISOString()
+            // Check if this is an archived lead - if so, unarchive and reset status
+            if (existingLead.contact_status === 'archived_referral') {
+              updates.contact_status = 'not_contacted'
+              updates.is_duplicate = false  // Not a duplicate, it's being restored
+            } else if (!disableDuplicateFlag) {
+              // Mark as duplicate and update (unless disabled)
+              updates.is_duplicate = true
+              updates.duplicate_detected_at = new Date().toISOString()
+            }
             updates.updated_at = new Date().toISOString()
 
             const { error: updateError } = await supabase
@@ -1269,6 +1276,18 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
                   </div>
                 </div>
               )}
+
+              <label className="flex items-center gap-2 cursor-pointer py-2">
+                <input
+                  type="checkbox"
+                  checked={disableDuplicateFlag}
+                  onChange={(e) => setDisableDuplicateFlag(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Don't mark duplicates as duplicate (updates data but skips duplicate flag)
+                </span>
+              </label>
 
               <div className="flex gap-3 pt-2">
                 <button

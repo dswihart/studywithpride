@@ -19,45 +19,51 @@ interface LeadReadResponse {
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
-  
+
   try {
     const roleCheck = await requireRole('recruiter')
-    
+
     if (!roleCheck.authorized) {
       return NextResponse.json(
         { success: false, error: roleCheck.reason || 'Forbidden' } as LeadReadResponse,
         { status: 403 }
       )
     }
-    
+
     const { searchParams } = new URL(request.url)
     const country = searchParams.get('country')
     const contactStatus = searchParams.get('contact_status')
     const limit = parseInt(searchParams.get('limit') || '100')
     const offset = parseInt(searchParams.get('offset') || '0')
     const search = searchParams.get('search')
-    
+    const includeArchived = searchParams.get('include_archived') === 'true'
+
     const supabase = await createClient()
-    let query = supabase.from('leads').select('*', { count: 'exact' }).neq('contact_status', 'archived_referral')
-    
+    let query = supabase.from('leads').select('*', { count: 'exact' })
+
+    // Exclude archived leads unless explicitly requested
+    if (!includeArchived) {
+      query = query.neq('contact_status', 'archived_referral')
+    }
+
     // Search filter - check name, email, or phone
     if (search && search.trim()) {
       const searchTerm = search.trim().toLowerCase()
       query = query.or(`prospect_name.ilike.%${searchTerm}%,prospect_email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
     }
-    
+
     if (country && country !== 'all') {
       query = query.eq('country', country)
     }
-    
+
     if (contactStatus && contactStatus !== 'all') {
       query = query.eq('contact_status', contactStatus)
     }
-    
+
     query = query.range(offset, offset + limit - 1).order('created_at', { ascending: false })
-    
+
     const { data: leads, error, count } = await query
-    
+
     if (error) {
       console.error('[leads-read] Error:', error)
       return NextResponse.json(
@@ -65,14 +71,14 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
-    
+
     const elapsedTime = Date.now() - startTime
     console.log(`[leads-read] Completed in ${elapsedTime}ms`)
-    
+
     if (elapsedTime > 250) {
       console.warn(`[leads-read] Performance threshold exceeded (${elapsedTime}ms > 250ms)`)
     }
-    
+
     // If search is provided, return simplified format for the AddContactLogModal
     if (search) {
       return NextResponse.json(
@@ -83,7 +89,7 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       )
     }
-    
+
     return NextResponse.json(
       {
         success: true,
@@ -95,7 +101,7 @@ export async function GET(request: NextRequest) {
       } as LeadReadResponse,
       { status: 200 }
     )
-    
+
   } catch (error: any) {
     console.error('[leads-read] Error:', error)
     return NextResponse.json(
