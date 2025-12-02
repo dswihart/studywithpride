@@ -206,6 +206,7 @@ export const translations = {
           actions: 'Actions',
           duplicate: 'Duplicate',
           barcelonaTimeline: 'Barcelona Timeline',
+          intake: 'Intake',
           createdTime: 'Created Time'
         },
         referralColumn: 'Referral Destination',
@@ -493,6 +494,7 @@ export const translations = {
           actions: 'Acciones',
           duplicate: 'Duplicado',
           barcelonaTimeline: 'Cronograma Barcelona',
+          intake: 'Periodo de Ingreso',
           createdTime: 'Fecha de Creación'
         },
         referralColumn: 'Destino de referencia',
@@ -779,6 +781,7 @@ export const translations = {
           actions: 'Ações',
           duplicate: 'Duplicado',
           barcelonaTimeline: 'Cronograma Barcelona',
+          intake: 'Periodo de Ingreso',
           createdTime: 'Data de Criação'
         },
         referralColumn: 'Destino de referência',

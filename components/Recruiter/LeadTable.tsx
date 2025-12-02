@@ -21,6 +21,7 @@ interface Lead {
   campaign: string | null
   campaign_name: string | null
   barcelona_timeline: number | null
+  intake: string | null
   date_imported: string | null
   name_score: number | null
   email_score: number | null
@@ -69,6 +70,7 @@ type SortColumn =
   | "is_duplicate"
   | "recruit_priority"
   | "barcelona_timeline"
+  | "intake"
   | "created_time"
   | "date_added"
   | null
@@ -87,6 +89,7 @@ type ColumnKey =
   | "is_duplicate"
   | "recruit_priority"
   | "barcelona_timeline"
+  | "intake"
   | "created_time"
   | "date_added"
   | "notes"
@@ -110,6 +113,7 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "notes", labelKey: "recruiter.table.columns.notes" },
   { key: "is_duplicate", labelKey: "recruiter.table.columns.duplicate", sortable: "is_duplicate" },
   { key: "barcelona_timeline", labelKey: "recruiter.table.columns.barcelonaTimeline", sortable: "barcelona_timeline" },
+  { key: "intake", labelKey: "recruiter.table.columns.intake", sortable: "intake" },
   { key: "created_time", labelKey: "recruiter.table.columns.createdTime", sortable: "created_time" },
 ]
 
@@ -382,6 +386,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           aValue = a.barcelona_timeline || 0
           bValue = b.barcelona_timeline || 0
           break
+        case "intake":
+          aValue = a.intake?.toLowerCase() || ""
+          bValue = b.intake?.toLowerCase() || ""
+          break
         case "created_time":
           aValue = a.created_time ? new Date(a.created_time).getTime() : 0
           bValue = b.created_time ? new Date(b.created_time).getTime() : 0
@@ -621,6 +629,8 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         )
       case "barcelona_timeline":
         return lead.barcelona_timeline ? lead.barcelona_timeline + " months" : t("recruiter.table.na")
+      case "intake":
+        return lead.intake || t("recruiter.table.na")
       case "created_time":
         return formatDate(lead.created_time)
       case "is_duplicate":
