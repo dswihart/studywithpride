@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { useLanguage } from "@/components/LanguageContext"
 import BulkEditLeadModal from "./BulkEditLeadModal"
+import MobileLeadCard from "./MobileLeadCard"
 
 interface Lead {
   id: string
@@ -148,7 +149,17 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const [selectedIntake, setSelectedIntake] = useState("all")
   const [intakes, setIntakes] = useState<string[]>([])
   const [includeArchived, setIncludeArchived] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const columnMenuRef = useRef<HTMLDivElement | null>(null)
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   // Use refs for callbacks to prevent infinite re-render loops
   const onLeadsChangeRef = useRef(onLeadsChange)
@@ -955,92 +966,115 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           </div>
         )}
 
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-left">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={(input) => {
-                    if (input) input.indeterminate = someSelected
-                  }}
-                  onChange={(event) => handleSelectAll(event.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-              </th>
-              {visibleColumns.map((column) => renderHeaderCell(column))}
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                {t("recruiter.table.columns.actions")}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+        {/* Mobile Card View */}
+        {isMobile ? (
+          <div className="p-4 space-y-4">
             {leads.length === 0 ? (
-              <tr>
-                <td className="px-6 py-8 text-center text-gray-500" colSpan={totalColumns}>
-                  {t("recruiter.table.noResults")}
-                </td>
-              </tr>
+              <div className="text-center py-8 text-gray-500">{t("recruiter.table.noResults")}</div>
             ) : (
               leads.map((lead) => (
-                <tr
+                <MobileLeadCard
                   key={lead.id}
-                  id={`lead-row-${lead.id}`}
-                  className={`cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-700 ${highlightedLeadId === lead.id
-                    ? "bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 shadow-lg"
-                    : selectedLeads.has(lead.id)
-                      ? "bg-blue-50 dark:bg-blue-900/20"
-                      : ""
-                    }`}
-                  onClick={(event) => handleRowClick(lead, event)}>
-                  <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedLeads.has(lead.id)}
-                      onChange={(event) => handleSelectLead(lead.id, event.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </td>
-                  {visibleColumns.map((column) => (
-                    <td key={`${lead.id}-${column.key}`} className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                      {renderCellContent(lead, column.key)}
-                    </td>
-                  ))}
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onLogContactClick?.(lead)
-                        }}
-                        className="flex items-center gap-1 font-medium text-amber-600 hover:text-amber-800"
-                        title="Log contact attempt"
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                        Log
-                      </button>
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onViewLead?.(lead)
-                        }}
-                        className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        {t("recruiter.table.edit")}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  lead={lead}
+                  isSelected={selectedLeads.has(lead.id)}
+                  onSelect={(leadId, selected) => handleSelectLead(leadId, selected)}
+                  onView={(lead) => onViewLead?.(lead)}
+                  onWhatsApp={(lead) => onWhatsAppClick?.(lead)}
+                  onLogContact={(lead) => onLogContactClick?.(lead)}
+                  isHighlighted={highlightedLeadId === lead.id}
+                />
               ))
             )}
-          </tbody>
-        </table>
+          </div>
+        ) : (
+          /* Desktop Table View */
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = someSelected
+                    }}
+                    onChange={(event) => handleSelectAll(event.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+                {visibleColumns.map((column) => renderHeaderCell(column))}
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  {t("recruiter.table.columns.actions")}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+              {leads.length === 0 ? (
+                <tr>
+                  <td className="px-6 py-8 text-center text-gray-500" colSpan={totalColumns}>
+                    {t("recruiter.table.noResults")}
+                  </td>
+                </tr>
+              ) : (
+                leads.map((lead) => (
+                  <tr
+                    key={lead.id}
+                    id={`lead-row-${lead.id}`}
+                    className={`cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-700 ${highlightedLeadId === lead.id
+                      ? "bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 shadow-lg"
+                      : selectedLeads.has(lead.id)
+                        ? "bg-blue-50 dark:bg-blue-900/20"
+                        : ""
+                      }`}
+                    onClick={(event) => handleRowClick(lead, event)}>
+                    <td className="px-6 py-4" onClick={(event) => event.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.has(lead.id)}
+                        onChange={(event) => handleSelectLead(lead.id, event.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                    {visibleColumns.map((column) => (
+                      <td key={`${lead.id}-${column.key}`} className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                        {renderCellContent(lead, column.key)}
+                      </td>
+                    ))}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onLogContactClick?.(lead)
+                          }}
+                          className="flex items-center gap-1 font-medium text-amber-600 hover:text-amber-800"
+                          title="Log contact attempt"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
+                          Log
+                        </button>
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onViewLead?.(lead)
+                          }}
+                          className="flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          {t("recruiter.table.edit")}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {leads.length > 0 && (
