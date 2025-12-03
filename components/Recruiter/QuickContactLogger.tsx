@@ -30,6 +30,7 @@ interface TaskData {
 }
 
 type ContactOutcome =
+  | "no_whatsapp"
   | "no_answer"
   | "no_answer_whatsapp_sent"
   | "whatsapp_replied_interested"
@@ -66,6 +67,7 @@ const CONTACT_OUTCOMES: ContactOutcomeOption[] = [
   { value: "whatsapp_replied_not_interested", label: "WhatsApp Reply: Not Interested", icon: "💬👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
   // Original outcomes
   { value: "no_answer", label: "No Answer (only)", icon: "📵", suggestedStatus: "contacted", suggestedFollowUp: "whatsapp" },
+  { value: "no_whatsapp", label: "No WhatsApp Available", icon: "🚫💬", suggestedStatus: "contacted", suggestedFollowUp: "call" },
   { value: "wrong_number", label: "Wrong Number", icon: "❌", suggestedStatus: "wrongnumber", suggestedFollowUp: "none" },
   { value: "answered_interested", label: "Call: Interested!", icon: "📞🎯", suggestedStatus: "contacted", suggestedFollowUp: "email" },
   { value: "answered_not_interested", label: "Call: Not Interested", icon: "📞👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
