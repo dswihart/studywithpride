@@ -30,6 +30,7 @@ import HeaderActions from "@/components/Recruiter/HeaderActions"
 import SelectionContextBar from "@/components/Recruiter/SelectionContextBar"
 import TrendsChart from '@/components/Recruiter/TrendsChart'
 import RecruiterPerformanceDashboard from '@/components/Recruiter/RecruiterPerformanceDashboard'
+import InsightsPanel from '@/components/Recruiter/InsightsPanel'
 import { useTheme } from '@/components/ThemeProvider'
 import * as XLSX from 'xlsx'
 
@@ -798,6 +799,9 @@ function RecruiterDashboardContent() {
             {/* Trends Chart */}
             <TrendsChart />
             
+            {/* Insights Panel */}
+            <InsightsPanel />
+
             {/* Performance Dashboard */}
             <RecruiterPerformanceDashboard />
           </div>

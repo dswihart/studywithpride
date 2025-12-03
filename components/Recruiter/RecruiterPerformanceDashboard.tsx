@@ -31,7 +31,6 @@ interface PerformanceData {
     leads: { this_week: number; last_week: number; change: number; direction: string }
     conversions: { this_week: number; last_week: number; change: number; direction: string }
   }
-  top_sources: { source: string; count: number; converted: number; conversion_rate: number }[]
   action_items: string[]
 }
 
@@ -342,56 +341,29 @@ export default function RecruiterPerformanceDashboard() {
         </div>
       </div>
 
-      {/* Top Sources & Action Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Sources */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Lead Sources</h3>
-          <div className="space-y-3">
-            {data.top_sources.slice(0, 15).map((source, index) => (
-              <div key={source.source} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-400 w-5">{index + 1}</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{source.source}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{source.count} leads</span>
-                  <span className={`text-sm font-medium ${
-                    source.conversion_rate >= 15 ? "text-green-500" :
-                    source.conversion_rate >= 10 ? "text-yellow-500" : "text-red-500"
-                  }`}>
-                    {source.conversion_rate}% conv
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Items */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Action Items</h3>
-          {data.action_items.length === 0 ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <span className="text-4xl">✓</span>
-                <p className="text-gray-500 dark:text-gray-400 mt-2">All caught up!</p>
-              </div>
+      {/* Action Items */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Action Items</h3>
+        {data.action_items.length === 0 ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <span className="text-4xl">✓</span>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">All caught up!</p>
             </div>
-          ) : (
-            <ul className="space-y-3">
-              {data.action_items.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg"
-                >
-                  <span className="text-amber-500 mt-0.5">!</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{item}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          </div>
+        ) : (
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {data.action_items.map((item, index) => (
+              <li
+                key={index}
+                className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg"
+              >
+                <span className="text-amber-500 mt-0.5">!</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

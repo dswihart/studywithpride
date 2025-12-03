@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     // Get all leads for the period
     const { data: leads, error: leadsError } = await supabase
       .from("leads")
-      .select("*")
+      .select("*").not('contact_status', 'in', '(archived,archived_referral)')
       .gte("created_at", startDate.toISOString())
 
     if (leadsError) {
