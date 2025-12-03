@@ -49,9 +49,15 @@ const themeInitializer = `(() => {
   try {
     const storageKey = 'theme';
     const cookieName = '${THEME_COOKIE}';
+    const readCookieTheme = () => {
+      const match = document.cookie.match(new RegExp('(?:^|; )' + cookieName + '=([^;]+)'));
+      return match ? match[1] : null;
+    };
     const storedTheme = window.localStorage.getItem(storageKey);
+    const cookieTheme = readCookieTheme();
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+    const themeValue = storedTheme || cookieTheme || (prefersDark ? 'dark' : 'light');
+    const theme = themeValue === 'dark' ? 'dark' : 'light';
     const root = document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
     root.dataset.theme = theme;

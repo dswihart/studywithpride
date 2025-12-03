@@ -114,6 +114,7 @@ function RecruiterDashboardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
+  const isDarkMode = theme === 'dark'
 
   useEffect(() => {
     checkAuthorization()
@@ -426,7 +427,7 @@ function RecruiterDashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : 'bg-gradient-to-b from-white to-blue-50'}`}>
         <div className="text-xl text-gray-600 dark:text-gray-300">Loading...</div>
       </div>
     )
@@ -437,7 +438,7 @@ function RecruiterDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : 'bg-gradient-to-b from-white to-blue-50'}`}>
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Header - Consolidated UX */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -445,7 +446,7 @@ function RecruiterDashboardContent() {
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Recruitment Dashboard
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-800 dark:text-gray-200">
               Manage and track recruitment leads
             </p>
           </div>
