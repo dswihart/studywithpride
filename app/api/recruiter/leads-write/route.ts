@@ -12,7 +12,7 @@ interface LeadWriteRequest {
   id?: string
   user_id?: string
   country?: string
-  contact_status: 'not_contacted' | 'referral' | 'contacted' | 'interested' | 'qualified' | 'converted' | 'unqualified' | 'notinterested' | 'wrongnumber'
+  contact_status: 'not_contacted' | 'referral' | 'contacted' | 'interested' | 'qualified' | 'converted' | 'unqualified' | 'notinterested' | 'wrongnumber' | 'archived_referral'
   last_contact_date?: string
   notes?: string
   prospect_email?: string
@@ -22,6 +22,7 @@ interface LeadWriteRequest {
   campaign?: string
   created_time?: string
   lead_quality?: string
+  recruit_priority?: number
 }
 
 // Response interface
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate contact_status enum
-    const validStatuses = ['not_contacted', 'referral', 'contacted', 'interested', 'qualified', 'converted', 'unqualified', 'notinterested', 'wrongnumber']
+    const validStatuses = ['not_contacted', 'referral', 'contacted', 'interested', 'qualified', 'converted', 'unqualified', 'notinterested', 'wrongnumber', 'archived_referral']
     if (!validStatuses.includes(body.contact_status)) {
       return NextResponse.json(
         {
@@ -100,7 +101,11 @@ export async function POST(request: NextRequest) {
       // Update existing lead by ID - build update object dynamically
       const updateFields: Record<string, any> = {
         contact_status: body.contact_status,
-        last_contact_date: body.last_contact_date || null,
+      }
+
+      // Only update last_contact_date if explicitly provided (FIX: don't overwrite with null)
+      if (body.last_contact_date !== undefined) {
+        updateFields.last_contact_date = body.last_contact_date
       }
 
       // Only update fields that are provided
@@ -113,6 +118,7 @@ export async function POST(request: NextRequest) {
       if (body.lead_quality !== undefined) updateFields.lead_quality = body.lead_quality
       if (body.campaign !== undefined) updateFields.campaign = body.campaign
       if (body.created_time !== undefined) updateFields.created_time = body.created_time
+      if (body.recruit_priority !== undefined) updateFields.recruit_priority = body.recruit_priority
 
       const { data, error } = await supabase
         .from('leads')
