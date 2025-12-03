@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
       has_funds: has_funds || false,
       meets_age_requirements: meets_age_requirements || false,
       has_valid_passport: has_valid_passport || false,
-      can_obtain_visa: can_obtain_visa || has_education_docs || false, // Map has_education_docs to can_obtain_visa temporarily
+      can_obtain_visa: can_obtain_visa || false,
+        has_education_docs: has_education_docs || false, // Map has_education_docs to can_obtain_visa temporarily
       can_start_intake: can_start_intake || false,
       discussed_with_family: discussed_with_family || false,
       needs_housing_support: needs_housing_support || false,

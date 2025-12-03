@@ -1,7 +1,13 @@
+require("dotenv").config({ path: ".env.local" });
 const { createClient } = require("@supabase/supabase-js");
 
-const supabaseUrl = "https://eurovhkmzgqtjrkjwrpb.supabase.co";
-const serviceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1cm92aGttemdxdGpya2p3cnBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjI1NTE4MiwiZXhwIjoyMDc3ODMxMTgyfQ.XLbVOcpZchoh9yIF4Z3bsv8L4qiREQRKK-9oODOSOI0";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error("Missing environment variables. Ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local");
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false }
@@ -40,4 +46,11 @@ async function setAdminRole(email) {
   console.log("New metadata:", data.user.user_metadata);
 }
 
-setAdminRole("dswihart@gmail.com");
+// Get email from command line argument
+const email = process.argv[2];
+if (!email) {
+  console.error("Usage: node set-admin-role.js <email>");
+  process.exit(1);
+}
+
+setAdminRole(email);

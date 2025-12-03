@@ -95,7 +95,7 @@ interface InsightsData {
   key_insights: string[]
 }
 
-type PeriodType = 'week' | 'month' | 'quarter' | 'all'
+type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'all'
 type SectionType = 'country' | 'method' | 'outcome' | 'source' | 'readiness' | 'intake'
 
 interface InsightsPanelProps {
@@ -201,7 +201,7 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
         </div>
 
         <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-          {(['week', 'month', 'quarter', 'all'] as PeriodType[]).map((p) => (
+          {(['day', 'week', 'month', 'quarter', 'all'] as PeriodType[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
