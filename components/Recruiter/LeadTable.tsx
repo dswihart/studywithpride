@@ -150,6 +150,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const [selectedIntake, setSelectedIntake] = useState("all")
   const [intakes, setIntakes] = useState<string[]>([])
   const [includeArchived, setIncludeArchived] = useState(false)
+  const [contactActivityFilter, setContactActivityFilter] = useState("all")
 
   // Unified filter state for AdvancedFilters component
   const filterState = {
@@ -160,7 +161,8 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     dateTo,
     selectedBarcelonaTimeline,
     selectedIntake,
-    includeArchived
+    includeArchived,
+    contactActivityFilter
   }
 
   const handleFiltersChange = (newFilters: typeof filterState) => {
@@ -172,6 +174,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     if (newFilters.selectedBarcelonaTimeline !== selectedBarcelonaTimeline) setSelectedBarcelonaTimeline(newFilters.selectedBarcelonaTimeline)
     if (newFilters.selectedIntake !== selectedIntake) setSelectedIntake(newFilters.selectedIntake)
     if (newFilters.includeArchived !== includeArchived) setIncludeArchived(newFilters.includeArchived)
+    if (newFilters.contactActivityFilter !== contactActivityFilter) setContactActivityFilter(newFilters.contactActivityFilter)
     setCurrentPage(1)
   }
   const [isMobile, setIsMobile] = useState(false)
@@ -391,9 +394,39 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     if (selectedIntake !== "all") {
       filtered = filtered.filter((lead) => lead.intake === selectedIntake)
     }
+    // Contact activity filter
+    if (contactActivityFilter && contactActivityFilter !== "all") {
+      const now = new Date()
+      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+      filtered = filtered.filter((lead) => {
+        const lastContact = lead.last_contact_date ? new Date(lead.last_contact_date) : null
+        const createdAt = new Date(lead.created_at)
+
+        switch (contactActivityFilter) {
+          case "new_leads":
+            // Added in last 7 days AND never contacted
+            return createdAt >= sevenDaysAgo && !lastContact
+          case "needs_followup":
+            // Has been contacted but last contact > 3 days ago
+            return lastContact && lastContact < threeDaysAgo
+          case "never_contacted":
+            // No contact history at all
+            return !lastContact
+          case "recently_contacted":
+            // Contacted in last 24 hours
+            return lastContact && lastContact >= oneDayAgo
+          default:
+            return true
+        }
+      })
+    }
+
 
     return filtered
-  }, [searchQuery, dateFrom, dateTo, selectedBarcelonaTimeline, selectedIntake])
+  }, [searchQuery, dateFrom, dateTo, selectedBarcelonaTimeline, selectedIntake, contactActivityFilter])
 
   const getSortedLeads = (leadsToSort: Lead[]) => {
     if (!sortColumn || !sortDirection) return leadsToSort

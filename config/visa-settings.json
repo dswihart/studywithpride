@@ -1,0 +1,21 @@
+{
+  "settings": {
+    "Dominican Republic": { "weeks": 6, "notes": "High volume - BLS Santo Domingo" },
+    "Mexico": { "weeks": 5, "notes": "BLS Mexico City" },
+    "Ecuador": { "weeks": 5, "notes": "Quito consulate" },
+    "Bolivia": { "weeks": 6, "notes": "La Paz - limited appointments" },
+    "Guatemala": { "weeks": 6, "notes": "Guatemala City" },
+    "Paraguay": { "weeks": 5, "notes": "" },
+    "Costa Rica": { "weeks": 5, "notes": "San Jose" },
+    "Panama": { "weeks": 4, "notes": "" },
+    "Colombia": { "weeks": 5, "notes": "Bogota - high demand" },
+    "Argentina": { "weeks": 3, "notes": "Buenos Aires - typically faster" },
+    "Brazil": { "weeks": 5, "notes": "Sao Paulo/Brasilia" },
+    "Chile": { "weeks": 4, "notes": "Santiago" },
+    "Haiti": { "weeks": 8, "notes": "Complex process" },
+    "Peru": { "weeks": 5, "notes": "Lima" },
+    "Nicaragua": { "weeks": 6, "notes": "" }
+  },
+  "defaultWeeks": 5,
+  "urgentThresholdWeeks": 8
+}
