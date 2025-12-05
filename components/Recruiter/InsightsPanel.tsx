@@ -37,14 +37,6 @@ interface OutcomeInsight {
   success_rate: number
 }
 
-interface SourceInsight {
-  source: string
-  total_leads: number
-  converted: number
-  conversion_rate: number
-  avg_score: number
-}
-
 interface ReadinessInsight {
   field: string
   label: string
@@ -89,14 +81,13 @@ interface InsightsData {
   country_insights: CountryInsight[]
   contact_method_insights: ContactMethodInsight[]
   outcome_insights: OutcomeInsight[]
-  source_insights: SourceInsight[]
   readiness_insights: ReadinessInsight[]
   intake_insights: IntakeInsight[]
   key_insights: string[]
 }
 
 type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'all'
-type SectionType = 'country' | 'method' | 'outcome' | 'source' | 'readiness' | 'intake'
+type SectionType = 'country' | 'method' | 'outcome' | 'readiness' | 'intake'
 
 interface InsightsPanelProps {
   className?: string
@@ -187,7 +178,7 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
   const maxCountryLeads = Math.max(...data.country_insights.map(c => c.total_leads), 1)
   const maxMethodContacts = Math.max(...data.contact_method_insights.map(m => m.total_contacts), 1)
   const maxOutcomeCount = Math.max(...data.outcome_insights.map(o => o.count), 1)
-  const maxSourceLeads = Math.max(...data.source_insights.map(s => s.total_leads), 1)
+  
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 ${className}`}>
@@ -350,16 +341,7 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
         >
           By Outcome
         </button>
-        <button
-          onClick={() => setActiveSection('source')}
-          className={`px-4 py-2 text-sm rounded-lg transition ${
-            activeSection === 'source'
-              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-          }`}
-        >
-          By Source
-        </button>
+        
       </div>
 
       {/* Readiness Checklist Insights */}
@@ -616,60 +598,6 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
           {data.outcome_insights.length === 0 && (
             <p className="text-center text-gray-500 dark:text-gray-400 py-8">
               No outcome data available yet
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Source Insights */}
-      {activeSection === 'source' && (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide px-2">
-            <div className="col-span-5">Source / Campaign</div>
-            <div className="col-span-2 text-center">Leads</div>
-            <div className="col-span-2 text-center">Avg Score</div>
-            <div className="col-span-3 text-center">Conversion</div>
-          </div>
-          {data.source_insights.map((source, i) => (
-            <div
-              key={source.source}
-              className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg"
-            >
-              <div className="col-span-5">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-400 w-5">{i + 1}</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm truncate" title={source.source}>
-                    {source.source.length > 25 ? source.source.substring(0, 25) + '...' : source.source}
-                  </span>
-                </div>
-                <div className="ml-7 mt-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-orange-500 rounded-full"
-                    style={{ width: `${getBarWidth(source.total_leads, maxSourceLeads)}%` }}
-                  />
-                </div>
-              </div>
-              <div className="col-span-2 text-center text-sm text-gray-700 dark:text-gray-300">
-                {source.total_leads}
-              </div>
-              <div className="col-span-2 text-center">
-                <span className={`text-sm font-medium ${
-                  source.avg_score >= 70 ? 'text-green-600' :
-                  source.avg_score >= 50 ? 'text-yellow-600' : 'text-red-600'
-                }`}>
-                  {source.avg_score}
-                </span>
-              </div>
-              <div className="col-span-3 text-center">
-                <span className={`text-sm font-bold ${getConversionColor(source.conversion_rate)}`}>
-                  {source.converted} ({source.conversion_rate}%)
-                </span>
-              </div>
-            </div>
-          ))}
-          {data.source_insights.length === 0 && (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-              No source data available yet
             </p>
           )}
         </div>

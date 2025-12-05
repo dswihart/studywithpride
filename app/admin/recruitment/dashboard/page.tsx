@@ -506,7 +506,7 @@ function RecruiterDashboardContent() {
           <nav className="-mb-px flex gap-8">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
                 activeTab === 'dashboard'
                   ? 'border-green-500 text-green-600 dark:text-green-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -521,7 +521,7 @@ function RecruiterDashboardContent() {
             </button>
             <button
               onClick={() => setActiveTab('leads')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
                 activeTab === 'leads'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -536,7 +536,7 @@ function RecruiterDashboardContent() {
             </button>
             <button
               onClick={() => setActiveTab('admin')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
                 activeTab === 'admin'
                   ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -598,7 +598,19 @@ function RecruiterDashboardContent() {
                 ) : (
                   <div className="space-y-3 max-h-80 overflow-y-auto">
                     {recentActivity.slice(0, 10).map((activity: any) => (
-                      <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <div
+                      key={activity.id}
+                      onClick={() => {
+                        if (activity.lead_id) {
+                          // Switch to leads tab and highlight this lead
+                          setActiveTab('leads')
+                          setHighlightedLeadId(activity.lead_id)
+                          // Clear highlight after a few seconds
+                          setTimeout(() => setHighlightedLeadId(null), 3000)
+                        }
+                      }}
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
+                    >
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs ${
                           activity.contact_type === 'call' ? 'bg-blue-500' :
                           activity.contact_type === 'whatsapp' ? 'bg-green-500' :

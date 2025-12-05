@@ -319,15 +319,10 @@ export async function GET(request: NextRequest) {
     // 5. READINESS CHECKLIST INSIGHTS
     // ==========================================
     const readinessFields = [
-      { field: "has_funds", label: "Has Sufficient Funds" },
-      { field: "meets_age_requirements", label: "Meets Age Requirements" },
+      { field: "meets_education_level", label: "Meets Education Level" },
+      { field: "english_level_basic", label: "English Level Basic" },
       { field: "has_valid_passport", label: "Has Valid Passport" },
-      { field: "can_obtain_visa", label: "Can Obtain Visa" },
-      { field: "can_start_intake", label: "Can Start Intake" },
-      { field: "discussed_with_family", label: "Discussed with Family" },
-      { field: "needs_housing_support", label: "Needs Housing Support" },
-      { field: "understands_work_rules", label: "Understands Work Rules" },
-      { field: "has_realistic_expectations", label: "Has Realistic Expectations" },
+      { field: "confirmed_financial_support", label: "Confirmed Financial Support" },
       { field: "ready_to_proceed", label: "Ready to Proceed" },
     ]
 
@@ -335,7 +330,7 @@ export async function GET(request: NextRequest) {
     const latestReadinessPerLead = new Map<string, any>()
     for (const contact of contactHistory || []) {
       // Only consider entries that have readiness data
-      if (contact.ready_to_proceed !== null || contact.has_funds !== null) {
+      if (contact.ready_to_proceed !== null || contact.meets_education_level !== null) {
         const existing = latestReadinessPerLead.get(contact.lead_id)
         if (!existing || new Date(contact.contacted_at) > new Date(existing.contacted_at)) {
           latestReadinessPerLead.set(contact.lead_id, contact)

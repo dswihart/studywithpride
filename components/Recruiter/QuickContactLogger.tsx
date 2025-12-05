@@ -480,15 +480,25 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 </div>
               )}
 
-              <div className="mb-4">
+              <div className="mb-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setRecruitPriority(recruitPriority ? null : 1)}
-                  className={`w-full p-3 rounded-lg border-2 transition flex items-center justify-center gap-2 ${recruitPriority ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "border-gray-200 dark:border-gray-700 hover:border-yellow-300"}`}
+                  className={`flex-1 p-3 rounded-lg border-2 transition flex items-center justify-center gap-2 ${recruitPriority ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "border-gray-200 dark:border-gray-700 hover:border-yellow-300"}`}
                 >
-                  <span className={`text-2xl ${recruitPriority ? "text-yellow-400" : "text-gray-300"}`}>★</span>
-                  <span className={`font-medium ${recruitPriority ? "text-yellow-700 dark:text-yellow-300" : "text-gray-500 dark:text-gray-400"}`}>
-                    {recruitPriority ? "VIP Lead" : "Mark as VIP"}
+                  <span className={`text-xl ${recruitPriority ? "text-yellow-400" : "text-gray-300"}`}>★</span>
+                  <span className={`text-sm font-medium ${recruitPriority ? "text-yellow-700 dark:text-yellow-300" : "text-gray-500 dark:text-gray-400"}`}>
+                    {recruitPriority ? "VIP" : "VIP"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReadyToProceed(!readyToProceed)}
+                  className={`flex-[2] p-3 rounded-lg border-2 transition flex items-center justify-center gap-2 ${readyToProceed ? "border-green-500 bg-green-50 dark:bg-green-900/20" : "border-gray-200 dark:border-gray-700 hover:border-green-300"}`}
+                >
+                  <span className={`text-xl ${readyToProceed ? "text-green-500" : "text-gray-300"}`}>✓</span>
+                  <span className={`text-sm font-medium ${readyToProceed ? "text-green-700 dark:text-green-300" : "text-gray-500 dark:text-gray-400"}`}>
+                    {readyToProceed ? "Ready to Proceed" : "Ready to Proceed"}
                   </span>
                 </button>
               </div>
@@ -509,27 +519,22 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 {showChecklist && (
                   <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
                       <span className="text-sm text-gray-700 dark:text-gray-300">Meets minimum education level</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
                       <span className="text-sm text-gray-700 dark:text-gray-300">English level of Basic</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
                       <span className="text-sm text-gray-700 dark:text-gray-300">Valid Passport</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
                       <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support</span>
                     </label>
-                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={readyToProceed} onChange={(e) => setReadyToProceed(e.target.checked)} className="w-4 h-4 rounded text-green-600" />
-                        <span className="text-sm font-medium text-green-700 dark:text-green-400">Ready to proceed with enrollment</span>
-                      </label>
-                    </div>
+                    
                   </div>
                 )}
               </div>
