@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import LeadTable from '@/components/Recruiter/LeadTable'
+import CallQueue from '@/components/Recruiter/CallQueue'
 import LeadMetrics from '@/components/Recruiter/LeadMetrics'
 import SendWhatsAppModal from "@/components/Recruiter/SendWhatsAppModal"
 import MessageHistoryModal from "@/components/Recruiter/MessageHistoryModal"
@@ -599,6 +600,13 @@ function RecruiterDashboardContent() {
                 setTaskLeadName(task.leads?.prospect_name || task.leads?.prospect_email || undefined)
                 setIsAddTaskModalOpen(true)
               }}
+              refreshKey={taskListKey}
+            />
+
+            {/* Call Queue */}
+            <CallQueue
+              onViewLead={handleViewLead}
+              onLogContact={handleLogContactClick}
               refreshKey={taskListKey}
             />
 

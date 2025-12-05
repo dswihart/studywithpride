@@ -52,7 +52,7 @@ export default function UpcomingTasksWidget({ onViewAllTasks, onTaskClick, refre
   const [overdueTasks, setOverdueTasks] = useState<Task[]>([])
   const [todayTasks, setTodayTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null)
 
   useEffect(() => {

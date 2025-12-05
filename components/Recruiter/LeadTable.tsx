@@ -344,46 +344,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   }
 
   // Find the highest priority lead to call next
-  const findPriorityLead = useCallback(() => {
-    // Filter for leads that are not contacted, contacted but not recently, or need follow-up
-    const eligibleLeads = allLeads.filter(lead => {
-      const status = lead.contact_status
-      // Skip converted, unqualified, not interested, wrong number
-      if (["converted", "unqualified", "notinterested", "wrongnumber", "archived"].includes(status)) return false
-      return true
-    })
-
-    // Sort by priority: intake timeline (sooner first), then lead_score (higher first)
-    const sorted = [...eligibleLeads].sort((a, b) => {
-      // First by intake timeline (6 months > 12 months > null)
-      const aTimeline = a.barcelona_timeline || 99
-      const bTimeline = b.barcelona_timeline || 99
-      if (aTimeline !== bTimeline) return aTimeline - bTimeline
-
-      // Then by lead_score (higher is better)
-      const aScore = a.lead_score || 0
-      const bScore = b.lead_score || 0
-      if (bScore !== aScore) return bScore - aScore
-
-      // Then by not contacted first
-      if (a.contact_status === "not_contacted" && b.contact_status !== "not_contacted") return -1
-      if (b.contact_status === "not_contacted" && a.contact_status !== "not_contacted") return 1
-
-      return 0
-    })
-
-    if (sorted.length > 0) {
-      const topLead = sorted[0]
-      // Clear filters and navigate to the lead
-      setSelectedCountry("all")
-      setSelectedStatus("all")
-      setSearchQuery("")
-      setCurrentPage(1)
-      // View the lead
-      if (onViewLead) onViewLead(topLead)
-    }
-  }, [allLeads, onViewLead])
-
   const getFilteredLeads = useCallback((leadsToFilter: Lead[]) => {
     let filtered = leadsToFilter
 
@@ -783,21 +743,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         intakes={intakes}
         statusOptions={CONTACT_STATUSES.map(s => ({ value: s.value, label: t(`recruiter.statuses.${s.label}`) }))}
       />
-
-      {/* Priority Lead Finder Button */}
-      <div className="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3">
-        <button
-          type="button"
-          onClick={findPriorityLead}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg shadow-md hover:from-green-700 hover:to-emerald-700 transition-all"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          Find Priority Lead to Call
-        </button>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Finds the best lead based on intake timeline and lead score</p>
-      </div>
 
       {/* Table Controls Row */}
       <div className="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 flex flex-wrap items-center gap-4">
