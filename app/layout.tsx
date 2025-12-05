@@ -10,6 +10,7 @@ import { ThemeProvider, type Theme } from '@/components/ThemeProvider'
 import { cookies } from 'next/headers'
 import Script from 'next/script'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import { ToastProvider } from '@/components/ui/Toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -90,10 +91,12 @@ export default async function RootLayout({
           <LanguageProvider>
             <IntlProvider>
               <AuthProvider>
-                <Header />
-                {children}
-                <Footer />
-                <WhatsAppButton />
+                <ToastProvider>
+                  <Header />
+                  {children}
+                  <Footer />
+                  <WhatsAppButton />
+                </ToastProvider>
               </AuthProvider>
             </IntlProvider>
           </LanguageProvider>

@@ -441,7 +441,7 @@ function RecruiterDashboardContent() {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : 'bg-gradient-to-b from-white to-blue-50'}`}>
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 pb-24 lg:pb-8">
         {/* Header - Consolidated UX */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
@@ -501,8 +501,8 @@ function RecruiterDashboardContent() {
           />
         )}
 
-                {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+                {/* Tab Navigation - Hidden on tablet, shown on desktop */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700 hidden lg:block">
           <nav className="-mb-px flex gap-8">
             <button
               onClick={() => setActiveTab('dashboard')}

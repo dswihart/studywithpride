@@ -1,5 +1,7 @@
 "use client"
 
+import { useToast } from '@/components/ui/Toast'
+
 import { useState, useEffect, useCallback } from "react"
 
 interface Lead {
@@ -49,6 +51,7 @@ function parseIntakeToSortValue(intake: string | null): number {
 }
 
 export default function CallQueue({ onViewLead, onLogContact, refreshKey }: CallQueueProps) {
+  const { showToast } = useToast()
   const [leads, setLeads] = useState<Lead[]>([])
   const [countries, setCountries] = useState<string[]>([])
   const [selectedCountry, setSelectedCountry] = useState("all")
