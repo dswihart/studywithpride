@@ -73,7 +73,6 @@ type SortColumn =
   | "barcelona_timeline"
   | "intake"
   | "created_time"
-  | "date_added"
   | null
 
 type SortDirection = "asc" | "desc" | null
@@ -92,7 +91,6 @@ type ColumnKey =
   | "barcelona_timeline"
   | "intake"
   | "created_time"
-  | "date_added"
   | "notes"
 
 type ColumnDefinition = {
@@ -110,7 +108,6 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "contact_status", labelKey: "recruiter.table.columns.status", sortable: "contact_status" },
   { key: "lead_quality", labelKey: "recruiter.table.columns.quality", sortable: "lead_quality" },
   { key: "last_contact_date", labelKey: "recruiter.table.columns.lastContact", sortable: "last_contact_date" },
-  { key: "date_added", labelKey: "recruiter.table.columns.dateAdded", sortable: "date_added" },
   { key: "notes", labelKey: "recruiter.table.columns.notes" },
   { key: "is_duplicate", labelKey: "recruiter.table.columns.duplicate", sortable: "is_duplicate" },
   { key: "barcelona_timeline", labelKey: "recruiter.table.columns.barcelonaTimeline", sortable: "barcelona_timeline" },
@@ -346,6 +343,47 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     setCurrentPage(1)
   }
 
+  // Find the highest priority lead to call next
+  const findPriorityLead = useCallback(() => {
+    // Filter for leads that are not contacted, contacted but not recently, or need follow-up
+    const eligibleLeads = allLeads.filter(lead => {
+      const status = lead.contact_status
+      // Skip converted, unqualified, not interested, wrong number
+      if (["converted", "unqualified", "notinterested", "wrongnumber", "archived"].includes(status)) return false
+      return true
+    })
+
+    // Sort by priority: intake timeline (sooner first), then lead_score (higher first)
+    const sorted = [...eligibleLeads].sort((a, b) => {
+      // First by intake timeline (6 months > 12 months > null)
+      const aTimeline = a.barcelona_timeline || 99
+      const bTimeline = b.barcelona_timeline || 99
+      if (aTimeline !== bTimeline) return aTimeline - bTimeline
+
+      // Then by lead_score (higher is better)
+      const aScore = a.lead_score || 0
+      const bScore = b.lead_score || 0
+      if (bScore !== aScore) return bScore - aScore
+
+      // Then by not contacted first
+      if (a.contact_status === "not_contacted" && b.contact_status !== "not_contacted") return -1
+      if (b.contact_status === "not_contacted" && a.contact_status !== "not_contacted") return 1
+
+      return 0
+    })
+
+    if (sorted.length > 0) {
+      const topLead = sorted[0]
+      // Clear filters and navigate to the lead
+      setSelectedCountry("all")
+      setSelectedStatus("all")
+      setSearchQuery("")
+      setCurrentPage(1)
+      // View the lead
+      if (onViewLead) onViewLead(topLead)
+    }
+  }, [allLeads, onViewLead])
+
   const getFilteredLeads = useCallback((leadsToFilter: Lead[]) => {
     let filtered = leadsToFilter
 
@@ -394,39 +432,9 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     if (selectedIntake !== "all") {
       filtered = filtered.filter((lead) => lead.intake === selectedIntake)
     }
-    // Contact activity filter
-    if (contactActivityFilter && contactActivityFilter !== "all") {
-      const now = new Date()
-      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
-      filtered = filtered.filter((lead) => {
-        const lastContact = lead.last_contact_date ? new Date(lead.last_contact_date) : null
-        const createdAt = new Date(lead.created_at)
-
-        switch (contactActivityFilter) {
-          case "new_leads":
-            // Added in last 7 days AND never contacted
-            return createdAt >= sevenDaysAgo && !lastContact
-          case "needs_followup":
-            // Has been contacted but last contact > 3 days ago
-            return lastContact && lastContact < threeDaysAgo
-          case "never_contacted":
-            // No contact history at all
-            return !lastContact
-          case "recently_contacted":
-            // Contacted in last 24 hours
-            return lastContact && lastContact >= oneDayAgo
-          default:
-            return true
-        }
-      })
-    }
-
 
     return filtered
-  }, [searchQuery, dateFrom, dateTo, selectedBarcelonaTimeline, selectedIntake, contactActivityFilter])
+  }, [searchQuery, dateFrom, dateTo, selectedBarcelonaTimeline, selectedIntake])
 
   const getSortedLeads = (leadsToSort: Lead[]) => {
     if (!sortColumn || !sortDirection) return leadsToSort
@@ -483,13 +491,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           aValue = a.created_time ? new Date(a.created_time).getTime() : 0
           bValue = b.created_time ? new Date(b.created_time).getTime() : 0
           break
-        case "date_added": {
-          const aDate = a.date_imported || a.created_at
-          const bDate = b.date_imported || b.created_at
-          aValue = aDate ? new Date(aDate).getTime() : 0
-          bValue = bDate ? new Date(bDate).getTime() : 0
-          break
-        }
         case "is_duplicate":
           aValue = a.is_duplicate ? 1 : 0
           bValue = b.is_duplicate ? 1 : 0
@@ -710,8 +711,6 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         )
       case "last_contact_date":
         return formatDate(lead.last_contact_date)
-      case "date_added":
-        return formatDate(lead.date_imported || lead.created_at)
       case "notes":
         return (
           <div className="max-w-xs truncate" title={lead.notes || ""}>
@@ -784,6 +783,21 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         intakes={intakes}
         statusOptions={CONTACT_STATUSES.map(s => ({ value: s.value, label: t(`recruiter.statuses.${s.label}`) }))}
       />
+
+      {/* Priority Lead Finder Button */}
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3">
+        <button
+          type="button"
+          onClick={findPriorityLead}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg shadow-md hover:from-green-700 hover:to-emerald-700 transition-all"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Find Priority Lead to Call
+        </button>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Finds the best lead based on intake timeline and lead score</p>
+      </div>
 
       {/* Table Controls Row */}
       <div className="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 flex flex-wrap items-center gap-4">

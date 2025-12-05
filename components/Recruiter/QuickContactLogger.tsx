@@ -121,12 +121,10 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
   const [referralDestination, setReferralDestination] = useState<string>("")
   const [expandedCategory, setExpandedCategory] = useState<SecondaryCategory>(null)
-  const [hasFunds, setHasFunds] = useState(false)
-  const [meetsAgeRequirements, setMeetsAgeRequirements] = useState(false)
+  const [meetsEducationLevel, setMeetsEducationLevel] = useState(false)
+  const [englishLevelBasic, setEnglishLevelBasic] = useState(false)
   const [hasValidPassport, setHasValidPassport] = useState(false)
-  const [hasEducationDocs, setHasEducationDocs] = useState(false)
-  const [discussedWithFamily, setDiscussedWithFamily] = useState(false)
-  const [needsHousingSupport, setNeedsHousingSupport] = useState(false)
+  const [confirmedFinancialSupport, setConfirmedFinancialSupport] = useState(false)
   const [intakePeriod, setIntakePeriod] = useState("")
   const [readyToProceed, setReadyToProceed] = useState(false)
   const [readinessComments, setReadinessComments] = useState("")
@@ -208,12 +206,10 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           outcome: outcomeOption?.label || selectedOutcome,
           notes: notes || null,
           follow_up_action: followUpLabel || null,
-          has_funds: hasFunds,
-          meets_age_requirements: meetsAgeRequirements,
+          meets_education_level: meetsEducationLevel,
+          english_level_basic: englishLevelBasic,
           has_valid_passport: hasValidPassport,
-          has_education_docs: hasEducationDocs,
-          discussed_with_family: discussedWithFamily,
-          needs_housing_support: needsHousingSupport,
+          confirmed_financial_support: confirmedFinancialSupport,
           ready_to_proceed: readyToProceed,
           readiness_comments: readinessComments || null,
           intake_period: intakePeriod || null,
@@ -483,6 +479,28 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 </div>
               )}
 
+              <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mark as VIP / Priority Lead</label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRecruitPriority(recruitPriority === star ? null : star)}
+                      className={`p-1 text-2xl transition-transform hover:scale-110 ${recruitPriority && recruitPriority >= star ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  {recruitPriority && (
+                    <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                      {recruitPriority === 5 ? "VIP" : recruitPriority >= 3 ? "High Priority" : "Priority"}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Click to rate lead priority (5 stars = VIP)</p>
+              </div>
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Additional Notes (optional)</label>
                 <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any important details from the conversation..." className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows={3} />
@@ -528,34 +546,25 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={hasFunds} onChange={(e) => setHasFunds(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead has funds to study</span>
+                  <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Meets minimum education level</span>
                 </label>
 
                 <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={meetsAgeRequirements} onChange={(e) => setMeetsAgeRequirements(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead meets minimum age requirements</span>
+                  <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">English level of Basic</span>
                 </label>
 
                 <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                   <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead has a valid passport</span>
+                  <span className="text-gray-700 dark:text-gray-300">Valid Passport</span>
                 </label>
 
                 <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={hasEducationDocs} onChange={(e) => setHasEducationDocs(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead has documents proving education requirements</span>
+                  <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Confirmed financial support</span>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={discussedWithFamily} onChange={(e) => setDiscussedWithFamily(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead has discussed with family/support network</span>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                  <input type="checkbox" checked={needsHousingSupport} onChange={(e) => setNeedsHousingSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                  <span className="text-gray-700 dark:text-gray-300">Lead needs housing support</span>
-                </label>
 
                 <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Intake Period</label>
