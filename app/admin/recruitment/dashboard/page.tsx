@@ -80,7 +80,7 @@ interface Task {
   } | null
 }
 
-type DashboardTab = 'leads' | 'tasks' | 'activity' | 'students' | 'templates' | 'stats' | 'settings' 
+type DashboardTab = 'dashboard' | 'leads' | 'admin' 
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -100,7 +100,7 @@ function RecruiterDashboardContent() {
   const [messageHistoryLead, setMessageHistoryLead] = useState<Lead | null>(null)
   const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(null)
   const [highlightedLeadName, setHighlightedLeadName] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<DashboardTab>('leads')
+  const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard')
   const [showActivityTimeline, setShowActivityTimeline] = useState(false)
   const [timelineLead, setTimelineLead] = useState<Lead | null>(null)
   const [showContactLogger, setShowContactLogger] = useState(false)
@@ -127,7 +127,7 @@ function RecruiterDashboardContent() {
     const leadId = searchParams.get('leadId')
     const tab = searchParams.get('tab') as DashboardTab | null
 
-    if (tab && ['leads', 'tasks', 'activity', 'students', 'templates', 'stats', 'settings'].includes(tab)) {
+    if (tab && ['dashboard', 'leads', 'admin'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -157,7 +157,7 @@ function RecruiterDashboardContent() {
 
   // Fetch recent activity when activity tab is selected
   useEffect(() => {
-    if (activeTab === 'activity') {
+    if (activeTab === 'dashboard') {
       fetchRecentActivity()
     }
   }, [activeTab])
@@ -501,9 +501,24 @@ function RecruiterDashboardContent() {
           />
         )}
 
-        {/* Tab Navigation */}
+                {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex gap-6">
+          <nav className="-mb-px flex gap-8">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
+                activeTab === 'dashboard'
+                  ? 'border-green-500 text-green-600 dark:text-green-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Dashboard
+              </span>
+            </button>
             <button
               onClick={() => setActiveTab('leads')}
               className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
@@ -516,134 +531,121 @@ function RecruiterDashboardContent() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                Lead Management
+                Leads
               </span>
             </button>
             <button
-              onClick={() => setActiveTab('tasks')}
+              onClick={() => setActiveTab('admin')}
               className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
-                activeTab === 'tasks'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-                Tasks
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('activity')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
-                activeTab === 'activity'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Activity
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('students')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
-                activeTab === 'students'
+                activeTab === 'admin'
                   ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
               }`}
             >
               <span className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Users
+                Admin
               </span>
             </button>
-            <button              onClick={() => setActiveTab('templates')}              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${                activeTab === 'templates'                  ? 'border-teal-500 text-teal-600 dark:text-teal-400'                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'              }`}            >              <span className="flex items-center gap-2">                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />                </svg>                Templates              </span>            </button>
-            <button
-              onClick={() => setActiveTab("stats")}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${
-                activeTab === "stats"
-                  ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Statistics
-              </span>
-            </button>
-<button              onClick={() => setActiveTab("settings")}              className={`py-3 px-1 border-b-2 font-medium text-sm transition ${                activeTab === "settings"                  ? "border-purple-500 text-purple-600 dark:text-purple-400"                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300"              }`}            >              <span className="flex items-center gap-2">                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />                </svg>                Settings              </span>            </button>
           </nav>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'leads' && (
+                {/* Tab Content */}
+
+        {/* DASHBOARD TAB - Agent daily workflow */}
+        {activeTab === 'dashboard' && (
           <>
-            {/* Metrics */}
-            <LeadMetrics leads={leads} />
-
-            {/* Upcoming Tasks Widget */}
-            <UpcomingTasksWidget
-              onViewAllTasks={() => setActiveTab("tasks")}
-              onTaskClick={(task) => {
-                setEditingTask(task as Task)
-                setTaskLeadId(task.lead_id || undefined)
-                setTaskLeadName(task.leads?.prospect_name || task.leads?.prospect_email || undefined)
-                setIsAddTaskModalOpen(true)
-              }}
-              refreshKey={taskListKey}
-            />
-
-            {/* Call Queue */}
+            {/* Call Queue - Most prominent */}
             <CallQueue
               onViewLead={handleViewLead}
               onLogContact={handleLogContactClick}
               refreshKey={taskListKey}
             />
 
-
-            {/* Notification Banner */}
-            {highlightedLeadName && (
-              <div className="mt-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg shadow-md flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <p className="font-semibold">Viewing messages from {highlightedLeadName}</p>
-                    <p className="text-sm text-yellow-800">Lead highlighted below - will auto-clear in 5 seconds</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setHighlightedLeadId(null)
-                    setHighlightedLeadName(null)
+            {/* Two column layout for Tasks and Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* Tasks Widget */}
+              <div>
+                <UpcomingTasksWidget
+                  onViewAllTasks={() => setActiveTab("leads")}
+                  onTaskClick={(task) => {
+                    setEditingTask(task as Task)
+                    setTaskLeadId(task.lead_id || undefined)
+                    setTaskLeadName(task.leads?.prospect_name || task.leads?.prospect_email || undefined)
+                    setIsAddTaskModalOpen(true)
                   }}
-                  className="text-yellow-700 hover:text-yellow-900"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                  refreshKey={taskListKey}
+                />
               </div>
-            )}
 
-            {/* Lead Table */}
-            <div className="mt-8">
+              {/* Recent Activity Summary */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Recent Activity
+                </h3>
+                {activityLoading ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700 rounded"></div>)}
+                  </div>
+                ) : recentActivity.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No recent activity</p>
+                ) : (
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {recentActivity.slice(0, 10).map((activity: any) => (
+                      <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs ${
+                          activity.contact_type === 'call' ? 'bg-blue-500' :
+                          activity.contact_type === 'whatsapp' ? 'bg-green-500' :
+                          activity.contact_type === 'email' ? 'bg-purple-500' : 'bg-gray-500'
+                        }`}>
+                          {activity.contact_type === 'call' ? '📞' :
+                           activity.contact_type === 'whatsapp' ? '💬' :
+                           activity.contact_type === 'email' ? '📧' : '•'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900 dark:text-white truncate">
+                            {activity.lead_name || 'Unknown Lead'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">{activity.outcome || activity.notes || activity.contact_type}</p>
+                        </div>
+                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                          {(() => {
+                            if (!activity.contacted_at) return "Recently"
+                            const diff = Date.now() - new Date(activity.contacted_at).getTime()
+                            const mins = Math.floor(diff / 60000)
+                            if (mins < 60) return mins + "m ago"
+                            const hrs = Math.floor(mins / 60)
+                            if (hrs < 24) return hrs + "h ago"
+                            const days = Math.floor(hrs / 24)
+                            if (days < 7) return days + "d ago"
+                            return new Date(activity.contacted_at).toLocaleDateString()
+                          })()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* LEADS TAB - Full lead management */}
+        {activeTab === 'leads' && (
+          <>
+            <LeadMetrics leads={leads} />
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
               <LeadTable
-                onLeadsChange={handleLeadsChange}
+                onLeadsChange={setLeads}
                 onEditLead={handleEditLead}
                 onViewLead={handleViewLead}
-                onSelectionChange={handleSelectionChange}
+                onSelectionChange={setSelectedLeadIds}
                 onWhatsAppClick={handleWhatsAppClick}
                 onMessageHistoryClick={handleMessageHistoryClick}
                 onLogContactClick={handleLogContactClick}
@@ -653,171 +655,78 @@ function RecruiterDashboardContent() {
           </>
         )}
 
-        {activeTab === 'tasks' && (
-          <TaskList
-            key={taskListKey}
-            onAddTask={handleAddTask}
-            onEditTask={handleEditTask}
-          />
-        )}
-
-        {activeTab === 'activity' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Activity</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">All contact log entries from recruiters</p>
-              </div>
-              <button
-                onClick={fetchRecentActivity}
-                className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Refresh
-              </button>
-            </div>
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {activityLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                  <p className="text-gray-500 dark:text-gray-400 mt-4">Loading activity...</p>
-                </div>
-              ) : recentActivity.length > 0 ? (
-                recentActivity.map((activity) => {
-                  const getOutcomeIcon = (outcome: string) => {
-                    if (!outcome) return '📋'
-                    const lower = outcome.toLowerCase()
-                    if (lower.includes('interested') && !lower.includes('not')) return '🎯'
-                    if (lower.includes('whatsapp') || lower.includes('message')) return '💬'
-                    if (lower.includes('call') || lower.includes('answer')) return '📞'
-                    if (lower.includes('not interested') || lower.includes('unqualified')) return '👎'
-                    if (lower.includes('wrong')) return '❌'
-                    return '📋'
-                  }
-
-                  const formatDate = (dateStr: string) => {
-                    const date = new Date(dateStr)
-                    const now = new Date()
-                    const diffMs = now.getTime() - date.getTime()
-                    const diffMins = Math.floor(diffMs / 60000)
-                    const diffHours = Math.floor(diffMs / 3600000)
-                    const diffDays = Math.floor(diffMs / 86400000)
-
-                    if (diffMins < 1) return 'Just now'
-                    if (diffMins < 60) return `${diffMins}m ago`
-                    if (diffHours < 24) return `${diffHours}h ago`
-                    if (diffDays < 7) return `${diffDays}d ago`
-                    return date.toLocaleDateString()
-                  }
-
-                  return (
-                    <div
-                      key={activity.id}
-                      className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition"
-                      onClick={() => {
-                        if (activity.lead_id) {
-                          if (activity.lead_status === 'archived_referral') {
-                            alert('This lead has been archived')
-                            return
-                          }
-                          const lead = leads.find(l => l.id === activity.lead_id)
-                          if (lead) {
-                            handleViewLead(lead)
-                          } else {
-                            setHighlightedLeadId(activity.lead_id)
-                            setActiveTab('leads')
-                          }
-                        }
-                      }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">{getOutcomeIcon(activity.outcome)}</span>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {activity.lead_name}
-                            </p>
-                            {activity.lead_country && (
-                              <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded">
-                                {activity.lead_country}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 ml-7">
-                            <span className="font-medium">{activity.outcome || 'Contact logged'}</span>
-                            {activity.follow_up_action && (
-                              <span className="text-purple-600 dark:text-purple-400"> → {activity.follow_up_action}</span>
-                            )}
-                          </p>
-                          {activity.notes && (
-                            <p className="text-xs text-gray-500 dark:text-gray-500 ml-7 mt-1 italic">
-                              {activity.notes.substring(0, 100)}{activity.notes.length > 100 ? '...' : ''}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right ml-4 flex-shrink-0">
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                            activity.lead_status === 'contacted' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                            activity.lead_status === 'qualified' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                            activity.lead_status === 'converted' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                            activity.lead_status === 'contacted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                            activity.lead_status === 'notinterested' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' :
-                            activity.lead_status === 'wrongnumber' ? 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300' :
-                            'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
-                          }`}>
-                            {activity.lead_status || 'unknown'}
-                          </span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {formatDate(activity.contacted_at)}
-                          </p>
-                          {activity.ready_to_proceed && (
-                            <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-0.5 rounded">
-                              Ready to proceed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="text-center py-12">
-                  <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <p className="text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Start logging contacts to see activity here.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'students' && (
-          <UserManagementPanel
-            onOpenLead={(leadId) => {
-              const lead = leads.find(l => l.id === leadId)
-              if (lead) {
-                setViewingLead(lead)
-                setIsViewLeadModalOpen(true)
-              }
-            }}
-          />
-        )}
-        {activeTab === 'templates' && (          <TemplatesLibrary            isAdmin={true}            selectedLead={viewingLead}            onSendComplete={() => {}}          />        )}
-
-        {activeTab === "stats" && (
+        {/* ADMIN TAB - Administrative functions */}
+        {activeTab === 'admin' && (
           <div className="space-y-6">
-            {/* Trends Chart */}
-            <TrendsChart />
-            
-            {/* Insights Panel */}
-            <InsightsPanel />
+            {/* Admin Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Users Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20">
+                  <h3 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    User Management
+                  </h3>
+                </div>
+                <UserManagementPanel />
+              </div>
 
-            {/* Performance Dashboard */}
-            <RecruiterPerformanceDashboard />
+              {/* Templates Section */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-teal-50 dark:bg-teal-900/20">
+                  <h3 className="font-semibold text-teal-900 dark:text-teal-100 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Message Templates
+                  </h3>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <TemplatesLibrary
+                    isAdmin={true}
+                    selectedLead={viewingLead}
+                    onSendComplete={() => {}}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Statistics Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-indigo-50 dark:bg-indigo-900/20">
+                <h3 className="font-semibold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Statistics & Performance
+                </h3>
+              </div>
+              <div className="p-4 space-y-6">
+                <TrendsChart />
+                <RecruiterPerformanceDashboard />
+                <InsightsPanel />
+              </div>
+            </div>
+
+            {/* Settings Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Settings
+                </h3>
+              </div>
+              <div className="p-4">
+                <VisaSettings />
+              </div>
+            </div>
           </div>
         )}
-{activeTab === "settings" && (          <div className="space-y-6">            <VisaSettings />          </div>        )}
 
         {/* Modals */}
         <ViewLeadModal

@@ -111,7 +111,7 @@ const STATUS_OPTIONS = [
 
 export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateTask }: QuickContactLoggerProps) {
   const { t } = useLanguage()
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [selectedOutcome, setSelectedOutcome] = useState<ContactOutcome | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
@@ -119,7 +119,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(true)
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
-  const [showChecklist, setShowChecklist] = useState(false)
   const [referralDestination, setReferralDestination] = useState<string>("")
   const [expandedCategory, setExpandedCategory] = useState<SecondaryCategory>(null)
   const [meetsEducationLevel, setMeetsEducationLevel] = useState(false)
@@ -480,58 +479,26 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 </div>
               )}
 
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setRecruitPriority(recruitPriority ? null : 1)}
-                  className={`w-full p-3 rounded-lg border-2 transition flex items-center justify-center gap-2 ${recruitPriority ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "border-gray-200 dark:border-gray-700 hover:border-yellow-300"}`}
-                >
-                  <span className={`text-2xl ${recruitPriority ? "text-yellow-400" : "text-gray-300"}`}>★</span>
-                  <span className={`font-medium ${recruitPriority ? "text-yellow-700 dark:text-yellow-300" : "text-gray-500 dark:text-gray-400"}`}>
-                    {recruitPriority ? "VIP Lead" : "Mark as VIP"}
-                  </span>
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowChecklist(!showChecklist)}
-                  className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between"
-                >
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <span>📋</span> Lead Readiness Checklist
-                  </span>
-                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showChecklist ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showChecklist && (
-                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Meets minimum education level</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">English level of Basic</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Valid Passport</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support</span>
-                    </label>
-                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={readyToProceed} onChange={(e) => setReadyToProceed(e.target.checked)} className="w-4 h-4 rounded text-green-600" />
-                        <span className="text-sm font-medium text-green-700 dark:text-green-400">Ready to proceed with enrollment</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
+              <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mark as VIP / Priority Lead</label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRecruitPriority(recruitPriority === star ? null : star)}
+                      className={`p-1 text-2xl transition-transform hover:scale-110 ${recruitPriority && recruitPriority >= star ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  {recruitPriority && (
+                    <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                      {recruitPriority === 5 ? "VIP" : recruitPriority >= 3 ? "High Priority" : "Priority"}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Click to rate lead priority (5 stars = VIP)</p>
               </div>
 
               <div className="mb-4">
@@ -565,14 +532,89 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
               <div className="flex gap-2">
                 <button onClick={() => { setStep(1); setExpandedCategory(null) }} className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Back</button>
-                <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50">
-                  {saving ? "Saving..." : "Save Contact Log"}
-                </button>
+                <button onClick={() => setStep(3)} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Next: Readiness & Save</button>
               </div>
             </div>
           )}
 
-          
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Lead Readiness Checklist</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Optional - Check all that apply</p>
+              </div>
+
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Meets minimum education level</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">English level of Basic</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Valid Passport</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                  <span className="text-gray-700 dark:text-gray-300">Confirmed financial support</span>
+                </label>
+
+
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Intake Period</label>
+                  <select value={intakePeriod} onChange={(e) => setIntakePeriod(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                    <option value="">Select intake...</option>
+                    <option value="february_2025">February 2025</option>
+                    <option value="may_2025">May 2025</option>
+                    <option value="october_2025">October 2025</option>
+                    <option value="february_2026">February 2026</option>
+                    <option value="may_2026">May 2026</option>
+                    <option value="october_2026">October 2026</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={readyToProceed} onChange={(e) => setReadyToProceed(e.target.checked)} className="w-5 h-5 mt-0.5 rounded text-blue-600" />
+                  <div>
+                    <span className="font-medium text-blue-800 dark:text-blue-200">Lead is ready to proceed to the next application stage</span>
+                    <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">Auto-upgrades to qualified status with application task</p>
+                  </div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Comments (optional)</label>
+                <textarea value={readinessComments} onChange={(e) => setReadinessComments(e.target.value)} placeholder="Any additional context about this lead's readiness..." rows={2} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400" />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <button onClick={() => setStep(2)} disabled={saving} className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">Back</button>
+                <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2">
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save Contact Log
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

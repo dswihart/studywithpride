@@ -318,6 +318,47 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   useEffect(() => {
     fetchLeads()
   }, [fetchLeads])
+// Toggle VIP status for a lead
+  const toggleVipStatus = async (lead: Lead) => {
+    const newPriority = lead.recruit_priority ? null : 1
+    // Optimistically update UI
+    setAllLeads(prev => prev.map(l =>
+      l.id === lead.id ? { ...l, recruit_priority: newPriority } : l
+    ))
+    setLeads(prev => prev.map(l =>
+      l.id === lead.id ? { ...l, recruit_priority: newPriority } : l
+    ))
+    try {
+      const response = await fetch("/api/recruiter/leads-write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          id: lead.id,
+          contact_status: lead.contact_status,
+          recruit_priority: newPriority
+        })
+      })
+      if (!response.ok) {
+        // Revert on failure
+        setAllLeads(prev => prev.map(l =>
+          l.id === lead.id ? { ...l, recruit_priority: lead.recruit_priority } : l
+        ))
+        setLeads(prev => prev.map(l =>
+          l.id === lead.id ? { ...l, recruit_priority: lead.recruit_priority } : l
+        ))
+      }
+    } catch (err) {
+      console.error("Failed to toggle VIP status:", err)
+      // Revert on error
+      setAllLeads(prev => prev.map(l =>
+        l.id === lead.id ? { ...l, recruit_priority: lead.recruit_priority } : l
+      ))
+      setLeads(prev => prev.map(l =>
+        l.id === lead.id ? { ...l, recruit_priority: lead.recruit_priority } : l
+      ))
+    }
+  }
 
   const handleBulkEditSuccess = () => {
     fetchLeads()
@@ -621,7 +662,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   }
 
   const visibleColumns = COLUMN_DEFINITIONS.filter((column) => columnVisibility[column.key])
-  const totalColumns = visibleColumns.length + 2 // selection + actions
+  const totalColumns = visibleColumns.length + 3 // selection + VIP + actions
   const allSelected = leads.length > 0 && selectedLeads.size === leads.length
   const someSelected = selectedLeads.size > 0 && selectedLeads.size < leads.length
 
@@ -690,11 +731,14 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
           </span>
         )
       case "recruit_priority":
-        if (!lead.recruit_priority) return <span className="text-gray-400">-</span>
         return (
-          <span className="text-yellow-400" title={`Priority: ${lead.recruit_priority}/5`}>
-            {"⭐".repeat(lead.recruit_priority)}
-          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleVipStatus(lead); }}
+            className={"text-2xl transition-transform hover:scale-110 " + (lead.recruit_priority ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300")}
+            title={lead.recruit_priority ? "VIP Lead - Click to remove" : "Click to mark as VIP"}
+          >
+            ★
+          </button>
         )
       default:
         return null
@@ -869,6 +913,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
+                <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">VIP</th>
                 {visibleColumns.map((column) => renderHeaderCell(column))}
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   {t("recruiter.table.columns.actions")}
@@ -901,6 +946,15 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                         onChange={(event) => handleSelectLead(lead.id, event.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
+                    </td>
+                    <td className="px-3 py-4 text-center" onClick={(event) => event.stopPropagation()}>
+                      <button
+                        onClick={() => toggleVipStatus(lead)}
+                        className={"text-xl transition-transform hover:scale-125 " + (lead.recruit_priority ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300")}
+                        title={lead.recruit_priority ? "VIP Lead - Click to remove" : "Click to mark as VIP"}
+                      >
+                        ★
+                      </button>
                     </td>
                     {visibleColumns.map((column) => (
                       <td key={`${lead.id}-${column.key}`} className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">

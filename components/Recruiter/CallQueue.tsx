@@ -99,6 +99,30 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
     }
   }, [])
 
+  // Toggle VIP status for a lead
+  const toggleVipStatus = async (lead: Lead) => {
+    const newPriority = lead.recruit_priority ? 0 : 1
+    try {
+      const response = await fetch("/api/recruiter/leads-write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          id: lead.id,
+          contact_status: lead.contact_status,
+          recruit_priority: newPriority
+        })
+      })
+      if (response.ok) {
+        setLeads(prev => prev.map(l =>
+          l.id === lead.id ? { ...l, recruit_priority: newPriority } : l
+        ))
+      }
+    } catch (err) {
+      console.error("Failed to toggle VIP status:", err)
+    }
+  }
+
   useEffect(() => { fetchLeads() }, [fetchLeads, refreshKey])
 
   const filteredLeads = selectedCountry === "all"
@@ -145,6 +169,7 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
               <option value="all" className="text-gray-900">All Countries</option>
               {countries.map(c => (<option key={c} value={c} className="text-gray-900">{c}</option>))}
             </select>
+            <button onClick={() => fetchLeads()} className="p-1.5 hover:bg-white/20 rounded-lg" title="Refresh queue"><svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
             <button onClick={() => setIsCollapsed(true)} className="p-1.5 hover:bg-white/20 rounded-lg">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
             </button>
@@ -164,7 +189,11 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  {lead.recruit_priority && lead.recruit_priority >= 1 && <span className="text-yellow-500">★</span>}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleVipStatus(lead); }}
+                    className={"text-lg transition-transform hover:scale-125 " + (lead.recruit_priority ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300")}
+                    title={lead.recruit_priority ? "VIP - Click to remove" : "Mark as VIP"}
+                  >★</button>
                   <span className="font-medium text-gray-900 dark:text-white truncate">{lead.prospect_name || lead.prospect_email || "Unknown"}</span>
                   <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{lead.country}</span>
                 </div>
