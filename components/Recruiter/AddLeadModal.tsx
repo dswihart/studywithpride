@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { calculateLeadScore, detectCountryFromPhone } from '@/lib/leadScoring'
 
 interface Lead {
@@ -424,18 +424,40 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     return countryMap[trimmed.toLowerCase()] || trimmed || 'Other'
   }
 
-  const parseXLSXToJson = (arrayBuffer: ArrayBuffer): Record<string, any>[] => {
-    // Read the workbook
-    const workbook = XLSX.read(arrayBuffer, { type: "array" })
-
-    // Get the first sheet
-    const firstSheetName = workbook.SheetNames[0]
-    const worksheet = workbook.Sheets[firstSheetName]
-
-    // Convert directly to JSON (handles newlines in cells properly)
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
-
-    return jsonData as Record<string, any>[]
+const parseXLSXToJson = async (arrayBuffer: ArrayBuffer): Promise<Record<string, any>[]> => {
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(arrayBuffer)
+    
+    const worksheet = workbook.worksheets[0]
+    if (\!worksheet) return []
+    
+    const jsonData: Record<string, any>[] = []
+    const headers: string[] = []
+    
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) {
+        // First row is headers
+        row.eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = String(cell.value || "")
+        })
+      } else {
+        // Data rows
+        const rowData: Record<string, any> = {}
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber - 1]
+          if (header) {
+            rowData[header] = cell.value ?? ""
+          }
+        })
+        // Fill in missing columns with empty strings
+        headers.forEach(h => {
+          if (\!(h in rowData)) rowData[h] = ""
+        })
+        jsonData.push(rowData)
+      }
+    })
+    
+    return jsonData
   }
   // Process XLSX rows directly from JSON (avoids CSV newline issues)
   const processXLSXRows = async (jsonRows: Record<string, any>[]): Promise<CsvRow[]> => {
@@ -699,7 +721,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
 
         reader.onload = async (event) => {
           const arrayBuffer = event.target?.result as ArrayBuffer
-          const jsonRows = parseXLSXToJson(arrayBuffer)
+          const jsonRows = await parseXLSXToJson(arrayBuffer)
           const parsed = await processXLSXRows(jsonRows)
           setParsedRows(parsed)
 

@@ -1,7 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = "https://eurovhkmzgqtjrkjwrpb.supabase.co";
-const serviceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1cm92aGttemdxdGpya2p3cnBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjI1NTE4MiwiZXhwIjoyMDc3ODMxMTgyfQ.XLbVOcpZchoh9yIF4Z3bsv8L4qiREQRKK-9oODOSOI0";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (\!supabaseUrl || \!serviceKey) {
+  console.error("Error: Missing required environment variables");
+  console.error("Please set NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY");
+  process.exit(1);
+}
 
 // Use service role key for admin operations
 const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
@@ -17,7 +24,7 @@ async function main() {
   // Step 1: Create or get admin user
   console.log("1. Creating admin user...");
   const adminEmail = "admin@studywithpride.com";
-  const adminPassword = "Admin123!Secure";
+  const adminPassword = "Admin123\!Secure";
 
   const { data: adminUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email: adminEmail,
@@ -34,7 +41,7 @@ async function main() {
       // Get existing user
       const { data: users } = await supabaseAdmin.auth.admin.listUsers();
       const existing = users?.users?.find(u => u.email === adminEmail);
-      if (existing && !existing.user_metadata?.role) {
+      if (existing && \!existing.user_metadata?.role) {
         // Update role if missing
         await supabaseAdmin.auth.admin.updateUserById(existing.id, {
           user_metadata: { role: "admin" }
@@ -51,7 +58,7 @@ async function main() {
   // Step 2: Create recruiter user for testing
   console.log("\n2. Creating test recruiter user...");
   const recruiterEmail = "recruiter@studywithpride.com";
-  const recruiterPassword = "Recruiter123!Secure";
+  const recruiterPassword = "Recruiter123\!Secure";
 
   const { data: recruiterUser, error: recruiterError } = await supabaseAdmin.auth.admin.createUser({
     email: recruiterEmail,
@@ -82,19 +89,25 @@ async function main() {
 
   // Step 3: Sign in as admin and get JWT
   console.log("\n3. Authenticating as admin...");
-  const supabaseClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1cm92aGttemdxdGpya2p3cnBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNTUxODIsImV4cCI6MjA3NzgzMTE4Mn0.AGofibiNYhk-8mVWefky8XLp_BY7ZNa9Lovksu3hRYo");
+  if (\!anonKey) {
+    console.log("   ↳ NEXT_PUBLIC_SUPABASE_ANON_KEY not set, skipping migration");
+    console.log("\n=== Setup Complete (migration skipped) ===");
+    return;
+  }
+  
+  const supabaseClient = createClient(supabaseUrl, anonKey);
   
   const { data: session, error: signInError } = await supabaseClient.auth.signInWithPassword({
     email: adminEmail,
     password: adminPassword
   });
 
-  if (signInError || !session) {
+  if (signInError || \!session) {
     console.log("   ↳ Could not sign in:", signInError?.message);
     console.log("\n=== Setup Complete (migration skipped) ===");
     console.log("\nCreated users:");
-    console.log("- Admin: admin@studywithpride.com / Admin123!Secure");
-    console.log("- Recruiter: recruiter@studywithpride.com / Recruiter123!Secure");
+    console.log("- Admin: admin@studywithpride.com / Admin123\!Secure");
+    console.log("- Recruiter: recruiter@studywithpride.com / Recruiter123\!Secure");
     console.log("\nPlease run migration manually via Supabase Dashboard or API");
     return;
   }
@@ -129,8 +142,8 @@ async function main() {
 
   console.log("\n=== Setup Complete ===");
   console.log("\nCreated users:");
-  console.log("- Admin: admin@studywithpride.com / Admin123!Secure");
-  console.log("- Recruiter: recruiter@studywithpride.com / Recruiter123!Secure");
+  console.log("- Admin: admin@studywithpride.com / Admin123\!Secure");
+  console.log("- Recruiter: recruiter@studywithpride.com / Recruiter123\!Secure");
 }
 
 main().then(() => process.exit(0)).catch((e) => {

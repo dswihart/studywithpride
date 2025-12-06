@@ -14,7 +14,7 @@ export default function SafetyPage() {
       const keys = key.split('.')
       let value: any = enMessages
       for (const k of keys) {
-        value = value?.[k]
+        value = value[k]
       }
       return value || key
     }

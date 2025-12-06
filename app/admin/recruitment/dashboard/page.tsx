@@ -34,7 +34,7 @@ import RecruiterPerformanceDashboard from '@/components/Recruiter/RecruiterPerfo
 import InsightsPanel from '@/components/Recruiter/InsightsPanel'
 import VisaSettings from '@/components/Recruiter/VisaSettings'
 import { useTheme } from '@/components/ThemeProvider'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 interface Lead {
   id: string

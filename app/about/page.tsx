@@ -10,7 +10,7 @@ export default function AboutPage() {
     let value: any = enMessages
 
     for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
+      if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, k)) {
         value = value[k]
       } else {
         return key

@@ -1,9 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import fetch from "node-fetch";
 
-const supabaseUrl = "https://eurovhkmzgqtjrkjwrpb.supabase.co";
-const serviceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1cm92aGttemdxdGpya2p3cnBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjI1NTE4MiwiZXhwIjoyMDc3ODMxMTgyfQ.XLbVOcpZchoh9yIF4Z3bsv8L4qiREQRKK-9oODOSOI0";
-const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1cm92aGttemdxdGpya2p3cnBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNTUxODIsImV4cCI6MjA3NzgzMTE4Mn0.AGofibiNYhk-8mVWefky8XLp_BY7ZNa9Lovksu3hRYo";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (\!supabaseUrl || \!anonKey) {
+  console.error("Error: Missing required environment variables");
+  console.error("Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, anonKey);
 

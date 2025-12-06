@@ -23,6 +23,13 @@ const messages: Record<Locale, Messages> = {
   pt: ptMessages,
 }
 
+// Blocked keys that could lead to prototype pollution
+const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function isValidKey(key: string): boolean {
+  return !BLOCKED_KEYS.has(key)
+}
+
 export function IntlProvider({ children }: { children: ReactNode }) {
   const { language, setLanguage } = useLanguage()
   const locale: Locale = (language as Locale) ?? 'en'
@@ -33,10 +40,16 @@ export function IntlProvider({ children }: { children: ReactNode }) {
 
   const t = (key: string): string => {
     const keys = key.split('.')
+    
+    // Validate all keys to prevent prototype pollution
+    if (!keys.every(isValidKey)) {
+      return key
+    }
+    
     let value: any = messages[locale]
 
     for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
+      if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, k)) {
         value = value[k]
       } else {
         return key

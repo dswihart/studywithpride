@@ -11,6 +11,13 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// Blocked keys that could lead to prototype pollution
+const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isValidKey(key: string): boolean {
+  return !BLOCKED_KEYS.has(key);
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
   const [mounted, setMounted] = useState(false);
@@ -42,17 +49,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // Check if the key contains dots (nested key)
     if (key.includes('.')) {
       const keys = key.split('.');
+      
+      // Validate all keys to prevent prototype pollution
+      if (!keys.every(isValidKey)) {
+        return key;
+      }
+      
       let value: any = translations[language];
 
       // Traverse the nested object structure
       for (const k of keys) {
-        if (value && typeof value === 'object' && k in value) {
+        if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, k)) {
           value = value[k];
         } else {
           // If not found in current language, try English fallback
           let fallbackValue: any = translations.en;
           for (const fk of keys) {
-            if (fallbackValue && typeof fallbackValue === 'object' && fk in fallbackValue) {
+            if (fallbackValue && typeof fallbackValue === 'object' && Object.prototype.hasOwnProperty.call(fallbackValue, fk)) {
               fallbackValue = fallbackValue[fk];
             } else {
               // If not found in fallback either, return the key itself
@@ -66,15 +79,25 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       return typeof value === 'string' ? value : key;
     }
 
+    // Validate key to prevent prototype pollution
+    if (!isValidKey(key)) {
+      return key;
+    }
+
     // Handle flat keys (original behavior)
     const langTranslations = translations[language as Language] as unknown as Record<string, string>;
-    const value = langTranslations[key];
-    if (typeof value === 'string') {
-      return value;
+    if (Object.prototype.hasOwnProperty.call(langTranslations, key)) {
+      const value = langTranslations[key];
+      if (typeof value === 'string') {
+        return value;
+      }
     }
-    const fallback = (translations.en as unknown as Record<string, string>)[key];
-    if (typeof fallback === 'string') {
-      return fallback;
+    const enTranslations = translations.en as unknown as Record<string, string>;
+    if (Object.prototype.hasOwnProperty.call(enTranslations, key)) {
+      const fallback = enTranslations[key];
+      if (typeof fallback === 'string') {
+        return fallback;
+      }
     }
     return key;
   };
