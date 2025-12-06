@@ -1,11 +1,9 @@
 /**
  * API Route: Task Management for Lead Follow-ups
- * GET /api/recruiter/tasks - List tasks
+ * GET /api/recruiter/tasks - List tasks (also searches contact logs)
  * POST /api/recruiter/tasks - Create task
  * PUT /api/recruiter/tasks - Update task
  * DELETE /api/recruiter/tasks - Delete task
- *
- * Uses service role key to bypass RLS - authorization is handled by requireRole
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -28,7 +26,13 @@ interface Task {
   updated_at: string
 }
 
-interface TaskWithLead extends Task {
+interface ContactLog {
+  id: string
+  lead_id: string
+  contact_type: string
+  outcome: string | null
+  notes: string | null
+  contacted_at: string
   leads?: {
     id: string
     prospect_name: string | null
@@ -49,7 +53,7 @@ function getSupabaseAdmin() {
   return createServiceClient(supabaseUrl, supabaseServiceKey)
 }
 
-// GET - List tasks with optional filters
+// GET - List tasks with optional filters, also searches contact logs
 export async function GET(request: NextRequest) {
   try {
     const roleCheck = await requireRole('recruiter')
@@ -117,21 +121,52 @@ export async function GET(request: NextRequest) {
       query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
     }
 
-    const { data, error } = await query
+    const { data: tasksData, error: tasksError } = await query
 
-    if (error) {
-      console.error('[tasks] GET error:', error)
+    if (tasksError) {
+      console.error('[tasks] GET error:', tasksError)
       return NextResponse.json(
         { success: false, error: 'Failed to fetch tasks' },
         { status: 500 }
       )
     }
 
+    // If searching, also search contact logs
+    let contactLogs: ContactLog[] = []
+    if (search && search.trim()) {
+      const searchTerm = search.trim()
+      const { data: logsData, error: logsError } = await supabase
+        .from('contact_history')
+        .select(`
+          id,
+          lead_id,
+          contact_type,
+          outcome,
+          notes,
+          contacted_at,
+          readiness_comments,
+          leads (
+            id,
+            prospect_name,
+            prospect_email,
+            phone
+          )
+        `)
+        .or(`notes.ilike.%${searchTerm}%,outcome.ilike.%${searchTerm}%,readiness_comments.ilike.%${searchTerm}%`)
+        .order('contacted_at', { ascending: false })
+        .limit(50)
+
+      if (!logsError && logsData) {
+        contactLogs = logsData as unknown as ContactLog[]
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
-        tasks: data || [],
-        count: data?.length || 0
+        tasks: tasksData || [],
+        contactLogs: contactLogs,
+        count: (tasksData?.length || 0) + contactLogs.length
       }
     })
   } catch (error) {
@@ -246,7 +281,6 @@ export async function PUT(request: NextRequest) {
       if (status === 'completed') {
         updateData.completed_at = new Date().toISOString()
       } else {
-        // Reset completed_at when status is changed away from completed
         updateData.completed_at = null
       }
     }

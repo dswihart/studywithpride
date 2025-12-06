@@ -5,9 +5,18 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient as createServiceClient } from "@supabase/supabase-js"
 import { requireRole } from "@/lib/auth/role-guard"
 import crypto from "crypto"
+// Create Supabase client with service role key (bypasses RLS)
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Supabase configuration missing")
+  }
+  return createServiceClient(supabaseUrl, supabaseServiceKey)
+}
 
 interface TrackingLink {
   id: string
@@ -31,7 +40,7 @@ function generateToken(): string {
 export async function GET(request: NextRequest) {
   try {
     const roleCheck = await requireRole("recruiter")
-    if (\!roleCheck.authorized) {
+    if (!roleCheck.authorized) {
       return NextResponse.json(
         { success: false, error: roleCheck.reason || "Forbidden" },
         { status: 403 }
@@ -41,14 +50,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const leadId = searchParams.get("lead_id")
 
-    if (\!leadId) {
+    if (!leadId) {
       return NextResponse.json(
         { success: false, error: "lead_id is required" },
         { status: 400 }
       )
     }
 
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
 
     // Get tracking links with visit counts
     const { data: links, error } = await supabase
@@ -107,7 +116,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const roleCheck = await requireRole("recruiter")
-    if (\!roleCheck.authorized) {
+    if (!roleCheck.authorized) {
       return NextResponse.json(
         { success: false, error: roleCheck.reason || "Forbidden" },
         { status: 403 }
@@ -116,8 +125,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { lead_id, destination_url, label, expires_in_days } = body
+    console.log("[tracking-links] POST request:", { lead_id, destination_url, label })
 
-    if (\!lead_id || \!destination_url) {
+    if (!lead_id || !destination_url) {
       return NextResponse.json(
         { success: false, error: "lead_id and destination_url are required" },
         { status: 400 }
@@ -134,7 +144,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = getSupabaseAdmin()
     const token = generateToken()
 
     // Calculate expiry if specified
@@ -159,7 +169,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[tracking-links] POST error:", error)
+      console.error("[tracking-links] POST error:", error, JSON.stringify(error))
       return NextResponse.json(
         { success: false, error: "Failed to create tracking link" },
         { status: 500 }
@@ -179,7 +189,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error("[tracking-links] POST error:", error)
+    console.error("[tracking-links] POST error:", error, JSON.stringify(error))
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

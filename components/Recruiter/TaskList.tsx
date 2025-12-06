@@ -29,6 +29,7 @@ interface Task {
 }
 
 interface TaskListProps {
+  onViewLead?: (leadId: string) => void
   leadId?: string
   onAddTask?: (leadId?: string) => void
   onEditTask?: (task: Task) => void
@@ -58,7 +59,7 @@ const STATUSES = [
   { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
 ]
 
-export default function TaskList({ leadId, onAddTask, onEditTask, compact = false }: TaskListProps) {
+export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, compact = false }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -67,6 +68,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
   const [showOverdue, setShowOverdue] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [contactLogs, setContactLogs] = useState<any[]>([])
 
   // Bulk selection state
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
@@ -96,6 +98,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
       }
 
       setTasks(result.data.tasks)
+      setContactLogs(result.data.contactLogs || [])
       // Clear selection when tasks change
       setSelectedTaskIds(new Set())
     } catch (err) {
@@ -605,6 +608,46 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
           </>
         )}
       </div>
+      {/* Contact Logs Search Results */}
+      {debouncedSearch && contactLogs.length > 0 && (
+        <div className="mt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 bg-purple-50 dark:bg-purple-900/20">
+            <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Contact Log Matches ({contactLogs.length})
+            </h3>
+            <div className="space-y-2">
+              {contactLogs.map((log: any) => (
+                <div key={log.id} onClick={() => onViewLead && log.lead_id && onViewLead(log.lead_id)} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/30 transition">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {log.leads?.prospect_name || "Unknown Lead"}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(log.contacted_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="text-sm text-purple-700 dark:text-purple-300 mb-1">
+                    {log.outcome}
+                  </div>
+                  {log.notes && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                      {log.notes}
+                    </p>
+                  )}
+                  {log.readiness_comments && (
+                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1 italic">
+                      {log.readiness_comments}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

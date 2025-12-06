@@ -222,6 +222,28 @@ function RecruiterDashboardContent() {
     setIsAddLeadModalOpen(true)
   }
 
+
+  const handleViewLeadById = async (leadId: string) => {
+    // First check if lead is already in our list
+    const existingLead = leads.find(l => l.id === leadId)
+    if (existingLead) {
+      setViewingLead(existingLead)
+      setIsViewLeadModalOpen(true)
+      return
+    }
+    // Otherwise fetch from API
+    try {
+      const response = await fetch(`/api/recruiter/leads-read?search=${leadId}&limit=1`)
+      const result = await response.json()
+      if (result.success && result.data && result.data.length > 0) {
+        setViewingLead(result.data[0])
+        setIsViewLeadModalOpen(true)
+      }
+    } catch (error) {
+      console.error("Failed to fetch lead:", error)
+    }
+  }
+
   const handleViewLead = (lead: Lead) => {
     setViewingLead(lead)
     setIsViewLeadModalOpen(true)
@@ -721,6 +743,7 @@ function RecruiterDashboardContent() {
               key={taskListKey}
               onEditTask={handleEditTask}
               onAddTask={handleAddTask}
+              onViewLead={handleViewLeadById}
             />
           </div>
         )}

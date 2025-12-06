@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useLanguage } from "@/components/LanguageContext"
+import TrackingLinksPanel from "./TrackingLinksPanel"
 
 interface Lead {
   id: string
@@ -255,6 +256,9 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
                 </div>
               </div>
             )}
+
+            {/* Tracking Links */}
+            <TrackingLinksPanel leadId={lead.id} leadName={lead.prospect_name || "Lead"} />
 
             {/* Contact History */}
             <div>

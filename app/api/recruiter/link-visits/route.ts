@@ -24,7 +24,7 @@ interface LinkVisit {
 export async function GET(request: NextRequest) {
   try {
     const roleCheck = await requireRole("recruiter")
-    if (\!roleCheck.authorized) {
+    if (!roleCheck.authorized) {
       return NextResponse.json(
         { success: false, error: roleCheck.reason || "Forbidden" },
         { status: 403 }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const linkId = searchParams.get("link_id")
     const leadId = searchParams.get("lead_id")
 
-    if (\!linkId && \!leadId) {
+    if (!linkId && !leadId) {
       return NextResponse.json(
         { success: false, error: "link_id or lead_id is required" },
         { status: 400 }
