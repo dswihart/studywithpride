@@ -362,7 +362,7 @@ function RecruiterDashboardContent() {
     }
   }
 
-  const handleExportSelected = () => {
+  const handleExportSelected = async () => {
     if (selectedLeadIds.length === 0) return
 
     const selectedLeads = leads.filter(lead => selectedLeadIds.includes(lead.id))
@@ -383,21 +383,27 @@ function RecruiterDashboardContent() {
       'Date Imported': lead.date_imported || ''
     }))
 
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(exportData)
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet("Leads")
+    
+    // Add headers and data
+    if (exportData.length > 0) {
+      const headers = Object.keys(exportData[0])
+      worksheet.addRow(headers)
+      exportData.forEach(row => worksheet.addRow(Object.values(row)))
+    }
 
-    ws['!cols'] = [
-      { wch: 25 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
-      { wch: 12 }, { wch: 10 }, { wch: 40 }, { wch: 15 }, { wch: 15 },
-      { wch: 12 }, { wch: 20 }, { wch: 20 }
-    ]
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Leads')
-
-    const date = new Date().toISOString().split('T')[0]
+        const date = new Date().toISOString().split('T')[0]
     const filename = `leads_export_${date}.xlsx`
 
-    XLSX.writeFile(wb, filename)
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const confirmDelete = async () => {

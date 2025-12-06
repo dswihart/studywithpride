@@ -429,7 +429,7 @@ const parseXLSXToJson = async (arrayBuffer: ArrayBuffer): Promise<Record<string,
     await workbook.xlsx.load(arrayBuffer)
     
     const worksheet = workbook.worksheets[0]
-    if (\!worksheet) return []
+    if (!worksheet) return []
     
     const jsonData: Record<string, any>[] = []
     const headers: string[] = []
@@ -451,7 +451,7 @@ const parseXLSXToJson = async (arrayBuffer: ArrayBuffer): Promise<Record<string,
         })
         // Fill in missing columns with empty strings
         headers.forEach(h => {
-          if (\!(h in rowData)) rowData[h] = ""
+          if (!(h in rowData)) rowData[h] = ""
         })
         jsonData.push(rowData)
       }
