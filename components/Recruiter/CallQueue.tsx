@@ -45,7 +45,7 @@ function parseIntakeToSortValue(intake: string | null): number {
     }
   }
 
-  if (month === 0) return 999998 // Couldn't parse, put near end
+  if (month === 0) return 999998 // Could not parse, put near end
 
   return year * 100 + month // e.g., February 2025 = 202502, October 2025 = 202510
 }
@@ -74,14 +74,9 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
           return !["converted", "unqualified", "notinterested", "wrongnumber", "archived"].includes(status)
         })
 
-        // Sort: VIP first, then by intake date (earlier first)
+        // Sort by intake date (earlier first), then by contact status
         const sorted = eligible.sort((a, b) => {
-          // VIP status first (starred leads on top)
-          const aVip = (a.recruit_priority && a.recruit_priority >= 1) ? 1 : 0
-          const bVip = (b.recruit_priority && b.recruit_priority >= 1) ? 1 : 0
-          if (bVip !== aVip) return bVip - aVip
-
-          // Then by intake timeline (earlier dates first - Feb before Oct)
+          // Sort by intake timeline (earlier dates first - Feb before Oct)
           const aIntakeVal = parseIntakeToSortValue(a.intake)
           const bIntakeVal = parseIntakeToSortValue(b.intake)
           if (aIntakeVal !== bIntakeVal) return aIntakeVal - bIntakeVal
@@ -128,9 +123,11 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
 
   useEffect(() => { fetchLeads() }, [fetchLeads, refreshKey])
 
-  const filteredLeads = selectedCountry === "all"
-    ? leads.slice(0, 8)
-    : leads.filter(l => l.country === selectedCountry).slice(0, 8)
+  // Regular leads are filtered by country (VIPs excluded - shown in separate card)
+  const countryFilteredLeads = selectedCountry === "all"
+    ? leads
+    : leads.filter(l => l.country === selectedCountry)
+  const regularLeads = countryFilteredLeads.filter(l => !l.recruit_priority || l.recruit_priority < 1).slice(0, 8)
 
   const formatLastContact = (date: string | null) => {
     if (!date) return "Never"
@@ -141,6 +138,30 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
     return Math.floor(diffDays / 7) + "w ago"
   }
 
+  const renderLeadRow = (lead: Lead, index: number) => (
+    <div key={lead.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-4">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30">
+        <span className="text-green-700 dark:text-green-400 font-bold text-sm">{index + 1}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleVipStatus(lead); }}
+            className={"text-lg transition-transform hover:scale-125 " + (lead.recruit_priority ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300")}
+            title={lead.recruit_priority ? "VIP - Click to remove" : "Mark as VIP"}
+          >★</button>
+          <span className="font-medium text-gray-900 dark:text-white truncate">{lead.prospect_name || lead.prospect_email || "Unknown"}</span>
+          <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{lead.country}</span>
+        </div>
+        <div className="text-sm text-gray-500">{lead.phone || "No phone"} • {lead.intake || "No intake"} • Last: {formatLastContact(lead.last_contact_date)}</div>
+      </div>
+      <div className="flex-shrink-0 flex gap-2">
+        <button onClick={() => onViewLead(lead)} className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">View</button>
+        <button onClick={() => onLogContact(lead)} className="px-3 py-1.5 text-sm text-white rounded-lg bg-green-600 hover:bg-green-700">Log Contact</button>
+      </div>
+    </div>
+  )
+
   if (isCollapsed) {
     return (
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl shadow-lg mb-4">
@@ -148,7 +169,7 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
           <div className="flex items-center gap-2">
             <span className="text-xl">📞</span>
             <span className="font-semibold">Call Queue</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{filteredLeads.length} leads</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">{regularLeads.length} leads</span>
           </div>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </button>
@@ -164,7 +185,7 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
             <span className="text-2xl">📞</span>
             <div>
               <h2 className="text-white font-bold text-lg">Call Queue</h2>
-              <p className="text-green-100 text-sm">VIP first, then earliest intake</p>
+              <p className="text-green-100 text-sm">Sorted by earliest intake</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -179,35 +200,15 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
           </div>
         </div>
       </div>
+
+      {/* Queue Section */}
       <div className="divide-y divide-gray-100 dark:divide-gray-700">
         {loading ? (
           <div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div></div>
-        ) : filteredLeads.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No leads in queue</div>
+        ) : regularLeads.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">No leads in queue for selected country</div>
         ) : (
-          filteredLeads.map((lead, index) => (
-            <div key={lead.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <span className="text-green-700 dark:text-green-400 font-bold text-sm">{index + 1}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleVipStatus(lead); }}
-                    className={"text-lg transition-transform hover:scale-125 " + (lead.recruit_priority ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300")}
-                    title={lead.recruit_priority ? "VIP - Click to remove" : "Mark as VIP"}
-                  >★</button>
-                  <span className="font-medium text-gray-900 dark:text-white truncate">{lead.prospect_name || lead.prospect_email || "Unknown"}</span>
-                  <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{lead.country}</span>
-                </div>
-                <div className="text-sm text-gray-500">{lead.phone || "No phone"} • {lead.intake || "No intake"} • Last: {formatLastContact(lead.last_contact_date)}</div>
-              </div>
-              <div className="flex-shrink-0 flex gap-2">
-                <button onClick={() => onViewLead(lead)} className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">View</button>
-                <button onClick={() => onLogContact(lead)} className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">Log Contact</button>
-              </div>
-            </div>
-          ))
+          regularLeads.map((lead, index) => renderLeadRow(lead, index))
         )}
       </div>
     </div>

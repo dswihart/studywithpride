@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import LeadTable from '@/components/Recruiter/LeadTable'
 import CallQueue from '@/components/Recruiter/CallQueue'
+import VipStudentsCard from '@/components/Recruiter/VipStudentsCard'
 import LeadMetrics from '@/components/Recruiter/LeadMetrics'
 import SendWhatsAppModal from "@/components/Recruiter/SendWhatsAppModal"
 import MessageHistoryModal from "@/components/Recruiter/MessageHistoryModal"
@@ -80,7 +81,7 @@ interface Task {
   } | null
 }
 
-type DashboardTab = 'dashboard' | 'leads' | 'admin' 
+type DashboardTab = 'dashboard' | 'leads' | 'tasks' | 'admin' 
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -127,7 +128,7 @@ function RecruiterDashboardContent() {
     const leadId = searchParams.get('leadId')
     const tab = searchParams.get('tab') as DashboardTab | null
 
-    if (tab && ['dashboard', 'leads', 'admin'].includes(tab)) {
+    if (tab && ['dashboard', 'leads', 'tasks', 'admin'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -461,7 +462,7 @@ function RecruiterDashboardContent() {
           <div className="flex items-center gap-3">
             {/* Primary Action - Add Lead */}
             <button
-              onClick={() => {
+              onClick={async () => {
                 setEditingLead(null)
                 setIsAddLeadModalOpen(true)
               }}
@@ -541,6 +542,21 @@ function RecruiterDashboardContent() {
               </span>
             </button>
             <button
+              onClick={() => setActiveTab('tasks')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
+                activeTab === 'tasks'
+                  ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Tasks
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab('admin')}
               className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
                 activeTab === 'admin'
@@ -564,7 +580,14 @@ function RecruiterDashboardContent() {
         {/* DASHBOARD TAB - Agent daily workflow */}
         {activeTab === 'dashboard' && (
           <>
-            {/* Call Queue - Most prominent */}
+            {/* VIP Students Card */}
+            <VipStudentsCard
+              onViewLead={handleViewLead}
+              onLogContact={handleLogContactClick}
+              refreshKey={taskListKey}
+            />
+
+            {/* Call Queue */}
             <CallQueue
               onViewLead={handleViewLead}
               onLogContact={handleLogContactClick}
@@ -576,7 +599,7 @@ function RecruiterDashboardContent() {
               {/* Tasks Widget */}
               <div>
                 <UpcomingTasksWidget
-                  onViewAllTasks={() => setActiveTab("leads")}
+                  onViewAllTasks={() => setActiveTab('tasks')}
                   onTaskClick={(task) => {
                     setEditingTask(task as Task)
                     setTaskLeadId(task.lead_id || undefined)
@@ -608,11 +631,10 @@ function RecruiterDashboardContent() {
                       key={activity.id}
                       onClick={() => {
                         if (activity.lead_id) {
-                          // Switch to leads tab and highlight this lead
-                          setActiveTab('leads')
-                          setHighlightedLeadId(activity.lead_id)
-                          // Clear highlight after a few seconds
-                          setTimeout(() => setHighlightedLeadId(null), 3000)
+                          const lead = leads.find(l => l.id === activity.lead_id)
+                          if (lead) {
+                            handleViewLead(lead)
+                          }
                         }
                       }}
                       className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
@@ -673,7 +695,37 @@ function RecruiterDashboardContent() {
           </>
         )}
 
-        {/* ADMIN TAB - Administrative functions */}
+        {/* TASKS TAB - Task management */}
+        {activeTab === 'tasks' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                  All Tasks
+                </h3>
+                <button
+                  onClick={() => handleAddTask()}
+                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Task
+                </button>
+              </div>
+            </div>
+            <TaskList
+              key={taskListKey}
+              onEditTask={handleEditTask}
+              onAddTask={handleAddTask}
+            />
+          </div>
+        )}
+
+                {/* ADMIN TAB - Administrative functions */}
         {activeTab === 'admin' && (
           <div className="space-y-6">
             {/* Admin Sections */}

@@ -29,6 +29,7 @@ interface TaskData {
   task_type: string
   priority: string
   due_days: number
+  due_time?: string
 }
 
 type ContactOutcome =
@@ -100,6 +101,19 @@ const FOLLOW_UP_TIMES = [
   { value: "1_week", label: "In 1 week", days: 7 },
 ]
 
+const CALLBACK_TIME_OPTIONS = [
+  { value: "09:00", label: "9:00 AM" },
+  { value: "10:00", label: "10:00 AM" },
+  { value: "11:00", label: "11:00 AM" },
+  { value: "12:00", label: "12:00 PM" },
+  { value: "13:00", label: "1:00 PM" },
+  { value: "14:00", label: "2:00 PM" },
+  { value: "15:00", label: "3:00 PM" },
+  { value: "16:00", label: "4:00 PM" },
+  { value: "17:00", label: "5:00 PM" },
+  { value: "18:00", label: "6:00 PM" },
+]
+
 const STATUS_OPTIONS = [
   { value: "referral", label: "Referral", color: "bg-pink-500" },
   { value: "not_contacted", label: "Not Contacted", color: "bg-gray-500" },
@@ -118,6 +132,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
   const [followUpTime, setFollowUpTime] = useState<string>("tomorrow")
+  const [callbackTime, setCallbackTime] = useState<string>("")
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(true)
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
@@ -196,9 +211,15 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
       const followUpOption = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
       const timeOption = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
 
-      const followUpLabel = selectedFollowUp === "none"
+      let followUpLabel = selectedFollowUp === "none"
         ? "No follow-up"
         : (followUpOption?.label || "") + " - " + (timeOption?.label || "")
+
+      // Add time to label if today is selected and a time is chosen
+      if (followUpTime === "today" && callbackTime) {
+        const timeLabel = CALLBACK_TIME_OPTIONS.find(t => t.value === callbackTime)?.label || callbackTime
+        followUpLabel += " at " + timeLabel
+      }
 
       const contactLogResponse = await fetch("/api/recruiter/contact-log", {
         method: "POST",
@@ -253,7 +274,14 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           const timeData = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
           const taskDays = timeData?.days ?? 1
           const taskType = followUpData?.taskType ?? "call"
-          const timeLabel = timeData?.label || "tomorrow"
+          let timeLabel = timeData?.label || "tomorrow"
+
+          // Add specific time if today is selected
+          if (followUpTime === "today" && callbackTime) {
+            const callbackTimeLabel = CALLBACK_TIME_OPTIONS.find(t => t.value === callbackTime)?.label || callbackTime
+            timeLabel = "today at " + callbackTimeLabel
+          }
+
           const taskTitle = (followUpData?.label || "Follow up") + " " + timeLabel.toLowerCase() + " - " + leadName
 
           onCreateTask({
@@ -262,7 +290,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             title: taskTitle,
             task_type: taskType,
             priority: selectedStatus === "interested" ? "high" : "medium",
-            due_days: taskDays
+            due_days: taskDays,
+            due_time: followUpTime === "today" && callbackTime ? callbackTime : undefined
           })
         }
 
@@ -315,7 +344,12 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     if (selectedFollowUp === "none") return "No follow-up"
     const action = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
     const time = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
-    return (action?.label || "") + " - " + (time?.label || "")
+    let summary = (action?.label || "") + " - " + (time?.label || "")
+    if (followUpTime === "today" && callbackTime) {
+      const timeLabel = CALLBACK_TIME_OPTIONS.find(t => t.value === callbackTime)?.label || callbackTime
+      summary += " at " + timeLabel
+    }
+    return summary
   }
 
   return (
@@ -462,11 +496,36 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When?</label>
                   <div className="grid grid-cols-4 gap-2">
                     {FOLLOW_UP_TIMES.map((time) => (
-                      <button key={time.value} onClick={() => setFollowUpTime(time.value)} className={`p-2 text-center rounded-lg border-2 transition text-sm ${followUpTime === time.value ? "border-blue-500 bg-blue-100 dark:bg-blue-900/30" : "border-gray-200 dark:border-gray-600 hover:border-gray-300"}`}>
+                      <button key={time.value} onClick={() => { setFollowUpTime(time.value); if (time.value !== "today") setCallbackTime(""); }} className={`p-2 text-center rounded-lg border-2 transition text-sm ${followUpTime === time.value ? "border-blue-500 bg-blue-100 dark:bg-blue-900/30" : "border-gray-200 dark:border-gray-600 hover:border-gray-300"}`}>
                         <span className="text-gray-700 dark:text-gray-300">{time.label}</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* Time selector for Today */}
+                  {followUpTime === "today" && (
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          What time? (optional)
+                        </span>
+                      </label>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {CALLBACK_TIME_OPTIONS.map((timeOpt) => (
+                          <button
+                            key={timeOpt.value}
+                            onClick={() => setCallbackTime(callbackTime === timeOpt.value ? "" : timeOpt.value)}
+                            className={`p-1.5 text-center rounded-lg border transition text-xs ${callbackTime === timeOpt.value ? "border-orange-500 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "border-gray-200 dark:border-gray-600 hover:border-orange-300 text-gray-600 dark:text-gray-400"}`}
+                          >
+                            {timeOpt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -536,7 +595,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                       <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
                       <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support</span>
                     </label>
-                    
+
                   </div>
                 )}
               </div>
@@ -579,7 +638,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             </div>
           )}
 
-          
+
         </div>
       </div>
     </div>
