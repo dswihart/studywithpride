@@ -97,8 +97,12 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
   const [disableDuplicateFlag, setDisableDuplicateFlag] = useState(false)
 
   const baseCountries = [
-    'USA', 'Canada', 'Mexico', 'Brazil', 'Spain', 'UK',
-    'Germany', 'France', 'Italy', 'Portugal', 'Netherlands', 'Other'
+    'Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Costa Rica',
+    'Cuba', 'Dominican Republic', 'Ecuador', 'El Salvador', 'Guatemala',
+    'Honduras', 'Mexico', 'Nicaragua', 'Panama', 'Paraguay', 'Peru',
+    'Puerto Rico', 'Uruguay', 'Venezuela',
+    'USA', 'Canada', 'Spain', 'UK', 'Germany', 'France', 'Italy',
+    'Portugal', 'Netherlands', 'Other'
   ]
 
   // Add current lead's country if editing and not in list

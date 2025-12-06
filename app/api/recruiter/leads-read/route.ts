@@ -17,6 +17,12 @@ interface LeadReadResponse {
   error?: string
 }
 
+// Helper to check if a string is a valid UUID
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(str)
+}
+
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
 
@@ -46,10 +52,16 @@ export async function GET(request: NextRequest) {
       query = query.not('contact_status', 'in', '(archived,archived_referral)')
     }
 
-    // Search filter - check name, email, or phone
+    // Search filter - check if UUID first, otherwise search name/email/phone
     if (search && search.trim()) {
-      const searchTerm = search.trim().toLowerCase()
-      query = query.or(`prospect_name.ilike.%${searchTerm}%,prospect_email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+      const searchTerm = search.trim()
+      if (isUUID(searchTerm)) {
+        // If it's a UUID, search by ID directly
+        query = query.eq('id', searchTerm)
+      } else {
+        // Otherwise search by name, email, or phone
+        query = query.or(`prospect_name.ilike.%${searchTerm}%,prospect_email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+      }
     }
 
     if (country && country !== 'all') {

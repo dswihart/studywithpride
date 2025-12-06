@@ -647,16 +647,13 @@ function RecruiterDashboardContent() {
                 ) : recentActivity.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No recent activity</p>
                 ) : (
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {recentActivity.slice(0, 10).map((activity: any) => (
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {recentActivity.map((activity: any) => (
                       <div
                       key={activity.id}
                       onClick={() => {
                         if (activity.lead_id) {
-                          const lead = leads.find(l => l.id === activity.lead_id)
-                          if (lead) {
-                            handleViewLead(lead)
-                          }
+                          handleViewLeadById(activity.lead_id)
                         }
                       }}
                       className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"

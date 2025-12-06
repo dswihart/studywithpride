@@ -119,7 +119,7 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
   }
 
   return (
-    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-lg mb-4 overflow-hidden border border-yellow-200 dark:border-yellow-800">
+    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-lg mb-4 border border-yellow-200 dark:border-yellow-800">
       {/* Header */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
       </div>
 
       {/* VIP Chips */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 overflow-visible">
         <div className="flex flex-wrap gap-2">
           {vipLeads.map((lead) => (
             <div key={lead.id} className="relative group">
@@ -166,7 +166,7 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
 
               {/* Expanded Actions Popup */}
               {expandedLead === lead.id && (
-                <div className="absolute top-full left-0 mt-2 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-yellow-200 dark:border-yellow-700 p-3 min-w-[200px]">
+                <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-yellow-200 dark:border-yellow-700 p-3 min-w-[200px]">
                   <div className="mb-2">
                     <p className="font-medium text-gray-900 dark:text-white truncate">
                       {lead.prospect_name || lead.prospect_email || "Unknown"}
@@ -204,7 +204,7 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
       {/* Click outside to close */}
       {expandedLead && (
         <div
-          className="fixed inset-0 z-10"
+          className="fixed inset-0 z-40"
           onClick={() => setExpandedLead(null)}
         />
       )}

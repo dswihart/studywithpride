@@ -38,7 +38,6 @@ type ContactOutcome =
   | "no_answer_send_whatsapp"
   | "no_whatsapp"
   | "whatsapp_replied_interested"
-  | "whatsapp_replied_send_info"
   | "whatsapp_replied_info"
   | "whatsapp_replied_not_interested"
   | "wrong_number"
@@ -70,7 +69,6 @@ const ANSWERED_OUTCOMES: ContactOutcomeOption[] = [
 
 const WHATSAPP_REPLY_OUTCOMES: ContactOutcomeOption[] = [
   { value: "whatsapp_replied_interested", label: "Interested!", icon: "🎯", suggestedStatus: "interested", suggestedFollowUp: "call" },
-  { value: "whatsapp_replied_send_info", label: "Interested - Send more info", icon: "📤", suggestedStatus: "interested", suggestedFollowUp: "email" },
   { value: "whatsapp_replied_info", label: "Shared Info", icon: "📋", suggestedStatus: "contacted", suggestedFollowUp: "call" },
   { value: "whatsapp_replied_not_interested", label: "Not Interested", icon: "👎", suggestedStatus: "notinterested", suggestedFollowUp: "none" },
 ]
@@ -85,7 +83,7 @@ const PROBLEM_OUTCOMES: ContactOutcomeOption[] = [
 
 const PRIMARY_OUTCOME: ContactOutcomeOption = {
   value: "no_answer_whatsapp_sent",
-  label: "No Answer + Send WhatsApp Followup",
+  label: "No Answer + WhatsApp Sent",
   icon: "📵💬",
   suggestedStatus: "contacted",
   suggestedFollowUp: "call"
@@ -131,7 +129,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [selectedOutcome, setSelectedOutcome] = useState<ContactOutcome | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
-  const [followUpTime, setFollowUpTime] = useState<string>("today")
+  const [followUpTime, setFollowUpTime] = useState<string>("tomorrow")
   const [callbackTime, setCallbackTime] = useState<string>("")
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(true)
@@ -384,7 +382,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
               <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-xl border-2 border-blue-200 dark:border-blue-700">
                 <div className="text-center mb-3">
                   <span className="text-3xl">📵💬</span>
-                  <h3 className="font-bold text-gray-900 dark:text-white mt-2">No Answer + Send WhatsApp Followup</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white mt-2">No Answer + WhatsApp Sent</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Most common outcome</p>
                 </div>
                 <button
@@ -492,41 +490,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 ))}
               </div>
 
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowChecklist(!showChecklist)}
-                  className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between"
-                >
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <span>📋</span> Lead Readiness Checklist
-                  </span>
-                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showChecklist ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showChecklist && (
-                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Meets minimum education level</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">English level of Basic</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Valid Passport</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
               {selectedFollowUp && selectedFollowUp !== "none" && (
                 <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When?</label>
@@ -598,6 +561,42 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                     {readyToProceed ? "Ready to Proceed" : "Ready to Proceed"}
                   </span>
                 </button>
+              </div>
+
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowChecklist(!showChecklist)}
+                  className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between"
+                >
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <span>📋</span> Lead Readiness Checklist
+                  </span>
+                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showChecklist ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showChecklist && (
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Meets minimum education level</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">English level of Basic</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Valid Passport</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support</span>
+                    </label>
+
+                  </div>
+                )}
               </div>
 
               <div className="mb-4">

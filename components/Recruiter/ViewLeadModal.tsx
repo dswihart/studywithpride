@@ -40,16 +40,11 @@ interface ContactHistory {
   contacted_at: string
   created_at: string
   follow_up_action: string | null
-  // Readiness checklist fields
-  has_funds: boolean
-  meets_age_requirements: boolean
+  // Readiness checklist fields (4 items)
+  meets_education_level: boolean
+  english_level_basic: boolean
   has_valid_passport: boolean
-  can_obtain_visa: boolean
-  can_start_intake: boolean
-  discussed_with_family: boolean
-  needs_housing_support: boolean
-  understands_work_rules: boolean
-  has_realistic_expectations: boolean
+  confirmed_financial_support: boolean
   ready_to_proceed: boolean
   readiness_comments: string | null
   intake_period: string | null
@@ -154,17 +149,14 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
   }
 
   const hasReadinessData = (entry: ContactHistory) => {
-    return entry.has_funds || entry.meets_age_requirements || entry.has_valid_passport ||
-           entry.can_obtain_visa || entry.can_start_intake || entry.discussed_with_family ||
-           entry.needs_housing_support || entry.understands_work_rules || entry.has_realistic_expectations ||
-           entry.ready_to_proceed || entry.intake_period
+    return entry.meets_education_level || entry.english_level_basic || entry.has_valid_passport ||
+           entry.confirmed_financial_support || entry.ready_to_proceed || entry.intake_period
   }
 
   const getReadinessCount = (entry: ContactHistory) => {
     return [
-      entry.has_funds, entry.meets_age_requirements, entry.has_valid_passport,
-      entry.can_obtain_visa, entry.can_start_intake, entry.discussed_with_family,
-      entry.understands_work_rules, entry.has_realistic_expectations
+      entry.meets_education_level, entry.english_level_basic, 
+      entry.has_valid_passport, entry.confirmed_financial_support
     ].filter(Boolean).length
   }
 
@@ -316,52 +308,32 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
-                            <span>Readiness: {getReadinessCount(entry)}/8 items checked</span>
+                            <span>Readiness: {getReadinessCount(entry)}/4 items checked</span>
                             {entry.intake_period && (
                               <span className="px-2 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs rounded">
                                 {entry.intake_period.charAt(0).toUpperCase() + entry.intake_period.slice(1)} Intake
                               </span>
                             )}
-                            {entry.needs_housing_support && (
-                              <span className="px-2 py-0.5 bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 text-xs rounded">
-                                Needs Housing
-                              </span>
-                            )}
+                            
                           </button>
 
                           {expandedEntry === entry.id && (
                             <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                              <div className={`flex items-center gap-2 ${entry.has_funds ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.has_funds ? '✓' : '○'}</span>
-                                <span>Has funds to study</span>
+                              <div className={`flex items-center gap-2 ${entry.meets_education_level ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                                <span>{entry.meets_education_level ? '✓' : '○'}</span>
+                                <span>Meets education level</span>
                               </div>
-                              <div className={`flex items-center gap-2 ${entry.meets_age_requirements ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.meets_age_requirements ? '✓' : '○'}</span>
-                                <span>Meets age requirements</span>
+                              <div className={`flex items-center gap-2 ${entry.english_level_basic ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                                <span>{entry.english_level_basic ? '✓' : '○'}</span>
+                                <span>English level basic</span>
                               </div>
                               <div className={`flex items-center gap-2 ${entry.has_valid_passport ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
                                 <span>{entry.has_valid_passport ? '✓' : '○'}</span>
                                 <span>Has valid passport</span>
                               </div>
-                              <div className={`flex items-center gap-2 ${entry.can_obtain_visa ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.can_obtain_visa ? '✓' : '○'}</span>
-                                <span>Can obtain visa</span>
-                              </div>
-                              <div className={`flex items-center gap-2 ${entry.can_start_intake ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.can_start_intake ? '✓' : '○'}</span>
-                                <span>Can start intake</span>
-                              </div>
-                              <div className={`flex items-center gap-2 ${entry.discussed_with_family ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.discussed_with_family ? '✓' : '○'}</span>
-                                <span>Discussed with family</span>
-                              </div>
-                              <div className={`flex items-center gap-2 ${entry.understands_work_rules ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.understands_work_rules ? '✓' : '○'}</span>
-                                <span>Understands work rules</span>
-                              </div>
-                              <div className={`flex items-center gap-2 ${entry.has_realistic_expectations ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
-                                <span>{entry.has_realistic_expectations ? '✓' : '○'}</span>
-                                <span>Realistic expectations</span>
+                              <div className={`flex items-center gap-2 ${entry.confirmed_financial_support ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                                <span>{entry.confirmed_financial_support ? '✓' : '○'}</span>
+                                <span>Confirmed financial support</span>
                               </div>
                               {entry.readiness_comments && (
                                 <div className="col-span-2 mt-2 p-2 bg-gray-100 dark:bg-gray-600 rounded text-gray-700 dark:text-gray-300">
