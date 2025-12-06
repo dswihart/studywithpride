@@ -24,6 +24,7 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
   const [vipLeads, setVipLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedLead, setExpandedLead] = useState<string | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
   const fetchVipLeads = useCallback(async () => {
     try {
@@ -94,6 +95,29 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
     return null
   }
 
+  // Collapsed view
+  if (isCollapsed) {
+    return (
+      <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-lg mb-4 border border-yellow-200 dark:border-yellow-800">
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-yellow-100/50 dark:hover:bg-yellow-800/20 transition rounded-xl"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⭐</span>
+            <span className="font-bold text-yellow-800 dark:text-yellow-200">VIP Students</span>
+            <span className="bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full text-xs font-semibold">
+              {vipLeads.length}
+            </span>
+          </div>
+          <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-lg mb-4 overflow-hidden border border-yellow-200 dark:border-yellow-800">
       {/* Header */}
@@ -105,7 +129,14 @@ export default function VipStudentsCard({ onViewLead, onLogContact, refreshKey }
             {vipLeads.length}
           </span>
         </div>
-        <span className="text-xs text-yellow-600 dark:text-yellow-400">Priority contacts</span>
+        <button
+          onClick={() => setIsCollapsed(true)}
+          className="p-1 hover:bg-yellow-200/50 dark:hover:bg-yellow-700/30 rounded transition"
+        >
+          <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
       </div>
 
       {/* VIP Chips */}

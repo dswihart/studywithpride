@@ -66,7 +66,8 @@ export async function GET(request: NextRequest) {
     const leadId = searchParams.get('lead_id')
     const dueToday = searchParams.get('due_today')
     const overdue = searchParams.get('overdue')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const search = searchParams.get('search')
+    const limit = parseInt(searchParams.get('limit') || '100')
 
     const supabase = getSupabaseAdmin()
 
@@ -108,6 +109,12 @@ export async function GET(request: NextRequest) {
     if (overdue === 'true') {
       const now = new Date().toISOString()
       query = query.lt('due_date', now).neq('status', 'completed').neq('status', 'cancelled')
+    }
+
+    // Search in title and description
+    if (search && search.trim()) {
+      const searchTerm = search.trim()
+      query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
     }
 
     const { data, error } = await query

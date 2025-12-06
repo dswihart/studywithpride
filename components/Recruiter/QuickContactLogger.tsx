@@ -101,17 +101,13 @@ const FOLLOW_UP_TIMES = [
   { value: "1_week", label: "In 1 week", days: 7 },
 ]
 
-const CALLBACK_TIME_OPTIONS = [
-  { value: "09:00", label: "9:00 AM" },
-  { value: "10:00", label: "10:00 AM" },
-  { value: "11:00", label: "11:00 AM" },
-  { value: "12:00", label: "12:00 PM" },
-  { value: "13:00", label: "1:00 PM" },
-  { value: "14:00", label: "2:00 PM" },
-  { value: "15:00", label: "3:00 PM" },
-  { value: "16:00", label: "4:00 PM" },
-  { value: "17:00", label: "5:00 PM" },
-  { value: "18:00", label: "6:00 PM" },
+const CALLBACK_HOUR_OPTIONS = [
+  { value: "1", label: "1 hr" },
+  { value: "2", label: "2 hrs" },
+  { value: "3", label: "3 hrs" },
+  { value: "4", label: "4 hrs" },
+  { value: "5", label: "5 hrs" },
+  { value: "6", label: "6 hrs" },
 ]
 
 const STATUS_OPTIONS = [
@@ -217,7 +213,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
       // Add time to label if today is selected and a time is chosen
       if (followUpTime === "today" && callbackTime) {
-        const timeLabel = CALLBACK_TIME_OPTIONS.find(t => t.value === callbackTime)?.label || callbackTime
+        const hourOption = CALLBACK_HOUR_OPTIONS.find(t => t.value === callbackTime)
+        const timeLabel = hourOption ? "in " + hourOption.label : callbackTime
         followUpLabel += " at " + timeLabel
       }
 
@@ -278,8 +275,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
 
           // Add specific time if today is selected
           if (followUpTime === "today" && callbackTime) {
-            const callbackTimeLabel = CALLBACK_TIME_OPTIONS.find(t => t.value === callbackTime)?.label || callbackTime
-            timeLabel = "today at " + callbackTimeLabel
+            const hourOption = CALLBACK_HOUR_OPTIONS.find(t => t.value === callbackTime)
+            timeLabel = hourOption ? "today in " + hourOption.label : "today"
           }
 
           const taskTitle = (followUpData?.label || "Follow up") + " " + timeLabel.toLowerCase() + " - " + leadName
@@ -346,8 +343,8 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
     const time = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
     let summary = (action?.label || "") + " - " + (time?.label || "")
     if (followUpTime === "today" && callbackTime) {
-      const timeLabel = CALLBACK_TIME_OPTIONS.find(t => t.value === callbackTime)?.label || callbackTime
-      summary += " at " + timeLabel
+      const hourOption = CALLBACK_HOUR_OPTIONS.find(t => t.value === callbackTime)
+      summary += hourOption ? " (in " + hourOption.label + ")" : ""
     }
     return summary
   }
@@ -510,17 +507,17 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          What time? (optional)
+                          In how many hours? (optional)
                         </span>
                       </label>
-                      <div className="grid grid-cols-5 gap-1.5">
-                        {CALLBACK_TIME_OPTIONS.map((timeOpt) => (
+                      <div className="grid grid-cols-6 gap-1.5">
+                        {CALLBACK_HOUR_OPTIONS.map((hourOpt) => (
                           <button
-                            key={timeOpt.value}
-                            onClick={() => setCallbackTime(callbackTime === timeOpt.value ? "" : timeOpt.value)}
-                            className={`p-1.5 text-center rounded-lg border transition text-xs ${callbackTime === timeOpt.value ? "border-orange-500 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "border-gray-200 dark:border-gray-600 hover:border-orange-300 text-gray-600 dark:text-gray-400"}`}
+                            key={hourOpt.value}
+                            onClick={() => setCallbackTime(callbackTime === hourOpt.value ? "" : hourOpt.value)}
+                            className={`p-1.5 text-center rounded-lg border transition text-xs ${callbackTime === hourOpt.value ? "border-orange-500 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" : "border-gray-200 dark:border-gray-600 hover:border-orange-300 text-gray-600 dark:text-gray-400"}`}
                           >
-                            {timeOpt.label}
+                            {hourOpt.label}
                           </button>
                         ))}
                       </div>
