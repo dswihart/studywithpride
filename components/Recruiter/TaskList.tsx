@@ -62,9 +62,11 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filterStatus, setFilterStatus] = useState('pending')
+  const [filterStatus, setFilterStatus] = useState('all')
   const [filterPriority, setFilterPriority] = useState('all')
   const [showOverdue, setShowOverdue] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   // Bulk selection state
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
@@ -80,6 +82,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
       if (filterStatus !== 'all') params.set('status', filterStatus)
       if (filterPriority !== 'all') params.set('priority', filterPriority)
       if (showOverdue) params.set('overdue', 'true')
+      if (debouncedSearch) params.set('search', debouncedSearch)
 
       const response = await fetch(`/api/recruiter/tasks?${params.toString()}`, {
         credentials: 'include'
@@ -101,11 +104,17 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
     } finally {
       setLoading(false)
     }
-  }, [leadId, filterStatus, filterPriority, showOverdue])
+  }, [leadId, filterStatus, filterPriority, showOverdue, debouncedSearch])
 
   useEffect(() => {
     fetchTasks()
   }, [fetchTasks])
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
@@ -383,6 +392,32 @@ export default function TaskList({ leadId, onAddTask, onEditTask, compact = fals
           )}
           <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm">
             <span className="font-medium">{tasks.length}</span> total
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mb-4">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search tasks by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
