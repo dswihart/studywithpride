@@ -1,6 +1,7 @@
 "use client"
 
-import { ColumnConfig, getColumnLabel } from "./columnConfig"
+import React from "react"
+import { ColumnConfig, getColumnLabel } from "@/lib/responsive/columnConfig"
 
 interface Lead {
   id: string
@@ -34,7 +35,7 @@ export default function ExpandedRowDetails({
   hiddenColumns,
   formatDate,
 }: ExpandedRowDetailsProps) {
-  const formatValue = (key: string, value: any): string | JSX.Element => {
+  const formatValue = (key: string, value: any): string | React.ReactNode => {
     if (value === null || value === undefined || value === "") {
       return <span className="text-gray-400">-</span>
     }

@@ -933,10 +933,10 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
                   lead={lead}
                   isSelected={selectedLeads.has(lead.id)}
                   onSelect={(leadId, selected) => handleSelectLead(leadId, selected)}
-                  onView={(lead) => onViewLead?.(lead)}
-                  onWhatsApp={(lead) => onWhatsAppClick?.(lead)}
-                  onLogContact={(lead) => onLogContactClick?.(lead)}
-                  isHighlighted={highlightedLeadId === lead.id}
+                  onView={() => onViewLead?.(lead)}
+                  onWhatsApp={() => onWhatsAppClick?.(lead)}
+                  onLogContact={() => onLogContactClick?.(lead)}
+                  onEdit={() => onViewLead?.(lead)}
                 />
               ))
             )}

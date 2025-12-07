@@ -1,6 +1,6 @@
 "use client"
 
-import { ColumnConfig, getColumnLabel } from "./columnConfig"
+import { ColumnConfig, getColumnLabel } from "@/lib/responsive/columnConfig"
 
 interface HiddenColumnsIndicatorProps {
   hiddenColumns: ColumnConfig[]

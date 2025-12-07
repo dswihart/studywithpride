@@ -10,10 +10,10 @@ interface Lead {
 interface ActionButtonsProps {
   lead: Lead
   compact?: boolean
-  onLogContact?: (lead: Lead) => void
-  onWhatsApp?: (lead: Lead) => void
-  onMessageHistory?: (lead: Lead) => void
-  onEdit?: (lead: Lead) => void
+  onLogContact?: (lead: any) => void
+  onWhatsApp?: (lead: any) => void
+  onMessageHistory?: (lead: any) => void
+  onEdit?: (lead: any) => void
 }
 
 export default function ActionButtons({

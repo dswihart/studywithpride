@@ -7,7 +7,7 @@ import {
   ColumnConfig,
   getVisibleColumns,
   getHiddenColumns
-} from "./columnConfig"
+} from "@/lib/responsive/columnConfig"
 
 interface UseResponsiveColumnsReturn {
   breakpoint: Breakpoint
