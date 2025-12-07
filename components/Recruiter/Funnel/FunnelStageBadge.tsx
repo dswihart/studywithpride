@@ -1,21 +1,75 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { FunnelStageNumber, FUNNEL_STAGES } from "@/lib/funnel/types"
 
 interface FunnelStageBadgeProps {
-  currentStage: FunnelStageNumber
-  completedStages: FunnelStageNumber[]
+  leadId: string
+  contactStatus?: string
+  currentStage?: FunnelStageNumber
+  completedStages?: FunnelStageNumber[]
   showLabel?: boolean
   size?: "sm" | "md"
 }
 
 export default function FunnelStageBadge({
-  currentStage,
-  completedStages = [],
+  leadId,
+  contactStatus = "",
+  currentStage = 1,
+  completedStages: passedCompletedStages = [],
   showLabel = true,
   size = "md",
 }: FunnelStageBadgeProps) {
-  const safeCompletedStages = completedStages || []
+  const [derivedCompletedStages, setDerivedCompletedStages] = useState<FunnelStageNumber[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch contact history and derive completed stages
+  useEffect(() => {
+    const fetchAndDeriveStages = async () => {
+      if (!leadId) {
+        setLoading(false)
+        return
+      }
+      try {
+        const response = await fetch(`/api/recruiter/contact-log?lead_id=${leadId}`)
+        const result = await response.json()
+        if (result.success && result.data) {
+          const history = result.data
+          const completed: FunnelStageNumber[] = []
+          
+          // Check interested (stage 1)
+          const isInterested = contactStatus === "interested" ||
+            history.some((c: any) => {
+              const outcome = c.outcome?.toLowerCase() || ""
+              return outcome.includes("interested") && !outcome.includes("not interested")
+            })
+          if (isInterested) completed.push(1)
+          
+          // Check education (stage 2)
+          if (history.some((c: any) => c.has_education_docs)) completed.push(2)
+          
+          // Check funds (stage 3)
+          if (history.some((c: any) => c.has_funds)) completed.push(3)
+          
+          // Check passport (stage 4)
+          if (history.some((c: any) => c.has_valid_passport)) completed.push(4)
+          
+          // Check english (stage 5)
+          if (history.some((c: any) => c.ready_to_proceed)) completed.push(5)
+          
+          setDerivedCompletedStages(completed)
+        }
+      } catch (error) {
+        console.error("Failed to fetch contact history for badge:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAndDeriveStages()
+  }, [leadId, contactStatus])
+
+  // Use derived stages if available, otherwise fall back to passed stages
+  const safeCompletedStages = derivedCompletedStages.length > 0 ? derivedCompletedStages : (passedCompletedStages || [])
   const currentStageInfo = FUNNEL_STAGES.find((s) => s.number === currentStage) || FUNNEL_STAGES[0]
 
   const getStageStatus = (stageNumber: FunnelStageNumber) => {
@@ -41,6 +95,10 @@ export default function FunnelStageBadge({
   }
 
   const getBadgeColor = () => {
+    // Show green when all 5 stages are complete
+    if (safeCompletedStages.length === 5) {
+      return "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
+    }
     const colorMap: Record<string, string> = {
       amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
       blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
@@ -62,6 +120,20 @@ export default function FunnelStageBadge({
       gap: "gap-1",
       badge: "px-2.5 py-1 text-sm",
     },
+  }
+
+  // Show loading state briefly
+  if (loading) {
+    return (
+      <div className={`inline-flex items-center ${sizeClasses[size].gap} rounded-full border bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 ${sizeClasses[size].badge}`}>
+        <div className={`flex items-center ${sizeClasses[size].gap}`}>
+          {[1, 2, 3, 4, 5].map((stageNum) => (
+            <div key={stageNum} className={`${sizeClasses[size].dot} bg-gray-300 dark:bg-gray-600 rounded-full`} />
+          ))}
+        </div>
+        {showLabel && <span className="font-medium ml-1">...</span>}
+      </div>
+    )
   }
 
   return (
@@ -91,7 +163,9 @@ export default function FunnelStageBadge({
 
       {/* Label */}
       {showLabel && (
-        <span className="font-medium ml-1">{currentStageInfo?.shortLabel || "New"}</span>
+        <span className="font-medium ml-1">
+          {safeCompletedStages.length === 5 ? "Ready" : (currentStageInfo?.shortLabel || "New")}
+        </span>
       )}
     </div>
   )

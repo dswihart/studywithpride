@@ -248,7 +248,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {lead.prospect_name || "Unknown Lead"}
                 </h2>
-                <FunnelStageBadge currentStage={leadWithFunnel.funnel_stage} completedStages={leadWithFunnel.funnel_data?.completedStages || []} size="md" showLabel />
+                <FunnelStageBadge currentStage={leadWithFunnel.funnel_stage} leadId={lead.id} contactStatus={lead.contact_status} completedStages={leadWithFunnel.funnel_data?.completedStages || []} size="md" showLabel />
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(lead.contact_status)}`}>

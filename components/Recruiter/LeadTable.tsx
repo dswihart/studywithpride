@@ -592,7 +592,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
       case "contact_status":
         return <StatusBadge status={lead.contact_status} compact={isTablet} />
       case "funnel_stage":
-        return <FunnelStageBadge currentStage={(lead.funnel_stage || 1) as FunnelStageNumber} completedStages={lead.funnel_data?.completedStages || []} size="sm" showLabel={false} />
+        return <FunnelStageBadge leadId={lead.id} contactStatus={lead.contact_status} currentStage={(lead.funnel_stage || 1) as FunnelStageNumber} completedStages={lead.funnel_data?.completedStages || []} size="sm" showLabel={false} />
       case "lead_quality":
         return <QualityBadge quality={lead.lead_quality} score={lead.lead_score} compact={isTablet} />
       case "last_contact_date":
