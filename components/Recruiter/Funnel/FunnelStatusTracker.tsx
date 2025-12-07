@@ -43,30 +43,31 @@ export default function FunnelStatusTracker({
   onConvertToStudent,
   onRefresh,
 }: FunnelStatusTrackerProps) {
-  const [activeStage, setActiveStage] = useState<FunnelStageNumber>(lead.funnel_stage || 1)
+  const [activeStage, setActiveStage] = useState<FunnelStageNumber>((lead?.funnel_stage || 1) as FunnelStageNumber)
   const [showConvertModal, setShowConvertModal] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Initialize funnel data
-  const funnelData: LeadFunnelData = lead.funnel_data || {
-    leadId: lead.id,
-    currentStage: lead.funnel_stage || 1,
+  // Initialize funnel data with proper defaults for nested properties
+  const rawFunnelData = (lead.funnel_data || {}) as Partial<LeadFunnelData>
+  const funnelData: LeadFunnelData = {
+    leadId: rawFunnelData.leadId || lead.id,
+    currentStage: rawFunnelData.currentStage || lead.funnel_stage || 1,
     stages: {
-      stage1: null,
-      stage2: null,
-      stage3: null,
-      stage4: null,
+      stage1: rawFunnelData.stages?.stage1 || null,
+      stage2: rawFunnelData.stages?.stage2 || null,
+      stage3: rawFunnelData.stages?.stage3 || null,
+      stage4: rawFunnelData.stages?.stage4 || null,
     },
-    completedStages: [],
-    convertedToStudent: false,
-    convertedAt: null,
-    studentId: null,
-    applicationId: null,
+    completedStages: rawFunnelData.completedStages || [],
+    convertedToStudent: rawFunnelData.convertedToStudent || false,
+    convertedAt: rawFunnelData.convertedAt || null,
+    studentId: rawFunnelData.studentId || null,
+    applicationId: rawFunnelData.applicationId || null,
   }
 
   // Update active stage when lead changes
   useEffect(() => {
-    setActiveStage(lead.funnel_stage || 1)
+    setActiveStage((lead?.funnel_stage || 1) as FunnelStageNumber)
   }, [lead.funnel_stage])
 
   const completedStages = funnelData.completedStages || []

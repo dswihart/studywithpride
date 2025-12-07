@@ -92,7 +92,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
   }, [isOpen, lead])
 
   const fetchContactHistory = async () => {
-    if (\!lead) return
+    if (!lead) return
     setLoadingHistory(true)
     try {
       const response = await fetch(`/api/recruiter/contact-log?lead_id=${lead.id}`)
@@ -132,7 +132,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
       body: JSON.stringify({ lead_id: leadId, stage, stage_data: data })
     })
     const result = await response.json()
-    if (\!result.success) throw new Error(result.error)
+    if (!result.success) throw new Error(result.error)
   }
 
   const handleCompleteStage = async (leadId: string, stage: FunnelStageNumber) => {
@@ -142,7 +142,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
       body: JSON.stringify({ lead_id: leadId, complete_stage: stage })
     })
     const result = await response.json()
-    if (\!result.success) throw new Error(result.error)
+    if (!result.success) throw new Error(result.error)
   }
 
   const handleConvertToStudent = async (data: ConversionData) => {
@@ -160,17 +160,16 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
       })
     })
     const result = await response.json()
-    if (\!result.success) throw new Error(result.error)
+    if (!result.success) throw new Error(result.error)
   }
 
-  if (\!isOpen || \!lead) return null
+  if (!isOpen || !lead) return null
 
   const leadWithFunnel: LeadWithFunnel = {
-    id: lead.id,
+    ...lead,
     prospect_name: lead.prospect_name || "Unknown",
     prospect_email: lead.prospect_email || "",
-    phone: lead.phone || undefined,
-    country: lead.country,
+    phone: lead.phone || null,
     funnel_stage: (lead.funnel_stage || 1) as FunnelStageNumber,
     funnel_data: lead.funnel_data || null,
     converted_to_student: lead.converted_to_student || false,
@@ -249,7 +248,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {lead.prospect_name || "Unknown Lead"}
                 </h2>
-                <FunnelStageBadge stage={leadWithFunnel.funnel_stage} size="md" showLabel />
+                <FunnelStageBadge currentStage={leadWithFunnel.funnel_stage} completedStages={leadWithFunnel.funnel_data?.completedStages || []} size="md" showLabel />
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(lead.contact_status)}`}>

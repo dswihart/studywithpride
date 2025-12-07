@@ -134,7 +134,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [followUpTime, setFollowUpTime] = useState<string>("today")
   const [callbackTime, setCallbackTime] = useState<string>("")
   const [notes, setNotes] = useState("")
-  const [createTask, setCreateTask] = useState(true)
+  const [createTask, setCreateTask] = useState(false)
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
   const [showChecklist, setShowChecklist] = useState(false)
   const [referralDestination, setReferralDestination] = useState<string>("")

@@ -1,6 +1,6 @@
 // Funnel Stage Types
 export type FunnelStageNumber = 1 | 2 | 3 | 4
-export type FunnelStageName = 'contacted' | 'program_confirmed' | 'documents_verified' | 'ready_for_interview'
+export type FunnelStageName = 'new_lead' | 'program_confirmed' | 'documents_verified' | 'ready_for_interview'
 
 // Stage 1: Contacted & Interested
 export interface Stage1Data {
@@ -144,9 +144,9 @@ export interface FunnelStageInfo {
 export const FUNNEL_STAGES: FunnelStageInfo[] = [
   {
     number: 1,
-    name: 'contacted',
-    label: 'Contacted & Interested',
-    description: 'Lead has been contacted and expressed initial interest',
+    name: 'new_lead',
+    label: 'New Lead',
+    description: 'New lead pending initial contact',
     color: 'amber'
   },
   {

@@ -6,6 +6,8 @@ import { useLanguage } from "@/components/LanguageContext"
 import BulkEditLeadModal from "./BulkEditLeadModal"
 import MobileLeadCard from "./MobileLeadCard"
 import StatusBadge, { QualityBadge } from "./StatusBadge"
+import FunnelStageBadge from "./Funnel/FunnelStageBadge"
+import { FunnelStageNumber } from "@/lib/funnel/types"
 import ActionButtons from "./ActionButtons"
 import ExpandedRowDetails from "./ExpandedRowDetails"
 import HiddenColumnsIndicator from "./HiddenColumnsIndicator"
@@ -39,6 +41,8 @@ interface Lead {
   recency_score: number | null
   lead_score: number | null
   lead_quality: string | null
+  funnel_stage?: number
+  funnel_data?: any
 }
 
 interface LeadTableProps {
@@ -587,6 +591,8 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
         return lead.referral_source || t("recruiter.table.na")
       case "contact_status":
         return <StatusBadge status={lead.contact_status} compact={isTablet} />
+      case "funnel_stage":
+        return <FunnelStageBadge currentStage={(lead.funnel_stage || 1) as FunnelStageNumber} completedStages={lead.funnel_data?.completedStages || []} size="sm" showLabel={false} />
       case "lead_quality":
         return <QualityBadge quality={lead.lead_quality} score={lead.lead_score} compact={isTablet} />
       case "last_contact_date":

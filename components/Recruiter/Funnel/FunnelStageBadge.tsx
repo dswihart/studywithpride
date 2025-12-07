@@ -18,7 +18,7 @@ export default function FunnelStageBadge({
   const currentStageInfo = FUNNEL_STAGES.find((s) => s.number === currentStage)
 
   const getStageStatus = (stageNumber: FunnelStageNumber) => {
-    if (completedStages.includes(stageNumber)) return "completed"
+    if ((completedStages || []).includes(stageNumber)) return "completed"
     if (stageNumber === currentStage) return "current"
     return "upcoming"
   }
