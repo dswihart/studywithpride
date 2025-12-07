@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 interface Lead {
   id: string
@@ -36,6 +36,9 @@ interface TaskListProps {
   compact?: boolean
 }
 
+type SortField = 'created_at' | 'due_date' | 'priority' | 'title'
+type SortDirection = 'asc' | 'desc'
+
 const TASK_TYPES = [
   { value: 'follow_up', label: 'Follow Up', icon: '📞' },
   { value: 'call', label: 'Call', icon: '📱' },
@@ -46,10 +49,10 @@ const TASK_TYPES = [
 ]
 
 const PRIORITIES = [
-  { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-  { value: 'medium', label: 'Medium', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  { value: 'high', label: 'High', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' },
-  { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }
+  { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', order: 1 },
+  { value: 'medium', label: 'Medium', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', order: 2 },
+  { value: 'high', label: 'High', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300', order: 3 },
+  { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', order: 4 }
 ]
 
 const STATUSES = [
@@ -57,6 +60,13 @@ const STATUSES = [
   { value: 'in_progress', label: 'In Progress', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
   { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
   { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
+]
+
+const SORT_OPTIONS = [
+  { value: 'created_at', label: 'Date Created' },
+  { value: 'due_date', label: 'Due Date' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'title', label: 'Title' }
 ]
 
 export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, compact = false }: TaskListProps) {
@@ -69,6 +79,10 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [contactLogs, setContactLogs] = useState<any[]>([])
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>('created_at')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   // Bulk selection state
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
@@ -119,6 +133,51 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  // Sort tasks
+  const sortedTasks = useMemo(() => {
+    const sorted = [...tasks].sort((a, b) => {
+      let comparison = 0
+
+      switch (sortField) {
+        case 'created_at':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          break
+        case 'due_date':
+          // Handle null due dates - put them at the end
+          if (!a.due_date && !b.due_date) comparison = 0
+          else if (!a.due_date) comparison = 1
+          else if (!b.due_date) comparison = -1
+          else comparison = new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+          break
+        case 'priority':
+          const priorityA = PRIORITIES.find(p => p.value === a.priority)?.order || 0
+          const priorityB = PRIORITIES.find(p => p.value === b.priority)?.order || 0
+          comparison = priorityA - priorityB
+          break
+        case 'title':
+          comparison = a.title.localeCompare(b.title)
+          break
+        default:
+          comparison = 0
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+
+    return sorted
+  }, [tasks, sortField, sortDirection])
+
+  const handleSortChange = (field: SortField) => {
+    if (field === sortField) {
+      // Toggle direction if same field
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      // Default direction based on field
+      setSortDirection(field === 'title' ? 'asc' : 'desc')
+    }
+  }
+
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
       const response = await fetch('/api/recruiter/tasks', {
@@ -166,10 +225,10 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
 
   // Bulk operations
   const handleSelectAll = () => {
-    if (selectedTaskIds.size === tasks.length) {
+    if (selectedTaskIds.size === sortedTasks.length) {
       setSelectedTaskIds(new Set())
     } else {
-      setSelectedTaskIds(new Set(tasks.map(t => t.id)))
+      setSelectedTaskIds(new Set(sortedTasks.map(t => t.id)))
     }
   }
 
@@ -261,6 +320,28 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
     }
   }
 
+  const formatCreatedDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+    if (days === 0) {
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      if (hours === 0) {
+        const minutes = Math.floor(diff / (1000 * 60))
+        return minutes <= 1 ? 'Just now' : `${minutes}m ago`
+      }
+      return `${hours}h ago`
+    } else if (days === 1) {
+      return 'Yesterday'
+    } else if (days < 7) {
+      return `${days}d ago`
+    } else {
+      return date.toLocaleDateString()
+    }
+  }
+
   const getTaskTypeIcon = (type: string) => {
     return TASK_TYPES.find(t => t.value === type)?.icon || '📋'
   }
@@ -294,7 +375,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
         ) : tasks.length === 0 ? (
           <div className="text-sm text-gray-500 dark:text-gray-400">No tasks</div>
         ) : (
-          tasks.slice(0, 5).map(task => (
+          sortedTasks.slice(0, 5).map(task => (
             <div key={task.id} className="flex items-center gap-2 text-sm">
               <span>{getTaskTypeIcon(task.task_type)}</span>
               <span className="flex-1 truncate">{task.title}</span>
@@ -424,8 +505,8 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3">
+        {/* Filters and Sort */}
+        <div className="flex flex-wrap gap-3 items-center">
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -457,6 +538,35 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
             />
             Overdue only
           </label>
+
+          {/* Sort Controls */}
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
+            <select
+              value={sortField}
+              onChange={(e) => handleSortChange(e.target.value as SortField)}
+              className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            >
+              {SORT_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {sortDirection === 'asc' ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -470,7 +580,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
           <div className="p-8 text-center text-red-600 dark:text-red-400">
             {error}
           </div>
-        ) : tasks.length === 0 ? (
+        ) : sortedTasks.length === 0 ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             <svg className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -488,11 +598,11 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
         ) : (
           <>
             {/* Select All Header */}
-            {tasks.length > 0 && (
+            {sortedTasks.length > 0 && (
               <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 flex items-center gap-3">
                 <input
                   type="checkbox"
-                  checked={selectedTaskIds.size === tasks.length && tasks.length > 0}
+                  checked={selectedTaskIds.size === sortedTasks.length && sortedTasks.length > 0}
                   onChange={handleSelectAll}
                   className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
                 />
@@ -501,7 +611,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
                 </span>
               </div>
             )}
-            {tasks.map(task => {
+            {sortedTasks.map(task => {
               const dueInfo = formatDueDate(task.due_date)
               const isSelected = selectedTaskIds.has(task.id)
               return (
@@ -566,6 +676,10 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
                             {dueInfo.text}
                           </span>
                         )}
+                        {/* Created date badge */}
+                        <span className="px-2 py-0.5 rounded text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
+                          Created {formatCreatedDate(task.created_at)}
+                        </span>
                       </div>
                     </div>
 
