@@ -3,10 +3,9 @@
 import { createContext, useContext, ReactNode } from 'react'
 import enMessages from '@/messages/en.json'
 import esMessages from '@/messages/es.json'
-import ptMessages from '@/messages/pt.json'
 import { useLanguage } from '@/components/LanguageContext'
 
-type Locale = 'en' | 'es' | 'pt'
+type Locale = 'en' | 'es'
 type Messages = typeof enMessages
 
 interface IntlContextType {
@@ -20,7 +19,6 @@ const IntlContext = createContext<IntlContextType | undefined>(undefined)
 const messages: Record<Locale, Messages> = {
   en: enMessages,
   es: esMessages,
-  pt: ptMessages,
 }
 
 // Blocked keys that could lead to prototype pollution

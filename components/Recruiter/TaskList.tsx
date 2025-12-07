@@ -304,15 +304,19 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
 
     const date = new Date(dateStr)
     const now = new Date()
-    const diff = date.getTime() - now.getTime()
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+    
+    // Compare dates at start of day in local timezone to avoid timezone issues
+    const dueDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const diffTime = dueDay.getTime() - today.getTime()
+    const days = Math.round(diffTime / (1000 * 60 * 60 * 24))
 
     if (days < 0) {
-      return { text: `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`, overdue: true }
+      return { text: `${Math.abs(days)} day${Math.abs(days) !== 1 ? "s" : ""} overdue`, overdue: true }
     } else if (days === 0) {
-      return { text: 'Due today', overdue: false, today: true }
+      return { text: "Due today", overdue: false, today: true }
     } else if (days === 1) {
-      return { text: 'Due tomorrow', overdue: false }
+      return { text: "Due tomorrow", overdue: false }
     } else if (days <= 7) {
       return { text: `Due in ${days} days`, overdue: false }
     } else {

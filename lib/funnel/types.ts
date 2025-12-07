@@ -1,6 +1,6 @@
 // Funnel Stage Types - 5 stages based on lead readiness checklist
 export type FunnelStageNumber = 1 | 2 | 3 | 4 | 5
-export type FunnelStageName = 'education' | 'has_funds' | 'has_passport' | 'english' | 'ready'
+export type FunnelStageName = 'interested' | 'education' | 'has_funds' | 'has_passport' | 'english'
 
 // Combined Lead Funnel Data (derived from contact_history checklist)
 export interface LeadFunnelData {
@@ -92,11 +92,11 @@ export interface FunnelStageInfo {
 }
 
 export const FUNNEL_STAGES: FunnelStageInfo[] = [
-  { number: 1, name: "education", label: "Education", shortLabel: "Education", description: "Has education documents", color: "purple", checklistField: "has_education_docs" },
-  { number: 2, name: "has_funds", label: "Has Funds", shortLabel: "Funds", description: "Has confirmed funds", color: "emerald", checklistField: "has_funds" },
-  { number: 3, name: "has_passport", label: "Has Passport", shortLabel: "Passport", description: "Has valid passport", color: "blue", checklistField: "has_valid_passport" },
-  { number: 4, name: "english", label: "English", shortLabel: "English", description: "English proficiency verified", color: "amber", checklistField: "english_proficient" },
-  { number: 5, name: "ready", label: "Ready", shortLabel: "Ready", description: "Ready for student portal", color: "green", checklistField: "ready_to_proceed" }
+  { number: 1, name: "interested", label: "Interested", shortLabel: "Interested", description: "Lead is interested", color: "amber", checklistField: "interested" },
+  { number: 2, name: "education", label: "Education", shortLabel: "Education", description: "Has education documents", color: "purple", checklistField: "has_education_docs" },
+  { number: 3, name: "has_funds", label: "Has Funds", shortLabel: "Funds", description: "Has confirmed funds", color: "emerald", checklistField: "has_funds" },
+  { number: 4, name: "has_passport", label: "Has Passport", shortLabel: "Passport", description: "Has valid passport", color: "blue", checklistField: "has_valid_passport" },
+  { number: 5, name: "english", label: "English", shortLabel: "English", description: "English proficiency verified", color: "green", checklistField: "ready_to_proceed" }
 ]
 
 // Legacy types kept for compatibility

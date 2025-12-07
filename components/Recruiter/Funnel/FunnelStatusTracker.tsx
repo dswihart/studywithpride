@@ -24,10 +24,11 @@ interface FunnelStatusTrackerProps {
 }
 
 const FUNNEL_STAGES = [
-  { number: 1, key: "education", label: "Education", color: "purple" },
-  { number: 2, key: "funds", label: "Funds", color: "emerald" },
-  { number: 3, key: "passport", label: "Passport", color: "blue" },
-  { number: 4, key: "english", label: "English", color: "amber" },
+  { number: 1, key: "interested", label: "Interested" },
+  { number: 2, key: "education", label: "Education" },
+  { number: 3, key: "funds", label: "Funds" },
+  { number: 4, key: "passport", label: "Passport" },
+  { number: 5, key: "english", label: "English" },
 ]
 
 export default function FunnelStatusTracker({ lead, onConvertToStudent }: FunnelStatusTrackerProps) {
@@ -54,35 +55,42 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
 
   // Derive funnel status from contact history
   const getStatus = () => {
+    // Interested is derived from lead status or contact outcome
+    const isInterested = lead.contact_status === "interested" ||
+      contactHistory.some(c => {
+        const outcome = c.outcome?.toLowerCase() || ""
+        return outcome.includes("interested") && !outcome.includes("not interested")
+      })
     const hasEducation = contactHistory.some(c => c.has_education_docs)
     const hasFunds = contactHistory.some(c => c.has_funds)
     const hasPassport = contactHistory.some(c => c.has_valid_passport)
-    const hasEnglish = contactHistory.some(c => c.has_education_docs) // Using education as proxy for now
-    const isReady = contactHistory.some(c => c.ready_to_proceed)
+    const hasEnglish = contactHistory.some(c => c.ready_to_proceed) // Using ready_to_proceed as proxy for English
     const latestIntake = contactHistory.find(c => c.intake_period)?.intake_period || null
 
-    return { hasEducation, hasFunds, hasPassport, hasEnglish, isReady, latestIntake }
+    return { isInterested, hasEducation, hasFunds, hasPassport, hasEnglish, latestIntake }
   }
 
   const status = getStatus()
 
-  const getCompletedCount = () => {
-    let count = 0
-    if (status.hasEducation) count++
-    if (status.hasFunds) count++
-    if (status.hasPassport) count++
-    if (status.hasEnglish) count++
-    return count
-  }
-
   const isStageComplete = (key: string) => {
     switch (key) {
+      case "interested": return status.isInterested
       case "education": return status.hasEducation
       case "funds": return status.hasFunds
       case "passport": return status.hasPassport
       case "english": return status.hasEnglish
       default: return false
     }
+  }
+
+  const getCompletedCount = () => {
+    let count = 0
+    if (status.isInterested) count++
+    if (status.hasEducation) count++
+    if (status.hasFunds) count++
+    if (status.hasPassport) count++
+    if (status.hasEnglish) count++
+    return count
   }
 
   const handleConvert = async () => {
@@ -143,6 +151,7 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
   }
 
   const completedCount = getCompletedCount()
+  const allComplete = completedCount === 5
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -150,94 +159,85 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
       <div className="p-5 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recruitment Funnel</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{completedCount} of 4</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{completedCount} of 5</span>
         </div>
       </div>
 
-      {/* Funnel Stages */}
+      {/* Funnel Stages - Horizontal Layout */}
       <div className="p-5">
-        <div className="space-y-3">
-          {FUNNEL_STAGES.map((stage) => {
+        <div className="flex items-start justify-between">
+          {FUNNEL_STAGES.map((stage, index) => {
             const complete = isStageComplete(stage.key)
             return (
-              <div
-                key={stage.key}
-                className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
-                  complete
-                    ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                    : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                }`}
-              >
-                {/* Number Circle */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
-                }`}>
-                  {complete ? (
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <span className="text-white text-sm font-medium">{stage.number}</span>
+              <div key={stage.key} className="flex flex-col items-center flex-1">
+                {/* Circle with number or checkmark */}
+                <div className="flex items-center w-full">
+                  {/* Connector line (left side) */}
+                  {index > 0 && (
+                    <div className={`h-0.5 flex-1 ${isStageComplete(FUNNEL_STAGES[index - 1].key) ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                  )}
+
+                  {/* Circle */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
+                  }`}>
+                    {complete ? (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <span className="text-white text-sm font-bold">{stage.number}</span>
+                    )}
+                  </div>
+
+                  {/* Connector line (right side) */}
+                  {index < FUNNEL_STAGES.length - 1 && (
+                    <div className={`h-0.5 flex-1 ${complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}`} />
                   )}
                 </div>
 
-                {/* Label */}
-                <span className={`text-base font-medium flex-1 ${
-                  complete ? "text-green-700 dark:text-green-300" : "text-gray-600 dark:text-gray-400"
+                {/* Label below */}
+                <span className={`text-xs mt-2 text-center font-medium ${
+                  complete ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
                 }`}>
                   {stage.label}
                 </span>
-
-                {/* Status indicator */}
-                {complete && (
-                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">Complete</span>
-                )}
               </div>
             )
           })}
         </div>
 
-        {/* Ready to Convert Section */}
-        {status.isReady && !lead.converted_to_student && (
-          <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-500">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <span className="text-base font-semibold text-green-700 dark:text-green-300">Ready for Conversion</span>
-            </div>
-            {onConvertToStudent && (
-              <button
-                onClick={handleConvert}
-                disabled={converting}
-                className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                {converting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Converting...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    Convert to Student Portal
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Target Intake */}
         {status.latestIntake && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-sm text-blue-800 dark:text-blue-200">
               <span className="font-medium">Target Intake:</span> {status.latestIntake}
             </p>
+          </div>
+        )}
+
+        {/* Convert Button - shown when all stages complete */}
+        {allComplete && !lead.converted_to_student && onConvertToStudent && (
+          <div className="mt-6">
+            <button
+              onClick={handleConvert}
+              disabled={converting}
+              className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {converting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Converting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Convert to Student Portal
+                </>
+              )}
+            </button>
           </div>
         )}
 

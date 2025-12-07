@@ -101,8 +101,7 @@ const FOLLOW_UP_ACTIONS: { value: FollowUpAction; label: string; icon: string; t
 const FOLLOW_UP_TIMES = [
   { value: "today", label: "Today", days: 0 },
   { value: "tomorrow", label: "Tomorrow", days: 1 },
-  { value: "3_days", label: "In 3 days", days: 3 },
-  { value: "1_week", label: "In 1 week", days: 7 },
+  { value: "custom", label: "In X days", days: 0 },
 ]
 
 const CALLBACK_HOUR_OPTIONS = [
@@ -132,6 +131,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [selectedStatus, setSelectedStatus] = useState<string>(lead.contact_status)
   const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpAction | null>(null)
   const [followUpTime, setFollowUpTime] = useState<string>("today")
+  const [customDays, setCustomDays] = useState<number>(3)
   const [callbackTime, setCallbackTime] = useState<string>("")
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(false)
@@ -171,6 +171,10 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
             outcome: outcome.label,
             notes: null,
             follow_up_action: null,
+            meets_education_level: meetsEducationLevel,
+            english_level_basic: englishLevelBasic,
+            has_valid_passport: hasValidPassport,
+            confirmed_financial_support: confirmedFinancialSupport,
           }),
         })
 
@@ -273,9 +277,9 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
         if (createTask && selectedFollowUp && selectedFollowUp !== "none" && onCreateTask) {
           const followUpData = FOLLOW_UP_ACTIONS.find(f => f.value === selectedFollowUp)
           const timeData = FOLLOW_UP_TIMES.find(t => t.value === followUpTime)
-          const taskDays = timeData?.days ?? 1
+          const taskDays = followUpTime === "custom" ? customDays : (timeData?.days ?? 1)
           const taskType = followUpData?.taskType ?? "call"
-          let timeLabel = timeData?.label || "tomorrow"
+          let timeLabel = followUpTime === "custom" ? `in ${customDays} days` : (timeData?.label || "tomorrow")
 
           // Add specific time if today is selected
           if (followUpTime === "today" && callbackTime) {
@@ -408,6 +412,42 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 </button>
               </div>
 
+              {/* Lead Readiness Checklist */}
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowChecklist(!showChecklist)}
+                  className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between"
+                >
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <span>📋</span> Lead Readiness Checklist
+                  </span>
+                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showChecklist ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showChecklist && (
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Meets minimum education level</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support (funds)</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Valid Passport</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">English level of Basic</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -492,51 +532,38 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 ))}
               </div>
 
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowChecklist(!showChecklist)}
-                  className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between"
-                >
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <span>📋</span> Lead Readiness Checklist
-                  </span>
-                  <svg className={`w-5 h-5 text-gray-400 transition-transform ${showChecklist ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showChecklist && (
-                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={meetsEducationLevel} onChange={(e) => setMeetsEducationLevel(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Meets minimum education level</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={englishLevelBasic} onChange={(e) => setEnglishLevelBasic(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">English level of Basic</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={hasValidPassport} onChange={(e) => setHasValidPassport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Valid Passport</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={confirmedFinancialSupport} onChange={(e) => setConfirmedFinancialSupport(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Confirmed financial support</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
               {selectedFollowUp && selectedFollowUp !== "none" && (
                 <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When?</label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {FOLLOW_UP_TIMES.map((time) => (
                       <button key={time.value} onClick={() => { setFollowUpTime(time.value); if (time.value !== "today") setCallbackTime(""); }} className={`p-2 text-center rounded-lg border-2 transition text-sm ${followUpTime === time.value ? "border-blue-500 bg-blue-100 dark:bg-blue-900/30" : "border-gray-200 dark:border-gray-600 hover:border-gray-300"}`}>
-                        <span className="text-gray-700 dark:text-gray-300">{time.label}</span>
+                        <span className="text-gray-700 dark:text-gray-300">{time.value === "custom" ? `In ${customDays} days` : time.label}</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* Custom days input */}
+                  {followUpTime === "custom" && (
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Number of days
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={customDays}
+                        onChange={(e) => setCustomDays(parseInt(e.target.value) || 3)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                  )}
 
                   {/* Time selector for Today */}
                   {followUpTime === "today" && (

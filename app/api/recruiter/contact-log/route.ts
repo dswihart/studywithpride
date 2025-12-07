@@ -58,17 +58,13 @@ export async function POST(request: NextRequest) {
       outcome,
       notes,
       follow_up_action,
-      // Readiness checklist fields - accept all variations
+      // Readiness checklist fields - accept all variations from frontend
       has_funds,
-      meets_age_requirements,
+      confirmed_financial_support,  // Frontend sends this for funds
+      meets_education_level,  // Frontend sends this for education
+      english_level_basic,  // Frontend sends this for english
       has_valid_passport,
-      has_education_docs,  // Frontend sends this
-      can_obtain_visa,     // DB has this
-      can_start_intake,
-      discussed_with_family,
-      needs_housing_support,
-      understands_work_rules,
-      has_realistic_expectations,
+      has_education_docs,
       ready_to_proceed,
       readiness_comments,
       intake_period,
@@ -84,7 +80,7 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     const recruiterId = user?.id || null
 
-    // Build insert object - only include fields that exist in DB
+    // Build insert object - map frontend field names to DB columns
     const insertData: Record<string, any> = {
       lead_id,
       contact_type: contact_type || "call",
@@ -93,18 +89,11 @@ export async function POST(request: NextRequest) {
       follow_up_action: follow_up_action || null,
       contacted_at: new Date().toISOString(),
       recruiter_id: recruiterId,
-      // Readiness checklist fields
-      has_funds: has_funds || false,
-      meets_age_requirements: meets_age_requirements || false,
-      has_valid_passport: has_valid_passport || false,
-      can_obtain_visa: can_obtain_visa || false,
-        has_education_docs: has_education_docs || false, // Map has_education_docs to can_obtain_visa temporarily
-      can_start_intake: can_start_intake || false,
-      discussed_with_family: discussed_with_family || false,
-      needs_housing_support: needs_housing_support || false,
-      understands_work_rules: understands_work_rules || false,
-      has_realistic_expectations: has_realistic_expectations || false,
-      ready_to_proceed: ready_to_proceed || false,
+      // Readiness checklist fields - map from frontend names to DB columns
+      has_funds: has_funds || confirmed_financial_support || false,  // Funds
+      has_education_docs: has_education_docs || meets_education_level || false,  // Education
+      has_valid_passport: has_valid_passport || false,  // Passport
+      ready_to_proceed: ready_to_proceed || english_level_basic || false,  // English (using ready_to_proceed as proxy)
       readiness_comments: readiness_comments || null,
       intake_period: intake_period || null,
     }

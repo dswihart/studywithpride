@@ -115,14 +115,19 @@ export default function UpcomingTasksWidget({ onViewAllTasks, onTaskClick, refre
   }
 
   const formatDueDate = (date: string | null) => {
-    if (!date) return 'No due date'
+    if (!date) return "No due date"
     const d = new Date(date)
     const now = new Date()
-    const diffDays = Math.floor((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Compare dates at start of day in local timezone
+    const dueDay = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const diffTime = dueDay.getTime() - today.getTime()
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
 
-    if (diffDays < 0) return `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''} overdue`
-    if (diffDays === 0) return 'Due today'
-    return `Due in ${diffDays} day${diffDays !== 1 ? 's' : ''}`
+    if (diffDays < 0) return `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? "s" : ""} overdue`
+    if (diffDays === 0) return "Due today"
+    return `Due in ${diffDays} day${diffDays !== 1 ? "s" : ""}`
   }
 
   const totalCount = overdueTasks.length + todayTasks.length

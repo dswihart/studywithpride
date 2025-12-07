@@ -1132,17 +1132,6 @@ const parseXLSXToJson = async (arrayBuffer: ArrayBuffer): Promise<Record<string,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Referral Destination</label>
-                <input
-                  type="text"
-                  value={formData.referral_source}
-                  onChange={(e) => setFormData({ ...formData, referral_source: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="e.g., University Name, Program, Partner Organization"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
                 <textarea
                   value={formData.notes}
@@ -1187,19 +1176,6 @@ const parseXLSXToJson = async (arrayBuffer: ArrayBuffer): Promise<Record<string,
                   onChange={(e) => setFormData({ ...formData, last_contact_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When do you want to come to Barcelona?</label>
-                <select
-                  value={formData.barcelona_timeline}
-                  onChange={(e) => setFormData({ ...formData, barcelona_timeline: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Select timeline</option>
-                  <option value="6">6 months</option>
-                  <option value="12">12 months</option>
-                </select>
               </div>
 
               <div className="flex gap-3 pt-2">

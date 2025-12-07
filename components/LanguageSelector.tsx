@@ -5,17 +5,16 @@ import { useIntl } from '@/components/IntlProvider';
 export default function LanguageSelector() {
   const { locale, setLocale } = useIntl();
 
-  const languages: { code: 'en' | 'es' | 'pt'; name: string; flag: string }[] = [
+  const languages: { code: 'en' | 'es'; name: string; flag: string }[] = [
     { code: 'en', name: 'English', flag: '🇬🇧' },
     { code: 'es', name: 'Español', flag: '🇪🇸' },
-    { code: 'pt', name: 'Português', flag: '🇧🇷' },
   ];
 
   return (
     <div className="relative inline-block">
       <select
         value={locale}
-        onChange={(e) => setLocale(e.target.value as 'en' | 'es' | 'pt')}
+        onChange={(e) => setLocale(e.target.value as 'en' | 'es')}
         className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
         aria-label="Select language"
       >

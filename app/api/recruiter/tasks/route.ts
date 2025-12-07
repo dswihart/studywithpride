@@ -103,16 +103,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (dueToday === 'true') {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      query = query.gte('due_date', today.toISOString()).lt('due_date', tomorrow.toISOString())
+      // Use UTC dates for consistent comparison with database
+      const now = new Date()
+      const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+      const tomorrowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+      query = query.gte('due_date', todayStart.toISOString()).lt('due_date', tomorrowStart.toISOString())
     }
 
     if (overdue === 'true') {
-      const now = new Date().toISOString()
-      query = query.lt('due_date', now).neq('status', 'completed').neq('status', 'cancelled')
+      // Use start of today (UTC) for consistent overdue comparison
+      const now = new Date()
+      const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+      query = query.lt('due_date', todayStart.toISOString()).neq('status', 'completed').neq('status', 'cancelled')
     }
 
     // Search in title and description

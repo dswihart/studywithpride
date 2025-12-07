@@ -95,7 +95,7 @@ export default function ProfileSettingsPage() {
         setSuccess(true)
         setProfile(result.data)
         // Update UI language if changed
-        setLanguage(preferredLanguage as 'en' | 'es' | 'pt')
+        setLanguage(preferredLanguage as 'en' | 'es')
         // Auto-hide success message after 3 seconds
         setTimeout(() => setSuccess(false), 3000)
       } else {
