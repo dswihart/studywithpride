@@ -1,70 +1,25 @@
-// Funnel Stage Types
-export type FunnelStageNumber = 1 | 2 | 3 | 4
-export type FunnelStageName = 'new_lead' | 'program_confirmed' | 'documents_verified' | 'ready_for_interview'
+// Funnel Stage Types - 5 stages based on lead readiness checklist
+export type FunnelStageNumber = 1 | 2 | 3 | 4 | 5
+export type FunnelStageName = 'education' | 'has_funds' | 'has_passport' | 'english' | 'ready'
 
-// Stage 1: Contacted & Interested
-export interface Stage1Data {
-  contactMethod: 'phone' | 'whatsapp' | 'email' | 'in_person' | null
-  interestLevel: 'low' | 'medium' | 'high' | null
-  responseDate: string | null
-  initialNotes: string | null
-  contactAttempts: number
-}
-
-// Stage 2: Program Confirmed
-export interface Stage2Data {
-  programId: string | null
-  programName: string | null
-  intakeId: string | null
-  intakePeriod: string | null
-  budgetConfirmed: boolean
-  budgetRange: string | null
-  timelineDiscussed: boolean
-  preferredCampus: string | null
-}
-
-// Stage 3: Documents Verified
-export interface Stage3Data {
-  hasValidPassport: boolean | null
-  passportExpiry: string | null
-  passportStatus: 'not_started' | 'in_progress' | 'verified' | 'issue'
-  educationVerified: boolean | null
-  highestDegree: string | null
-  transcriptsStatus: 'not_started' | 'in_progress' | 'verified' | 'issue'
-  englishTest: string | null
-  englishScore: string | null
-  englishStatus: 'not_started' | 'in_progress' | 'verified' | 'issue' | 'not_required'
-  financialDocsReady: boolean | null
-  bankStatementsStatus: 'not_started' | 'in_progress' | 'verified' | 'issue'
-  sponsorLetterRequired: boolean
-  sponsorLetterStatus: 'not_started' | 'in_progress' | 'verified' | 'issue' | 'not_required'
-  readinessScore: number
-  verificationNotes: string | null
-}
-
-// Stage 4: Ready for Interview
-export interface Stage4Data {
-  preChecklistComplete: boolean
-  informationVerified: boolean
-  consentObtained: boolean
-  readyToConvert: boolean
-}
-
-// Combined Lead Funnel Data
+// Combined Lead Funnel Data (derived from contact_history checklist)
 export interface LeadFunnelData {
   leadId: string
   currentStage: FunnelStageNumber
   stages: {
-    stage1: Stage1Data | null
-    stage2: Stage2Data | null
-    stage3: Stage3Data | null
-    stage4: Stage4Data | null
+    stage1: boolean // Interested
+    stage2: boolean // Has Passport
+    stage3: boolean // Education/English
+    stage4: boolean // Has Funds
+    stage5: boolean // Program Identified / Ready
   }
   completedStages: FunnelStageNumber[]
   convertedToStudent: boolean
   convertedAt: string | null
   studentId: string | null
   applicationId: string | null
+  intakePeriod: string | null
+  programName: string | null
 }
 
 // Lead type with funnel data
@@ -95,7 +50,7 @@ export interface LeadWithFunnel {
   [key: string]: any
 }
 
-// Program and Intake types for Stage 2
+// Program and Intake types
 export interface Program {
   id: string
   name: string
@@ -107,7 +62,7 @@ export interface Program {
 export interface Intake {
   id: string
   programId: string
-  period: string // e.g., "Fall 2025", "Spring 2026"
+  period: string
   startDate: string
   applicationDeadline: string
   spotsAvailable: number
@@ -125,54 +80,70 @@ export interface ConversionData {
   notes: string | null
 }
 
-// Stage completion check
-export interface StageCompletionStatus {
-  isComplete: boolean
-  missingFields: string[]
-  completionPercentage: number
-}
-
 // Funnel stage info
 export interface FunnelStageInfo {
   number: FunnelStageNumber
   name: FunnelStageName
   label: string
+  shortLabel: string
   description: string
   color: string
+  checklistField: string // Maps to contact_history field
 }
 
 export const FUNNEL_STAGES: FunnelStageInfo[] = [
-  {
-    number: 1,
-    name: 'new_lead',
-    label: 'New Lead',
-    description: 'New lead pending initial contact',
-    color: 'amber'
-  },
-  {
-    number: 2,
-    name: 'program_confirmed',
-    label: 'Program Confirmed',
-    description: 'Lead confirmed interest in a specific program and intake',
-    color: 'blue'
-  },
-  {
-    number: 3,
-    name: 'documents_verified',
-    label: 'Documents Verified',
-    description: 'Lead has verified they have required documents',
-    color: 'purple'
-  },
-  {
-    number: 4,
-    name: 'ready_for_interview',
-    label: 'Ready for Interview',
-    description: 'Lead is ready to be converted to student',
-    color: 'green'
-  }
+  { number: 1, name: "education", label: "Education", shortLabel: "Education", description: "Has education documents", color: "purple", checklistField: "has_education_docs" },
+  { number: 2, name: "has_funds", label: "Has Funds", shortLabel: "Funds", description: "Has confirmed funds", color: "emerald", checklistField: "has_funds" },
+  { number: 3, name: "has_passport", label: "Has Passport", shortLabel: "Passport", description: "Has valid passport", color: "blue", checklistField: "has_valid_passport" },
+  { number: 4, name: "english", label: "English", shortLabel: "English", description: "English proficiency verified", color: "amber", checklistField: "english_proficient" },
+  { number: 5, name: "ready", label: "Ready", shortLabel: "Ready", description: "Ready for student portal", color: "green", checklistField: "ready_to_proceed" }
 ]
 
-// Default stage data
+// Legacy types kept for compatibility
+export interface Stage1Data {
+  contactMethod: 'phone' | 'whatsapp' | 'email' | 'in_person' | null
+  interestLevel: 'low' | 'medium' | 'high' | null
+  responseDate: string | null
+  initialNotes: string | null
+  contactAttempts: number
+}
+
+export interface Stage2Data {
+  programId: string | null
+  programName: string | null
+  intakeId: string | null
+  intakePeriod: string | null
+  budgetConfirmed: boolean
+  budgetRange: string | null
+  timelineDiscussed: boolean
+  preferredCampus: string | null
+}
+
+export interface Stage3Data {
+  hasValidPassport: boolean | null
+  passportExpiry: string | null
+  passportStatus: 'not_started' | 'in_progress' | 'verified' | 'issue'
+  educationVerified: boolean | null
+  highestDegree: string | null
+  transcriptsStatus: 'not_started' | 'in_progress' | 'verified' | 'issue'
+  englishTest: string | null
+  englishScore: string | null
+  englishStatus: 'not_started' | 'in_progress' | 'verified' | 'issue' | 'not_required'
+  financialDocsReady: boolean | null
+  bankStatementsStatus: 'not_started' | 'in_progress' | 'verified' | 'issue'
+  sponsorLetterRequired: boolean
+  sponsorLetterStatus: 'not_started' | 'in_progress' | 'verified' | 'issue' | 'not_required'
+  readinessScore: number
+  verificationNotes: string | null
+}
+
+export interface Stage4Data {
+  preChecklistComplete: boolean
+  informationVerified: boolean
+  consentObtained: boolean
+  readyToConvert: boolean
+}
+
 export const DEFAULT_STAGE1_DATA: Stage1Data = {
   contactMethod: null,
   interestLevel: null,

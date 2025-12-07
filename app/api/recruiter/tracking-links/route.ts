@@ -176,6 +176,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Create contact history entry for sending information
+    await supabase
+      .from("contact_history")
+      .insert({
+        lead_id,
+        contact_type: "link",
+        outcome: "Information Sent",
+        notes: "Sent tracking link: " + (label || destination_url),
+        contacted_at: new Date().toISOString(),
+        recruiter_id: roleCheck.user?.id || null
+      })
+
     // Build the tracking URL
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://studywithpride.com"
     const trackingUrl = `${baseUrl}/track/${token}`

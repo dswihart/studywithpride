@@ -308,12 +308,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
                       <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Country</label>
                       <p className="text-gray-900 dark:text-white">{lead.country}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Barcelona Timeline</label>
-                      <p className="text-gray-900 dark:text-white">
-                        {lead.barcelona_timeline ? `${lead.barcelona_timeline} months` : "N/A"}
-                      </p>
-                    </div>
+
                   </div>
                 </div>
 
