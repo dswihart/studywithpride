@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
+
+// Admin client for user creation
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 // GET - Fetch funnel data for a lead, or list programs/intakes
 export async function GET(request: NextRequest) {
@@ -209,7 +216,7 @@ export async function POST(request: NextRequest) {
     const {
       lead_id,
       student_email,
-      generate_password,
+      generate_password = true,
       send_welcome_email,
       enable_document_upload,
       enable_interview_scheduling,
@@ -217,17 +224,18 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!lead_id || !student_email) {
-      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ success: false, error: "Missing required fields (lead_id, student_email)" }, { status: 400 })
     }
 
-    // Get lead data
-    const { data: lead, error: leadError } = await supabase
+    // Get lead data using admin client for full access
+    const { data: lead, error: leadError } = await supabaseAdmin
       .from("leads")
       .select("*")
       .eq("id", lead_id)
       .single()
 
     if (leadError || !lead) {
+      console.error("[funnel] Lead fetch error:", leadError)
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 })
     }
 
@@ -235,31 +243,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Lead already converted" }, { status: 400 })
     }
 
-    // Generate a random password if requested
-    const password = generate_password
-      ? Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-2).toUpperCase() + "!"
-      : null
+    // Generate a secure password
+    const password = `Welcome${Date.now().toString(36)}${Math.random().toString(36).slice(-4).toUpperCase()}!`
 
-    // Create student account in auth (if applicable)
+    // Create student account using admin client
     let studentUserId = null
-    if (generate_password && password) {
-      const { data: authUser, error: signUpError } = await supabase.auth.admin.createUser({
-        email: student_email,
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: lead.prospect_name,
-          role: 'student',
-          converted_from_lead: lead_id
-        }
+    const { data: authUser, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+      email: student_email.toLowerCase().trim(),
+      password: password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: lead.prospect_name,
+        role: 'student',
+        converted_from_lead: lead_id
+      }
+    })
+
+    if (signUpError) {
+      console.error("[funnel] Failed to create student auth account:", signUpError)
+      return NextResponse.json({
+        success: false,
+        error: `Failed to create student account: ${signUpError.message}`
+      }, { status: 500 })
+    }
+
+    studentUserId = authUser.user?.id
+
+    if (!studentUserId) {
+      return NextResponse.json({ success: false, error: "Failed to create student account - no user ID returned" }, { status: 500 })
+    }
+
+    // Create user_profiles entry
+    const { error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .insert({
+        id: studentUserId,
+        email: student_email.toLowerCase().trim(),
+        full_name: lead.prospect_name || null,
+        country_of_origin: lead.country || null,
+        phone_number: lead.phone || null,
+        preferred_language: "en",
+        crm_lead_id: lead_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
 
-      if (signUpError) {
-        console.error("Failed to create student auth account:", signUpError)
-        // Continue without auth account - can be created later
-      } else {
-        studentUserId = authUser.user?.id
-      }
+    if (profileError) {
+      console.error("[funnel] Profile creation error:", profileError)
+      // Don't fail - the auth account was created
     }
 
     // Update lead as converted
@@ -274,12 +305,13 @@ export async function POST(request: NextRequest) {
       enableInterviewScheduling: enable_interview_scheduling
     }
 
-    const { data: updatedLead, error: updateError } = await supabase
+    const { data: updatedLead, error: updateError } = await supabaseAdmin
       .from("leads")
       .update({
         converted_to_student: true,
         converted_at: new Date().toISOString(),
         student_id: studentUserId,
+        contact_status: "converted",
         funnel_data: funnelData
       })
       .eq("id", lead_id)
@@ -287,37 +319,53 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (updateError) {
+      console.error("[funnel] Lead update error:", updateError)
       return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
     }
 
-    // Log conversion in history
-    await supabase
-      .from("lead_funnel_history")
+    // Log conversion in contact_history
+    await supabaseAdmin
+      .from("contact_history")
       .insert({
-        lead_id,
-        from_stage: lead.funnel_stage,
-        to_stage: 4,
-        stage_data: { action: 'converted_to_student', student_email },
-        changed_by: user.id,
-        notes: notes || 'Lead converted to student'
+        lead_id: lead_id,
+        contact_type: "system",
+        outcome: "Converted to Student Portal",
+        notes: `Student account created. User ID: ${studentUserId}. Email: ${student_email}`,
+        follow_up_action: null,
+        ready_to_proceed: true,
+        contacted_at: new Date().toISOString()
       })
 
-    // TODO: Send welcome email if requested
-    // if (send_welcome_email && password) {
-    //   await sendWelcomeEmail(student_email, password, lead.prospect_name)
-    // }
+    // Try to log in lead_funnel_history (table may not exist)
+    try {
+      await supabaseAdmin
+        .from("lead_funnel_history")
+        .insert({
+          lead_id,
+          from_stage: lead.funnel_stage || 4,
+          to_stage: 4,
+          stage_data: { action: 'converted_to_student', student_email },
+          changed_by: user.id,
+          notes: notes || 'Lead converted to student'
+        })
+    } catch (e) {
+      // Table may not exist - not critical
+    }
+
+    console.log(`[funnel] Successfully converted lead ${lead_id} to student ${studentUserId}`)
 
     return NextResponse.json({
       success: true,
       data: {
         lead: updatedLead,
         studentId: studentUserId,
+        studentEmail: student_email,
         message: "Lead successfully converted to student"
       }
     })
 
-  } catch (error) {
-    console.error("Funnel POST (convert) error:", error)
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[funnel] POST (convert) error:", error)
+    return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 })
   }
 }

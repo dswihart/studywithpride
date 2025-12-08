@@ -32,7 +32,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data })
+    // Debug: Log the raw DB columns
+    if (data && data.length > 0) {
+      console.log("[contact-log] DB columns:", Object.keys(data[0]))
+      console.log("[contact-log] First entry raw:", JSON.stringify(data[0]))
+    }
+
+    // Map DB column names back to frontend expected names
+    const mappedData = data?.map((entry: any) => ({
+      ...entry,
+      // Map DB columns to frontend expected field names
+      meets_education_level: entry.has_education_docs || false,
+      english_level_basic: entry.ready_to_proceed || false,
+      confirmed_financial_support: entry.has_funds || false,
+      // has_valid_passport stays the same
+      // ready_to_proceed stays as-is for the "Ready to Proceed" indicator
+    })) || []
+
+    return NextResponse.json({ success: true, data: mappedData })
   } catch (error) {
     console.error("[contact-log] GET Error:", error)
     return NextResponse.json({ success: false, error: "Failed to fetch contact history" }, { status: 500 })

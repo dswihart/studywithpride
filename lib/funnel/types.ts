@@ -1,6 +1,6 @@
-// Funnel Stage Types - 5 stages based on lead readiness checklist
-export type FunnelStageNumber = 1 | 2 | 3 | 4 | 5
-export type FunnelStageName = 'interested' | 'education' | 'has_funds' | 'has_passport' | 'english'
+// Funnel Stage Types - 4 stages based on lead readiness checklist
+export type FunnelStageNumber = 1 | 2 | 3 | 4
+export type FunnelStageName = 'interested' | 'education' | 'english' | 'has_funds'
 
 // Combined Lead Funnel Data (derived from contact_history checklist)
 export interface LeadFunnelData {
@@ -8,10 +8,9 @@ export interface LeadFunnelData {
   currentStage: FunnelStageNumber
   stages: {
     stage1: boolean // Interested
-    stage2: boolean // Has Passport
-    stage3: boolean // Education/English
+    stage2: boolean // Education
+    stage3: boolean // English
     stage4: boolean // Has Funds
-    stage5: boolean // Program Identified / Ready
   }
   completedStages: FunnelStageNumber[]
   convertedToStudent: boolean
@@ -94,9 +93,8 @@ export interface FunnelStageInfo {
 export const FUNNEL_STAGES: FunnelStageInfo[] = [
   { number: 1, name: "interested", label: "Interested", shortLabel: "Interested", description: "Lead is interested", color: "amber", checklistField: "interested" },
   { number: 2, name: "education", label: "Education", shortLabel: "Education", description: "Has education documents", color: "purple", checklistField: "has_education_docs" },
-  { number: 3, name: "has_funds", label: "Has Funds", shortLabel: "Funds", description: "Has confirmed funds", color: "emerald", checklistField: "has_funds" },
-  { number: 4, name: "has_passport", label: "Has Passport", shortLabel: "Passport", description: "Has valid passport", color: "blue", checklistField: "has_valid_passport" },
-  { number: 5, name: "english", label: "English", shortLabel: "English", description: "English proficiency verified", color: "green", checklistField: "ready_to_proceed" }
+  { number: 3, name: "english", label: "English", shortLabel: "English", description: "English proficiency verified", color: "blue", checklistField: "ready_to_proceed" },
+  { number: 4, name: "has_funds", label: "Funds", shortLabel: "Funds", description: "Has confirmed funds", color: "green", checklistField: "has_funds" }
 ]
 
 // Legacy types kept for compatibility

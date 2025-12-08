@@ -46,16 +46,13 @@ export default function FunnelStageBadge({
           if (isInterested) completed.push(1)
           
           // Check education (stage 2)
-          if (history.some((c: any) => c.has_education_docs)) completed.push(2)
+          if (history.some((c: any) => c.has_education_docs || c.meets_education_level)) completed.push(2)
           
-          // Check funds (stage 3)
-          if (history.some((c: any) => c.has_funds)) completed.push(3)
+          // Check english (stage 3)
+          if (history.some((c: any) => c.ready_to_proceed || c.english_level_basic)) completed.push(3)
           
-          // Check passport (stage 4)
-          if (history.some((c: any) => c.has_valid_passport)) completed.push(4)
-          
-          // Check english (stage 5)
-          if (history.some((c: any) => c.ready_to_proceed)) completed.push(5)
+          // Check funds (stage 4)
+          if (history.some((c: any) => c.has_funds || c.confirmed_financial_support)) completed.push(4)
           
           setDerivedCompletedStages(completed)
         }
@@ -95,8 +92,8 @@ export default function FunnelStageBadge({
   }
 
   const getBadgeColor = () => {
-    // Show green when all 5 stages are complete
-    if (safeCompletedStages.length === 5) {
+    // Show green when all 4 stages are complete
+    if (safeCompletedStages.length === 4) {
       return "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
     }
     const colorMap: Record<string, string> = {
@@ -127,7 +124,7 @@ export default function FunnelStageBadge({
     return (
       <div className={`inline-flex items-center ${sizeClasses[size].gap} rounded-full border bg-gray-50 dark:bg-gray-900/20 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 ${sizeClasses[size].badge}`}>
         <div className={`flex items-center ${sizeClasses[size].gap}`}>
-          {[1, 2, 3, 4, 5].map((stageNum) => (
+          {[1, 2, 3, 4].map((stageNum) => (
             <div key={stageNum} className={`${sizeClasses[size].dot} bg-gray-300 dark:bg-gray-600 rounded-full`} />
           ))}
         </div>
@@ -143,16 +140,16 @@ export default function FunnelStageBadge({
         ${getBadgeColor()} ${sizeClasses[size].badge}
       `}
     >
-      {/* 5 Dot indicators */}
+      {/* 4 Dot indicators */}
       <div className={`flex items-center ${sizeClasses[size].gap}`}>
-        {[1, 2, 3, 4, 5].map((stageNum) => {
-          const status = getStageStatus(stageNum as FunnelStageNumber)
+        {([1, 2, 3, 4] as FunnelStageNumber[]).map((stageNum) => {
+          const status = getStageStatus(stageNum)
           return (
             <div
               key={stageNum}
               className={`
                 ${sizeClasses[size].dot}
-                ${getDotColor(status, stageNum as FunnelStageNumber)}
+                ${getDotColor(status, stageNum)}
                 rounded-full
                 ${status === "current" ? "ring-2 ring-offset-1 ring-current opacity-100" : ""}
               `}
@@ -164,7 +161,7 @@ export default function FunnelStageBadge({
       {/* Label */}
       {showLabel && (
         <span className="font-medium ml-1">
-          {safeCompletedStages.length === 5 ? "Ready" : (currentStageInfo?.shortLabel || "New")}
+          {safeCompletedStages.length === 4 ? "Ready" : (currentStageInfo?.shortLabel || "New")}
         </span>
       )}
     </div>

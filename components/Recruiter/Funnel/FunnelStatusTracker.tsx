@@ -7,9 +7,12 @@ interface ContactHistoryEntry {
   id: string
   outcome: string | null
   has_funds: boolean
+  confirmed_financial_support: boolean
   has_valid_passport: boolean
   has_education_docs: boolean
+  meets_education_level: boolean
   ready_to_proceed: boolean
+  english_level_basic: boolean
   intake_period: string | null
 }
 
@@ -24,17 +27,17 @@ interface FunnelStatusTrackerProps {
 }
 
 const FUNNEL_STAGES = [
-  { number: 1, key: "interested", label: "Interested" },
-  { number: 2, key: "education", label: "Education" },
-  { number: 3, key: "funds", label: "Funds" },
-  { number: 4, key: "passport", label: "Passport" },
-  { number: 5, key: "english", label: "English" },
+  { number: 1, key: "interested", label: "Interested", color: "amber" },
+  { number: 2, key: "education", label: "Education", color: "purple" },
+  { number: 3, key: "english", label: "English", color: "blue" },
+  { number: 4, key: "funds", label: "Funds", color: "green" },
 ]
 
 export default function FunnelStatusTracker({ lead, onConvertToStudent }: FunnelStatusTrackerProps) {
   const [contactHistory, setContactHistory] = useState<ContactHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [converting, setConverting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchContactHistory = async () => {
@@ -53,21 +56,18 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
     fetchContactHistory()
   }, [lead.id])
 
-  // Derive funnel status from contact history
   const getStatus = () => {
-    // Interested is derived from lead status or contact outcome
     const isInterested = lead.contact_status === "interested" ||
       contactHistory.some(c => {
         const outcome = c.outcome?.toLowerCase() || ""
         return outcome.includes("interested") && !outcome.includes("not interested")
       })
-    const hasEducation = contactHistory.some(c => c.has_education_docs)
-    const hasFunds = contactHistory.some(c => c.has_funds)
-    const hasPassport = contactHistory.some(c => c.has_valid_passport)
-    const hasEnglish = contactHistory.some(c => c.ready_to_proceed) // Using ready_to_proceed as proxy for English
+    const hasEducation = contactHistory.some(c => c.has_education_docs || c.meets_education_level)
+    const hasEnglish = contactHistory.some(c => c.ready_to_proceed || c.english_level_basic)
+    const hasFunds = contactHistory.some(c => c.has_funds || c.confirmed_financial_support)
     const latestIntake = contactHistory.find(c => c.intake_period)?.intake_period || null
 
-    return { isInterested, hasEducation, hasFunds, hasPassport, hasEnglish, latestIntake }
+    return { isInterested, hasEducation, hasEnglish, hasFunds, latestIntake }
   }
 
   const status = getStatus()
@@ -76,9 +76,8 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
     switch (key) {
       case "interested": return status.isInterested
       case "education": return status.hasEducation
-      case "funds": return status.hasFunds
-      case "passport": return status.hasPassport
       case "english": return status.hasEnglish
+      case "funds": return status.hasFunds
       default: return false
     }
   }
@@ -87,27 +86,38 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
     let count = 0
     if (status.isInterested) count++
     if (status.hasEducation) count++
-    if (status.hasFunds) count++
-    if (status.hasPassport) count++
     if (status.hasEnglish) count++
+    if (status.hasFunds) count++
     return count
   }
 
   const handleConvert = async () => {
-    if (!onConvertToStudent) return
+    if (!onConvertToStudent) {
+      setError("Conversion handler not configured")
+      return
+    }
+
+    if (!lead.prospect_email) {
+      setError("Lead must have an email address to convert")
+      return
+    }
+
     setConverting(true)
+    setError(null)
+
     try {
       await onConvertToStudent({
         leadId: lead.id,
-        studentEmail: lead.prospect_email || "",
+        studentEmail: lead.prospect_email,
         generatePassword: true,
         sendWelcomeEmail: false,
         enableDocumentUpload: true,
         enableInterviewScheduling: true,
         notes: null,
       })
-    } catch (error) {
-      console.error("Conversion failed:", error)
+    } catch (err: any) {
+      console.error("Conversion failed:", err)
+      setError(err.message || "Conversion failed. Please try again.")
     } finally {
       setConverting(false)
     }
@@ -151,36 +161,29 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
   }
 
   const completedCount = getCompletedCount()
-  const allComplete = completedCount === 5
+  const allComplete = completedCount === 4
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      {/* Header */}
       <div className="p-5 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recruitment Funnel</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{completedCount} of 5</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{completedCount} of 4</span>
         </div>
       </div>
 
-      {/* Funnel Stages - Horizontal Layout */}
       <div className="p-5">
         <div className="flex items-start justify-between">
           {FUNNEL_STAGES.map((stage, index) => {
             const complete = isStageComplete(stage.key)
+            const prevComplete = index > 0 ? isStageComplete(FUNNEL_STAGES[index - 1].key) : false
             return (
               <div key={stage.key} className="flex flex-col items-center flex-1">
-                {/* Circle with number or checkmark */}
                 <div className="flex items-center w-full">
-                  {/* Connector line (left side) */}
                   {index > 0 && (
-                    <div className={`h-0.5 flex-1 ${isStageComplete(FUNNEL_STAGES[index - 1].key) ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                    <div className={"h-0.5 flex-1 " + (prevComplete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600")} />
                   )}
-
-                  {/* Circle */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
-                  }`}>
+                  <div className={"w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 " + (complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600")}>
                     {complete ? (
                       <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -189,17 +192,11 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
                       <span className="text-white text-sm font-bold">{stage.number}</span>
                     )}
                   </div>
-
-                  {/* Connector line (right side) */}
                   {index < FUNNEL_STAGES.length - 1 && (
-                    <div className={`h-0.5 flex-1 ${complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                    <div className={"h-0.5 flex-1 " + (complete ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600")} />
                   )}
                 </div>
-
-                {/* Label below */}
-                <span className={`text-xs mt-2 text-center font-medium ${
-                  complete ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
-                }`}>
+                <span className={"text-xs mt-2 text-center font-medium " + (complete ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400")}>
                   {stage.label}
                 </span>
               </div>
@@ -207,7 +204,6 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
           })}
         </div>
 
-        {/* Target Intake */}
         {status.latestIntake && (
           <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -216,7 +212,12 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
           </div>
         )}
 
-        {/* Convert Button - shown when all stages complete */}
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        )}
+
         {allComplete && !lead.converted_to_student && onConvertToStudent && (
           <div className="mt-6">
             <button
@@ -241,7 +242,6 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
           </div>
         )}
 
-        {/* No data message */}
         {contactHistory.length === 0 && (
           <div className="mt-4 text-center py-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -251,7 +251,6 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
         )}
       </div>
 
-      {/* Footer */}
       <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 rounded-b-lg">
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
           Updated from Contact Log checklist
