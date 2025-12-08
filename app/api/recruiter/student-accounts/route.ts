@@ -31,6 +31,8 @@ interface UserAccountData {
   lead_converted_at?: string
   lead_conversion_source?: string
   intake_term?: string
+  // Program from contact history
+  program_name?: string
 }
 
 export async function GET(request: NextRequest) {
@@ -96,6 +98,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch program names from contact_history for each lead
+    let programMap: Record<string, string> = {}
+    if (crmLeadIds.length > 0) {
+      const { data: contactHistory } = await supabaseAdmin
+        .from("contact_history")
+        .select("lead_id, program_name")
+        .in("lead_id", crmLeadIds)
+        .not("program_name", "is", null)
+        .order("contacted_at", { ascending: false })
+
+      if (contactHistory) {
+        // Get the most recent program_name for each lead
+        for (const entry of contactHistory) {
+          if (entry.program_name && !programMap[entry.lead_id]) {
+            programMap[entry.lead_id] = entry.program_name
+          }
+        }
+      }
+    }
+
     // Fetch application states
     const userIds = authUsers.map((u) => u.id)
     let applicationMap: Record<string, any> = {}
@@ -123,6 +145,7 @@ export async function GET(request: NextRequest) {
       const linkedLead = profile?.crm_lead_id ? leadsMap[profile.crm_lead_id] : null
       const applicationState = applicationMap[authUser.id]
       const role = authUser.user_metadata?.role || "student"
+      const programName = profile?.crm_lead_id ? programMap[profile.crm_lead_id] : undefined
 
       return {
         id: authUser.id,
@@ -141,6 +164,8 @@ export async function GET(request: NextRequest) {
         lead_conversion_source: linkedLead?.conversion_source,
         // Application data
         intake_term: applicationState?.intake_term,
+        // Program data
+        program_name: programName,
       }
     })
 

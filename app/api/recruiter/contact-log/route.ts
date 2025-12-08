@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
       ready_to_proceed,
       readiness_comments,
       intake_period,
+      program_name,
     } = body
 
     if (!lead_id) {
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
       ready_to_proceed: ready_to_proceed || english_level_basic || false,  // English (using ready_to_proceed as proxy)
       readiness_comments: readiness_comments || null,
       intake_period: intake_period || null,
+      program_name: program_name || null,
     }
 
     const { data, error } = await supabase

@@ -18,6 +18,7 @@ interface Student {
   lead_converted_at?: string
   lead_conversion_source?: string
   intake_term?: string
+  program_name?: string
 }
 
 interface Summary {
@@ -81,7 +82,8 @@ export default function AdminStudentsPage() {
       student.full_name?.toLowerCase().includes(query) ||
       student.lead_prospect_name?.toLowerCase().includes(query) ||
       student.country_of_origin?.toLowerCase().includes(query) ||
-      student.phone_number?.includes(query)
+      student.phone_number?.includes(query) ||
+      student.program_name?.toLowerCase().includes(query)
     )
   })
 
@@ -190,7 +192,7 @@ export default function AdminStudentsPage() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search by name, email, phone, or country..."
+                  placeholder="Search by name, email, phone, country, or program..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -249,8 +251,8 @@ export default function AdminStudentsPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Country</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Source</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Intake</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -289,6 +291,15 @@ export default function AdminStudentsPage() {
                           <p className="text-gray-900 dark:text-white">{student.country_of_origin || student.lead_country || "—"}</p>
                         </td>
                         <td className="px-6 py-4">
+                          {student.program_name ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                              {student.program_name}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
                           {student.crm_lead_id ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                               CRM Conversion
@@ -298,9 +309,6 @@ export default function AdminStudentsPage() {
                               Manual
                             </span>
                           )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-900 dark:text-white">{student.intake_term || "—"}</p>
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-gray-900 dark:text-white">{formatDate(student.created_at)}</p>
@@ -366,6 +374,10 @@ export default function AdminStudentsPage() {
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Country</label>
                   <p className="text-gray-900 dark:text-white">{selectedStudent.country_of_origin || selectedStudent.lead_country || "—"}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Program</label>
+                  <p className="text-gray-900 dark:text-white">{selectedStudent.program_name || "—"}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Intake</label>
