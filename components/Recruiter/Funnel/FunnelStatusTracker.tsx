@@ -57,14 +57,14 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
   }, [lead.id])
 
   const getStatus = () => {
-    const isInterested = lead.contact_status === "interested" ||
+    const isInterested = (lead.funnel_stage && lead.funnel_stage >= 1) || lead.contact_status === "interested" ||
       contactHistory.some(c => {
         const outcome = c.outcome?.toLowerCase() || ""
         return outcome.includes("interested") && !outcome.includes("not interested")
       })
-    const hasEducation = contactHistory.some(c => c.has_education_docs || c.meets_education_level)
-    const hasEnglish = contactHistory.some(c => c.ready_to_proceed || c.english_level_basic)
-    const hasFunds = contactHistory.some(c => c.has_funds || c.confirmed_financial_support)
+    const hasEducation = (lead.funnel_stage && lead.funnel_stage >= 2) || contactHistory.some(c => c.has_education_docs || c.meets_education_level)
+    const hasEnglish = (lead.funnel_stage && lead.funnel_stage >= 3) || contactHistory.some(c => c.ready_to_proceed || c.english_level_basic)
+    const hasFunds = (lead.funnel_stage && lead.funnel_stage >= 4) || contactHistory.some(c => c.has_funds || c.confirmed_financial_support)
     const latestIntake = contactHistory.find(c => c.intake_period)?.intake_period || null
 
     return { isInterested, hasEducation, hasEnglish, hasFunds, latestIntake }
