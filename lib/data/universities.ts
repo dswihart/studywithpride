@@ -52,7 +52,7 @@ export const universities: University[] = [
         registrationFee: 300,
         language: 'English',
         deliveryModes: ['On Campus (Barcelona)', 'Online'],
-        intakes: ['October'],
+        intakes: ['February', 'May', 'October'],
         awardingBodies: ['OTHM Qualifications', 'Abertay University UK'],
         description: 'The OTHM Level 7 Diploma in Project Management followed by MBA top-up from Abertay University. This program develops skills for project managers in global sectors, covering strategy, risk management, budgeting, international regulations, and sustainability.',
         structure: [
