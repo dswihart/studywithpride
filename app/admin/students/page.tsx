@@ -3,6 +3,16 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
+interface ContactHistoryEntry {
+  id: string
+  contact_type: string
+  outcome: string | null
+  notes: string | null
+  follow_up_action: string | null
+  contacted_at: string
+  program_name?: string
+}
+
 interface Student {
   id: string
   email: string
@@ -15,10 +25,13 @@ interface Student {
   has_profile: boolean
   lead_prospect_name?: string
   lead_country?: string
+  lead_phone?: string
   lead_converted_at?: string
-  lead_conversion_source?: string
+  lead_source?: string
+  lead_notes?: string
   intake_term?: string
   program_name?: string
+  contact_history?: ContactHistoryEntry[]
 }
 
 interface Summary {
@@ -42,6 +55,20 @@ export default function AdminStudentsPage() {
   const [filterSource, setFilterSource] = useState<string>("all")
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
 
+  // Edit modal state
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    phone_number: "",
+    country_of_origin: "",
+    role: "student"
+  })
+  const [saving, setSaving] = useState(false)
+
+  // Delete modal state
+  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   useEffect(() => {
     fetchStudents()
   }, [filterSource])
@@ -50,7 +77,7 @@ export default function AdminStudentsPage() {
     setLoading(true)
     setError(null)
     try {
-      let url = "/api/recruiter/student-accounts?role=student"
+      let url = "/api/recruiter/student-accounts?role=student&include_history=true"
       if (filterSource === "crm") {
         url += "&source=crm_conversion"
       } else if (filterSource === "manual") {
@@ -101,6 +128,84 @@ export default function AdminStudentsPage() {
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
   }
 
+  const handleEditClick = (student: Student) => {
+    setEditingStudent(student)
+    setEditForm({
+      full_name: student.full_name || student.lead_prospect_name || "",
+      phone_number: student.phone_number || student.lead_phone || "",
+      country_of_origin: student.country_of_origin || student.lead_country || "",
+      role: student.role || "student"
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingStudent) return
+    setSaving(true)
+    setError(null)
+
+    try {
+      const response = await fetch("/api/recruiter/update-user-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: editingStudent.id,
+          full_name: editForm.full_name,
+          phone_number: editForm.phone_number,
+          country_of_origin: editForm.country_of_origin,
+          role: editForm.role
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setEditingStudent(null)
+        fetchStudents()
+      } else {
+        setError(result.error || "Failed to update student")
+      }
+    } catch (err) {
+      setError("Failed to update student")
+      console.error(err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteClick = (student: Student) => {
+    setDeletingStudent(student)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingStudent) return
+    setDeleting(true)
+    setError(null)
+
+    try {
+      const response = await fetch("/api/recruiter/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: deletingStudent.id
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setDeletingStudent(null)
+        fetchStudents()
+      } else {
+        setError(result.error || "Failed to delete student")
+      }
+    } catch (err) {
+      setError("Failed to delete student")
+      console.error(err)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -108,9 +213,9 @@ export default function AdminStudentsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Student Portal</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Student Management</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Manage converted leads and student accounts
+                Manage student accounts - Edit, delete, and view details
               </p>
             </div>
             <button
@@ -251,7 +356,6 @@ export default function AdminStudentsPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Country</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Program</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Source</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -260,7 +364,7 @@ export default function AdminStudentsPage() {
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                         <svg className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
@@ -285,24 +389,15 @@ export default function AdminStudentsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-gray-900 dark:text-white">{student.phone_number || "—"}</p>
+                          <p className="text-gray-900 dark:text-white">{student.phone_number || student.lead_phone || "—"}</p>
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-gray-900 dark:text-white">{student.country_of_origin || student.lead_country || "—"}</p>
                         </td>
                         <td className="px-6 py-4">
-                          {student.program_name ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                              {student.program_name}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-500">—</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
                           {student.crm_lead_id ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                              CRM Conversion
+                              CRM
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
@@ -312,19 +407,38 @@ export default function AdminStudentsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-gray-900 dark:text-white">{formatDate(student.created_at)}</p>
-                          {student.lead_converted_at && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Converted: {formatDate(student.lead_converted_at)}
-                            </p>
-                          )}
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => setSelectedStudent(student)}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
-                          >
-                            View Details
-                          </button>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setSelectedStudent(student)}
+                              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition"
+                              title="View Details"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleEditClick(student)}
+                              className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition"
+                              title="Edit"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(student)}
+                              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                              title="Delete"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -336,7 +450,7 @@ export default function AdminStudentsPage() {
         )}
       </div>
 
-      {/* Student Detail Modal */}
+      {/* View Details Modal */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -369,7 +483,7 @@ export default function AdminStudentsPage() {
               <div className="grid grid-cols-2 gap-4 pt-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</label>
-                  <p className="text-gray-900 dark:text-white">{selectedStudent.phone_number || "—"}</p>
+                  <p className="text-gray-900 dark:text-white">{selectedStudent.phone_number || selectedStudent.lead_phone || "—"}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Country</label>
@@ -393,28 +507,204 @@ export default function AdminStudentsPage() {
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Account Created</label>
                   <p className="text-gray-900 dark:text-white">{formatDate(selectedStudent.created_at)}</p>
                 </div>
-                {selectedStudent.lead_converted_at && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lead Converted</label>
-                    <p className="text-gray-900 dark:text-white">{formatDate(selectedStudent.lead_converted_at)}</p>
-                  </div>
-                )}
               </div>
 
-              {selectedStudent.crm_lead_id && (
+              {selectedStudent.lead_notes && (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-medium">Lead ID:</span> {selectedStudent.crm_lead_id}
-                  </p>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Lead Notes</label>
+                  <p className="text-gray-900 dark:text-white mt-1">{selectedStudent.lead_notes}</p>
+                </div>
+              )}
+
+              {selectedStudent.contact_history && selectedStudent.contact_history.length > 0 && (
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Contact History ({selectedStudent.contact_history.length})</h4>
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {selectedStudent.contact_history.map((entry) => (
+                      <div key={entry.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">{entry.contact_type}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(entry.contacted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
+                        {entry.outcome && (
+                          <p className="text-sm text-blue-600 dark:text-blue-400">{entry.outcome}</p>
+                        )}
+                        {entry.notes && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{entry.notes}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectedStudent(null)
+                  handleEditClick(selectedStudent)
+                }}
+                className="flex-1 py-2 px-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition"
+              >
+                Edit Student
+              </button>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="w-full py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                className="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Student</h2>
+                <button
+                  onClick={() => setEditingStudent(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email (read-only)</label>
+                <input
+                  type="email"
+                  value={editingStudent.email}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  value={editForm.phone_number}
+                  onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>
+                <input
+                  type="text"
+                  value={editForm.country_of_origin}
+                  onChange={(e) => setEditForm({ ...editForm, country_of_origin: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="student">Student</option>
+                  <option value="recruiter">Recruiter</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex gap-3">
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+              <button
+                onClick={() => setEditingStudent(null)}
+                disabled={saving}
+                className="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Delete Student</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-2">
+                Are you sure you want to delete the following student account?
+              </p>
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-4">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {deletingStudent.full_name || deletingStudent.lead_prospect_name || "Unknown"}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{deletingStudent.email}</p>
+              </div>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                This will permanently delete the user account, profile, and all associated data.
+              </p>
+            </div>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex gap-3">
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 transition flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Student"
+                )}
+              </button>
+              <button
+                onClick={() => setDeletingStudent(null)}
+                disabled={deleting}
+                className="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+              >
+                Cancel
               </button>
             </div>
           </div>

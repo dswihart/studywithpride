@@ -2,7 +2,7 @@
  * User Management API
  * GET /api/recruiter/student-accounts
  *
- * Fetches ALL users from auth system with their profile data
+ * Fetches ALL users from auth system with their profile and lead data
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -15,6 +15,16 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+interface ContactHistoryEntry {
+  id: string
+  contact_type: string
+  outcome: string | null
+  notes: string | null
+  follow_up_action: string | null
+  contacted_at: string
+  program_name?: string
+}
+
 interface UserAccountData {
   id: string
   email: string
@@ -25,14 +35,17 @@ interface UserAccountData {
   created_at: string
   role: string
   has_profile: boolean
-  // Joined from leads
+  // Lead data
   lead_prospect_name?: string
   lead_country?: string
+  lead_phone?: string
   lead_converted_at?: string
-  lead_conversion_source?: string
+  lead_source?: string
+  lead_notes?: string
   intake_term?: string
-  // Program from contact history
   program_name?: string
+  // Contact history
+  contact_history?: ContactHistoryEntry[]
 }
 
 export async function GET(request: NextRequest) {
@@ -50,6 +63,7 @@ export async function GET(request: NextRequest) {
     const source = searchParams.get("source")
     const dateFrom = searchParams.get("date_from")
     const dateTo = searchParams.get("date_to")
+    const includeHistory = searchParams.get("include_history") === "true"
 
     // Fetch ALL users from auth.users via admin API
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
@@ -77,40 +91,49 @@ export async function GET(request: NextRequest) {
       profileMap[profile.id] = profile
     }
 
-    // Get all CRM lead IDs from profiles
-    const crmLeadIds = (profiles || [])
-      .filter((p) => p.crm_lead_id)
-      .map((p) => p.crm_lead_id)
+    // Fetch ALL converted leads (leads that have student_id set)
+    const { data: convertedLeads } = await supabaseAdmin
+      .from("leads")
+      .select("*")
+      .not("student_id", "is", null)
 
-    // Fetch linked leads data
-    let leadsMap: Record<string, any> = {}
-    if (crmLeadIds.length > 0) {
-      const { data: leads } = await supabaseAdmin
-        .from("leads")
-        .select("id, prospect_name, country, converted_at, conversion_source")
-        .in("id", crmLeadIds)
-
-      if (leads) {
-        leadsMap = leads.reduce((acc, lead) => {
-          acc[lead.id] = lead
-          return acc
-        }, {} as Record<string, any>)
+    // Create lead lookup map by student_id
+    const leadsByStudentId: Record<string, any> = {}
+    const leadIds: string[] = []
+    for (const lead of convertedLeads || []) {
+      if (lead.student_id) {
+        leadsByStudentId[lead.student_id] = lead
+        leadIds.push(lead.id)
       }
     }
 
-    // Fetch program names from contact_history for each lead
+    // Fetch contact history for all converted leads
+    let contactHistoryMap: Record<string, ContactHistoryEntry[]> = {}
     let programMap: Record<string, string> = {}
-    if (crmLeadIds.length > 0) {
+
+    if (leadIds.length > 0) {
       const { data: contactHistory } = await supabaseAdmin
         .from("contact_history")
-        .select("lead_id, program_name")
-        .in("lead_id", crmLeadIds)
-        .not("program_name", "is", null)
+        .select("*")
+        .in("lead_id", leadIds)
         .order("contacted_at", { ascending: false })
 
       if (contactHistory) {
-        // Get the most recent program_name for each lead
         for (const entry of contactHistory) {
+          if (!contactHistoryMap[entry.lead_id]) {
+            contactHistoryMap[entry.lead_id] = []
+          }
+          contactHistoryMap[entry.lead_id].push({
+            id: entry.id,
+            contact_type: entry.contact_type,
+            outcome: entry.outcome,
+            notes: entry.notes,
+            follow_up_action: entry.follow_up_action,
+            contacted_at: entry.contacted_at,
+            program_name: entry.program_name
+          })
+
+          // Get most recent program_name
           if (entry.program_name && !programMap[entry.lead_id]) {
             programMap[entry.lead_id] = entry.program_name
           }
@@ -142,30 +165,34 @@ export async function GET(request: NextRequest) {
     // Build combined user list from ALL auth users
     let userAccounts: UserAccountData[] = authUsers.map((authUser) => {
       const profile = profileMap[authUser.id]
-      const linkedLead = profile?.crm_lead_id ? leadsMap[profile.crm_lead_id] : null
+      const lead = leadsByStudentId[authUser.id]
       const applicationState = applicationMap[authUser.id]
       const role = authUser.user_metadata?.role || "student"
-      const programName = profile?.crm_lead_id ? programMap[profile.crm_lead_id] : undefined
+      const programName = lead ? programMap[lead.id] : undefined
 
       return {
         id: authUser.id,
         email: authUser.email || "",
-        full_name: profile?.full_name || authUser.user_metadata?.full_name || null,
-        country_of_origin: profile?.country_of_origin || null,
-        phone_number: profile?.phone_number || null,
-        crm_lead_id: profile?.crm_lead_id || null,
+        full_name: profile?.full_name || lead?.prospect_name || authUser.user_metadata?.full_name || null,
+        country_of_origin: profile?.country_of_origin || lead?.country || null,
+        phone_number: lead?.phone || null,
+        crm_lead_id: lead?.id || null,
         created_at: authUser.created_at,
         role: role,
         has_profile: !!profile,
         // Lead data
-        lead_prospect_name: linkedLead?.prospect_name,
-        lead_country: linkedLead?.country,
-        lead_converted_at: linkedLead?.converted_at,
-        lead_conversion_source: linkedLead?.conversion_source,
+        lead_prospect_name: lead?.prospect_name,
+        lead_country: lead?.country,
+        lead_phone: lead?.phone,
+        lead_converted_at: lead?.converted_at,
+        lead_source: lead?.source,
+        lead_notes: lead?.notes,
         // Application data
         intake_term: applicationState?.intake_term,
         // Program data
         program_name: programName,
+        // Contact history (only if requested)
+        ...(includeHistory && lead ? { contact_history: contactHistoryMap[lead.id] || [] } : {})
       }
     })
 

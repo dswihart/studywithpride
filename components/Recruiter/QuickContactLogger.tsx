@@ -148,22 +148,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [readinessComments, setReadinessComments] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
-  const [programs, setPrograms] = useState<{id: string, name: string}[]>([])
-  const [selectedProgram, setSelectedProgram] = useState<string>("")
 
-  // Fetch programs when step 2 is entered
-  useEffect(() => {
-    if (step === 2 && programs.length === 0) {
-      fetch("/api/recruiter/funnel?type=programs")
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.data?.programs) {
-            setPrograms(data.data.programs)
-          }
-        })
-        .catch(err => console.error("Failed to fetch programs:", err))
-    }
-  }, [step, programs.length])
 
   const handleOutcomeSelect = async (outcome: ContactOutcomeOption) => {
     setSelectedOutcome(outcome.value)
@@ -258,7 +243,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           ready_to_proceed: readyToProceed,
           readiness_comments: readinessComments || null,
           intake_period: intakePeriod || null,
-          program_name: selectedProgram || null,
         }),
       })
 
@@ -643,22 +627,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                   </span>
                 </button>
               </div>
-
-              {programs.length > 0 && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Program (PG)</label>
-                  <select
-                    value={selectedProgram}
-                    onChange={(e) => setSelectedProgram(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a program...</option>
-                    {programs.map((prog) => (
-                      <option key={prog.id} value={prog.name}>{prog.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Additional Notes (optional)</label>

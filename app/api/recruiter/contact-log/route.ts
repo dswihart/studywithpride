@@ -32,22 +32,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    // Debug: Log the raw DB columns
-    if (data && data.length > 0) {
-      console.log("[contact-log] DB columns:", Object.keys(data[0]))
-      console.log("[contact-log] First entry raw:", JSON.stringify(data[0]))
-    }
-
     // Map DB column names back to frontend expected names
-    const mappedData = data?.map((entry: any) => ({
-      ...entry,
-      // Map DB columns to frontend expected field names
-      meets_education_level: entry.has_education_docs || false,
-      english_level_basic: entry.ready_to_proceed || false,
-      confirmed_financial_support: entry.has_funds || false,
-      // has_valid_passport stays the same
-      // ready_to_proceed stays as-is for the "Ready to Proceed" indicator
-    })) || []
+    // Also extract program_name from notes if it was stored there
+    const mappedData = data?.map((entry: any) => {
+      // Try to extract program name from notes if stored as [Program: xxx]
+      let programName = null
+      if (entry.notes) {
+        const match = entry.notes.match(/\[Program: ([^\]]+)\]/)
+        if (match) {
+          programName = match[1]
+        }
+      }
+
+      return {
+        ...entry,
+        // Map DB columns to frontend expected field names
+        meets_education_level: entry.has_education_docs || false,
+        english_level_basic: entry.ready_to_proceed || false,
+        confirmed_financial_support: entry.has_funds || false,
+        program_name: programName,
+      }
+    }) || []
 
     return NextResponse.json({ success: true, data: mappedData })
   } catch (error) {
@@ -77,9 +82,9 @@ export async function POST(request: NextRequest) {
       follow_up_action,
       // Readiness checklist fields - accept all variations from frontend
       has_funds,
-      confirmed_financial_support,  // Frontend sends this for funds
-      meets_education_level,  // Frontend sends this for education
-      english_level_basic,  // Frontend sends this for english
+      confirmed_financial_support,
+      meets_education_level,
+      english_level_basic,
       has_valid_passport,
       has_education_docs,
       ready_to_proceed,
@@ -98,23 +103,29 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     const recruiterId = user?.id || null
 
+    // Build notes field - append program name if provided
+    let finalNotes = notes || ""
+    if (program_name) {
+      finalNotes = finalNotes ? `${finalNotes} [Program: ${program_name}]` : `[Program: ${program_name}]`
+    }
+
     // Build insert object - map frontend field names to DB columns
+    // NOTE: program_name column doesn't exist, so we store it in notes
     const insertData: Record<string, any> = {
       lead_id,
       contact_type: contact_type || "call",
       outcome: outcome || null,
-      notes: notes || null,
+      notes: finalNotes || null,
       follow_up_action: follow_up_action || null,
       contacted_at: new Date().toISOString(),
       recruiter_id: recruiterId,
       // Readiness checklist fields - map from frontend names to DB columns
-      has_funds: has_funds || confirmed_financial_support || false,  // Funds
-      has_education_docs: has_education_docs || meets_education_level || false,  // Education
-      has_valid_passport: has_valid_passport || false,  // Passport
-      ready_to_proceed: ready_to_proceed || english_level_basic || false,  // English (using ready_to_proceed as proxy)
+      has_funds: has_funds || confirmed_financial_support || false,
+      has_education_docs: has_education_docs || meets_education_level || false,
+      has_valid_passport: has_valid_passport || false,
+      ready_to_proceed: ready_to_proceed || english_level_basic || false,
       readiness_comments: readiness_comments || null,
       intake_period: intake_period || null,
-      program_name: program_name || null,
     }
 
     const { data, error } = await supabase
@@ -130,7 +141,14 @@ export async function POST(request: NextRequest) {
 
     console.log("[contact-log] Contact logged for lead:", lead_id, "by recruiter:", recruiterId)
 
-    return NextResponse.json({ success: true, data })
+    // Return data with program_name extracted back out for frontend
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...data,
+        program_name: program_name || null
+      }
+    })
   } catch (error: any) {
     console.error("[contact-log] POST Error:", error)
     return NextResponse.json({ success: false, error: "Failed to create contact log: " + error.message }, { status: 500 })

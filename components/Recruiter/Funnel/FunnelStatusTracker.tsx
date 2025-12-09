@@ -110,7 +110,7 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
         leadId: lead.id,
         studentEmail: lead.prospect_email,
         generatePassword: true,
-        sendWelcomeEmail: false,
+        sendWelcomeEmail: true,
         enableDocumentUpload: true,
         enableInterviewScheduling: true,
         notes: null,
@@ -146,7 +146,7 @@ export default function FunnelStatusTracker({ lead, onConvertToStudent }: Funnel
           <p className="text-gray-500 dark:text-gray-400 mb-4">{lead.prospect_name} is now in the Student Portal.</p>
           {lead.student_id && (
             <a
-              href={`/admin/students/${lead.student_id}`}
+              href="/admin/students"
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               View Student Profile

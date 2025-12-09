@@ -174,6 +174,7 @@ export default function TemplatesLibrary({
         payload.lead_id = selectedLead.id
         payload.recipient_email = selectedLead.prospect_email
         payload.recipient_phone = selectedLead.phone
+        payload.recipient_name = selectedLead.prospect_name
       }
 
       const res = await fetch("/api/recruiter/templates/send", {
@@ -190,16 +191,21 @@ export default function TemplatesLibrary({
             await navigator.clipboard.writeText(url)
             alert("Link copied to clipboard!")
           }
-        } else if (method === "email" && selectedLead?.prospect_email) {
-          const subject = encodeURIComponent(
-            sendType === "template" ? (sendItem as Template).name : (sendItem as QuickMessage).title
-          )
-          const body = encodeURIComponent(
-            sendType === "template"
-              ? `Please find the attached document: ${(sendItem as Template).file_url}`
-              : (sendItem as QuickMessage).content
-          )
-          window.open(`mailto:${selectedLead.prospect_email}?subject=${subject}&body=${body}`)
+        } else if (method === "email") {
+          if (data.emailSent) {
+            alert("Email sent successfully!")
+          } else if (selectedLead?.prospect_email) {
+            // Fallback to mailto if API email not sent
+            const subject = encodeURIComponent(
+              sendType === "template" ? (sendItem as Template).name : (sendItem as QuickMessage).title
+            )
+            const body = encodeURIComponent(
+              sendType === "template"
+                ? `Please find the attached document: ${(sendItem as Template).file_url}`
+                : (sendItem as QuickMessage).content
+            )
+            window.open(`mailto:${selectedLead.prospect_email}?subject=${subject}&body=${body}`)
+          }
         } else if (method === "whatsapp" && selectedLead?.phone) {
           const text = encodeURIComponent(
             sendType === "template"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { sendWelcomeEmail } from "@/lib/email"
 
 // Admin client for user creation
 const supabaseAdmin = createAdminClient(
@@ -217,7 +218,7 @@ export async function POST(request: NextRequest) {
       lead_id,
       student_email,
       generate_password = true,
-      send_welcome_email,
+      send_welcome_email = true,
       enable_document_upload,
       enable_interview_scheduling,
       notes
@@ -352,6 +353,38 @@ export async function POST(request: NextRequest) {
       // Table may not exist - not critical
     }
 
+    // Send welcome email to the new student
+    let emailResult = null
+    if (send_welcome_email !== false) {
+      try {
+        emailResult = await sendWelcomeEmail({
+          to: student_email,
+          studentName: lead.prospect_name || 'Student',
+          temporaryPassword: password
+        })
+
+        if (emailResult.success) {
+          console.log(`[funnel] Welcome email sent to ${student_email}`)
+          // Log email sent in contact_history
+          await supabaseAdmin
+            .from("contact_history")
+            .insert({
+              lead_id: lead_id,
+              contact_type: "email",
+              outcome: "Welcome email sent",
+              notes: `Welcome email sent to ${student_email} with login credentials`,
+              follow_up_action: null,
+              contacted_at: new Date().toISOString()
+            })
+        } else {
+          console.error(`[funnel] Failed to send welcome email: ${emailResult.error}`)
+        }
+      } catch (emailError: any) {
+        console.error("[funnel] Error sending welcome email:", emailError)
+        // Don't fail the conversion if email fails
+      }
+    }
+
     console.log(`[funnel] Successfully converted lead ${lead_id} to student ${studentUserId}`)
 
     return NextResponse.json({
@@ -360,6 +393,7 @@ export async function POST(request: NextRequest) {
         lead: updatedLead,
         studentId: studentUserId,
         studentEmail: student_email,
+        welcomeEmailSent: emailResult?.success || false,
         message: "Lead successfully converted to student"
       }
     })
