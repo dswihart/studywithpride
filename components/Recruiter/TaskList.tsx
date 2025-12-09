@@ -653,11 +653,30 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
 
                       {/* Lead info */}
                       {task.leads && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span>{task.leads.prospect_name || task.leads.prospect_email || 'Unknown'}</span>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          <div className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span
+                              className={onViewLead && task.lead_id ? "cursor-pointer hover:text-blue-600 dark:hover:text-blue-400" : ""}
+                              onClick={() => onViewLead && task.lead_id && onViewLead(task.lead_id)}
+                            >
+                              {task.leads.prospect_name || task.leads.prospect_email || 'Unknown'}
+                            </span>
+                          </div>
+                          {task.leads.phone && (
+                            <a
+                              href={`tel:${task.leads.phone}`}
+                              className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              {task.leads.phone}
+                            </a>
+                          )}
                         </div>
                       )}
 

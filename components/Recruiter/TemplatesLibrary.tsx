@@ -130,6 +130,18 @@ export default function TemplatesLibrary({
   const [customSubject, setCustomSubject] = useState("")
   const [customMessage, setCustomMessage] = useState("")
 
+  // Lead selection state (for sending to CRM leads)
+  const [showLeadSelectModal, setShowLeadSelectModal] = useState(false)
+  const [allLeads, setAllLeads] = useState<Lead[]>([])
+  const [loadingLeads, setLoadingLeads] = useState(false)
+  const [leadSearchTerm, setLeadSearchTerm] = useState("")
+  const [selectedLeadForSend, setSelectedLeadForSend] = useState<Lead | null>(null)
+  const [sendingToLead, setSendingToLead] = useState(false)
+  const [leadSendItem, setLeadSendItem] = useState<Template | QuickMessage | null>(null)
+  const [leadSendType, setLeadSendType] = useState<"template" | "message">("template")
+  const [leadCustomSubject, setLeadCustomSubject] = useState("")
+  const [leadCustomMessage, setLeadCustomMessage] = useState("")
+
   const [formData, setFormData] = useState({
     name: "",
     title: "",
@@ -177,6 +189,22 @@ export default function TemplatesLibrary({
     }
   }
 
+  const fetchAllLeads = async () => {
+    setLoadingLeads(true)
+    try {
+      const res = await fetch("/api/recruiter/leads-read")
+      const data = await res.json()
+      if (data.success) {
+        // Filter leads that have email addresses
+        setAllLeads(data.data.filter((l: any) => l.prospect_email))
+      }
+    } catch (error) {
+      console.error("Error fetching leads:", error)
+    } finally {
+      setLoadingLeads(false)
+    }
+  }
+
   const filteredTemplates = templates.filter((t) => {
     const matchesCategory = !selectedCategory || t.category_id === selectedCategory
     const matchesSearch =
@@ -202,6 +230,16 @@ export default function TemplatesLibrary({
       s.email?.toLowerCase().includes(searchLower) ||
       s.full_name?.toLowerCase().includes(searchLower) ||
       s.country_of_origin?.toLowerCase().includes(searchLower)
+    )
+  })
+
+  const filteredLeads = allLeads.filter((l) => {
+    if (!leadSearchTerm) return true
+    const searchLower = leadSearchTerm.toLowerCase()
+    return (
+      l.prospect_email?.toLowerCase().includes(searchLower) ||
+      l.prospect_name?.toLowerCase().includes(searchLower) ||
+      l.phone?.toLowerCase().includes(searchLower)
     )
   })
 
@@ -338,6 +376,68 @@ export default function TemplatesLibrary({
       alert("An error occurred. Please try again.")
     } finally {
       setSendingToStudent(false)
+    }
+  }
+
+  // Open lead selection modal
+  const handleSendToLead = (item: Template | QuickMessage, type: "template" | "message") => {
+    setLeadSendItem(item)
+    setLeadSendType(type)
+    setShowLeadSelectModal(true)
+    setSelectedLeadForSend(null)
+    setLeadCustomSubject(type === "template" ? (item as Template).name : (item as QuickMessage).title)
+    setLeadCustomMessage(type === "template" ? (item as Template).description || "" : (item as QuickMessage).content)
+    if (allLeads.length === 0) {
+      fetchAllLeads()
+    }
+  }
+
+  // Send to selected lead
+  const handleSendToSelectedLead = async () => {
+    if (!selectedLeadForSend || !leadSendItem) return
+    setSendingToLead(true)
+
+    try {
+      const payload: Record<string, unknown> = {
+        send_method: "email",
+        recipient_email: selectedLeadForSend.prospect_email,
+        recipient_name: selectedLeadForSend.prospect_name || selectedLeadForSend.prospect_email,
+        lead_id: selectedLeadForSend.id,
+        custom_subject: leadCustomSubject,
+        custom_message: leadCustomMessage,
+      }
+
+      if (leadSendType === "template") {
+        payload.template_id = leadSendItem.id
+      } else {
+        payload.quick_message_id = leadSendItem.id
+      }
+
+      const res = await fetch("/api/recruiter/templates/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        if (data.emailSent) {
+          alert(`Email sent successfully to ${selectedLeadForSend.prospect_name || selectedLeadForSend.prospect_email}!`)
+        } else {
+          alert(data.message || "Action logged. Email may not have been sent (check Resend configuration).")
+        }
+        setShowLeadSelectModal(false)
+        setSelectedLeadForSend(null)
+        setLeadSendItem(null)
+        onSendComplete?.()
+      } else {
+        alert(data.error || "Failed to send email")
+      }
+    } catch (error) {
+      console.error("Error sending to lead:", error)
+      alert("An error occurred. Please try again.")
+    } finally {
+      setSendingToLead(false)
     }
   }
 
@@ -618,13 +718,22 @@ export default function TemplatesLibrary({
                       </button>
                     )}
                     {isAdmin && (
-                      <button
-                        onClick={() => handleSendToPortalStudent(template, "template")}
-                        className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
-                        title="Send to Portal Student"
-                      >
-                        <UserGroupIcon className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleSendToLead(template, "template")}
+                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+                          title="Email to Lead"
+                        >
+                          <EnvelopeIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleSendToPortalStudent(template, "template")}
+                          className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
+                          title="Send to Portal Student"
+                        >
+                          <UserGroupIcon className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => {
@@ -678,13 +787,22 @@ export default function TemplatesLibrary({
                     <ClipboardDocumentIcon className="w-4 h-4" />
                   </button>
                   {isAdmin && (
-                    <button
-                      onClick={() => handleSendToPortalStudent(msg, "message")}
-                      className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
-                      title="Send to Portal Student"
-                    >
-                      <UserGroupIcon className="w-4 h-4" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleSendToLead(msg, "message")}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+                        title="Email to Lead"
+                      >
+                        <EnvelopeIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleSendToPortalStudent(msg, "message")}
+                        className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
+                        title="Send to Portal Student"
+                      >
+                        <UserGroupIcon className="w-4 h-4" />
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => {

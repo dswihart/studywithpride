@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       readiness_comments,
       intake_period,
       program_name,
+      flag_followup,
     } = body
 
     if (!lead_id) {
@@ -140,6 +141,29 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("[contact-log] Contact logged for lead:", lead_id, "by recruiter:", recruiterId)
+
+    // Update lead status to "contacted" and last_contact_date
+    const updateData: Record<string, unknown> = {
+      contact_status: "contacted",
+      last_contact_date: new Date().toISOString(),
+    }
+    
+    // Add needs_followup flag if set
+    if (flag_followup) {
+      updateData.needs_followup = true
+    }
+    
+    const { error: updateError } = await supabase
+      .from("leads")
+      .update(updateData)
+      .eq("id", lead_id)
+
+    if (updateError) {
+      console.error("[contact-log] Failed to update lead status:", updateError)
+      // Don't fail the request - the contact was logged successfully
+    } else {
+      console.log("[contact-log] Lead status updated to contacted for lead:", lead_id)
+    }
 
     // Return data with program_name extracted back out for frontend
     return NextResponse.json({

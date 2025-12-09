@@ -325,11 +325,15 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     // Text search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
+      // Normalize query for phone search (remove spaces, dashes, parentheses)
+      const normalizedQuery = query.replace(/[\s\-\(\)]/g, "")
       filtered = filtered.filter((lead) => {
         const name = (lead.prospect_name || "").toLowerCase()
         const email = (lead.prospect_email || "").toLowerCase()
         const phone = (lead.phone || "").toLowerCase()
-        return name.includes(query) || email.includes(query) || phone.includes(query)
+        // Normalize phone for comparison
+        const normalizedPhone = phone.replace(/[\s\-\(\)]/g, "")
+        return name.includes(query) || email.includes(query) || phone.includes(query) || normalizedPhone.includes(normalizedQuery)
       })
     }
 

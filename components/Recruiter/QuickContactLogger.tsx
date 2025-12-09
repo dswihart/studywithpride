@@ -136,6 +136,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
   const [notes, setNotes] = useState("")
   const [createTask, setCreateTask] = useState(false)
   const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
+  const [flagForFollowup, setFlagForFollowup] = useState(false)
   const [showChecklist, setShowChecklist] = useState(false)
   const [referralDestination, setReferralDestination] = useState<string>("")
   const [expandedCategory, setExpandedCategory] = useState<SecondaryCategory>(null)
@@ -243,6 +244,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
           ready_to_proceed: readyToProceed,
           readiness_comments: readinessComments || null,
           intake_period: intakePeriod || null,
+          flag_followup: flagForFollowup,
         }),
       })
 
@@ -449,6 +451,22 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 )}
               </div>
 
+              {/* Flag for Follow-up */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={flagForFollowup} 
+                    onChange={(e) => setFlagForFollowup(e.target.checked)} 
+                    className="w-5 h-5 rounded text-amber-600 focus:ring-amber-500" 
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Flag for Follow-up</span>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">Mark this lead as needing a follow-up call</p>
+                  </div>
+                </label>
+              </div>
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -616,16 +634,7 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                     {recruitPriority ? "VIP" : "VIP"}
                   </span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setReadyToProceed(!readyToProceed)}
-                  className={`flex-[2] p-3 rounded-lg border-2 transition flex items-center justify-center gap-2 ${readyToProceed ? "border-green-500 bg-green-50 dark:bg-green-900/20" : "border-gray-200 dark:border-gray-700 hover:border-green-300"}`}
-                >
-                  <span className={`text-xl ${readyToProceed ? "text-green-500" : "text-gray-300"}`}>✓</span>
-                  <span className={`text-sm font-medium ${readyToProceed ? "text-green-700 dark:text-green-300" : "text-gray-500 dark:text-gray-400"}`}>
-                    {readyToProceed ? "Ready to Proceed" : "Ready to Proceed"}
-                  </span>
-                </button>
+
               </div>
 
               <div className="mb-4">
