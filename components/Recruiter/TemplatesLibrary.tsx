@@ -24,6 +24,7 @@ import {
   DocumentIcon,
   PhotoIcon,
   ArrowTopRightOnSquareIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline"
 
 interface Category {
@@ -66,10 +67,21 @@ interface Lead {
   phone: string | null
 }
 
+interface PortalStudent {
+  id: string
+  email: string
+  full_name: string | null
+  country_of_origin: string | null
+  phone_number: string | null
+  crm_lead_id: string | null
+  role: string
+}
+
 interface TemplatesLibraryProps {
   isAdmin?: boolean
   selectedLead?: Lead | null
   onSendComplete?: () => void
+  fullWidth?: boolean
 }
 
 const iconMap: Record<string, React.ElementType> = {
@@ -88,6 +100,7 @@ export default function TemplatesLibrary({
   isAdmin = false,
   selectedLead,
   onSendComplete,
+  fullWidth = false,
 }: TemplatesLibraryProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [templates, setTemplates] = useState<Template[]>([])
@@ -104,6 +117,18 @@ export default function TemplatesLibrary({
   const [showAddModal, setShowAddModal] = useState(false)
   const [addType, setAddType] = useState<"template" | "message">("template")
   const [uploading, setUploading] = useState(false)
+
+  // Portal student selection state
+  const [showStudentSelectModal, setShowStudentSelectModal] = useState(false)
+  const [portalStudents, setPortalStudents] = useState<PortalStudent[]>([])
+  const [loadingStudents, setLoadingStudents] = useState(false)
+  const [studentSearchTerm, setStudentSearchTerm] = useState("")
+  const [selectedStudent, setSelectedStudent] = useState<PortalStudent | null>(null)
+  const [sendingToStudent, setSendingToStudent] = useState(false)
+  const [studentSendItem, setStudentSendItem] = useState<Template | QuickMessage | null>(null)
+  const [studentSendType, setStudentSendType] = useState<"template" | "message">("template")
+  const [customSubject, setCustomSubject] = useState("")
+  const [customMessage, setCustomMessage] = useState("")
 
   const [formData, setFormData] = useState({
     name: "",
@@ -137,6 +162,21 @@ export default function TemplatesLibrary({
     }
   }
 
+  const fetchPortalStudents = async () => {
+    setLoadingStudents(true)
+    try {
+      const res = await fetch("/api/recruiter/student-accounts?role=student")
+      const data = await res.json()
+      if (data.success) {
+        setPortalStudents(data.data)
+      }
+    } catch (error) {
+      console.error("Error fetching portal students:", error)
+    } finally {
+      setLoadingStudents(false)
+    }
+  }
+
   const filteredTemplates = templates.filter((t) => {
     const matchesCategory = !selectedCategory || t.category_id === selectedCategory
     const matchesSearch =
@@ -153,6 +193,16 @@ export default function TemplatesLibrary({
       m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.content.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesCategory && matchesSearch
+  })
+
+  const filteredStudents = portalStudents.filter((s) => {
+    if (!studentSearchTerm) return true
+    const searchLower = studentSearchTerm.toLowerCase()
+    return (
+      s.email?.toLowerCase().includes(searchLower) ||
+      s.full_name?.toLowerCase().includes(searchLower) ||
+      s.country_of_origin?.toLowerCase().includes(searchLower)
+    )
   })
 
   const handleSend = async (method: string) => {
@@ -195,7 +245,6 @@ export default function TemplatesLibrary({
           if (data.emailSent) {
             alert("Email sent successfully!")
           } else if (selectedLead?.prospect_email) {
-            // Fallback to mailto if API email not sent
             const subject = encodeURIComponent(
               sendType === "template" ? (sendItem as Template).name : (sendItem as QuickMessage).title
             )
@@ -222,6 +271,73 @@ export default function TemplatesLibrary({
       console.error("Error sending:", error)
     } finally {
       setSending(false)
+    }
+  }
+
+  // Open student selection modal
+  const handleSendToPortalStudent = (item: Template | QuickMessage, type: "template" | "message") => {
+    setStudentSendItem(item)
+    setStudentSendType(type)
+    setShowStudentSelectModal(true)
+    setSelectedStudent(null)
+    setCustomSubject(type === "template" ? (item as Template).name : (item as QuickMessage).title)
+    setCustomMessage(type === "template" ? (item as Template).description || "" : (item as QuickMessage).content)
+    if (portalStudents.length === 0) {
+      fetchPortalStudents()
+    }
+  }
+
+  // Send to selected portal student
+  const handleSendToStudent = async () => {
+    if (!selectedStudent || !studentSendItem) return
+    setSendingToStudent(true)
+
+    try {
+      const payload: Record<string, unknown> = {
+        send_method: "email",
+        recipient_email: selectedStudent.email,
+        recipient_name: selectedStudent.full_name || selectedStudent.email,
+        student_user_id: selectedStudent.id,
+        custom_subject: customSubject,
+        custom_message: customMessage,
+      }
+
+      if (studentSendType === "template") {
+        payload.template_id = studentSendItem.id
+      } else {
+        payload.quick_message_id = studentSendItem.id
+      }
+
+      // If student has a linked CRM lead, include lead_id for contact history logging
+      if (selectedStudent.crm_lead_id) {
+        payload.lead_id = selectedStudent.crm_lead_id
+      }
+
+      const res = await fetch("/api/recruiter/templates/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        if (data.emailSent) {
+          alert(`Email sent successfully to ${selectedStudent.full_name || selectedStudent.email}!`)
+        } else {
+          alert(data.message || "Action logged. Email may not have been sent (check Resend configuration).")
+        }
+        setShowStudentSelectModal(false)
+        setSelectedStudent(null)
+        setStudentSendItem(null)
+        onSendComplete?.()
+      } else {
+        alert(data.error || "Failed to send email")
+      }
+    } catch (error) {
+      console.error("Error sending to student:", error)
+      alert("An error occurred. Please try again.")
+    } finally {
+      setSendingToStudent(false)
     }
   }
 
@@ -364,7 +480,7 @@ export default function TemplatesLibrary({
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${fullWidth ? "p-6" : ""}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -372,7 +488,7 @@ export default function TemplatesLibrary({
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {selectedLead
               ? `Sending to: ${selectedLead.prospect_name || 'Unknown'}`
-              : "Select documents to send to leads"}
+              : "Manage documents and send to leads or portal students"}
           </p>
         </div>
         {isAdmin && (
@@ -450,9 +566,9 @@ export default function TemplatesLibrary({
         ))}
       </div>
 
-      {/* Content */}
+      {/* Content - Templates Grid */}
       {activeTab === "templates" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={`grid gap-4 ${fullWidth ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
           {filteredTemplates.length === 0 ? (
             <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
               No templates found. {isAdmin && "Click 'Add Template' to create one."}
@@ -501,6 +617,15 @@ export default function TemplatesLibrary({
                         <EyeIcon className="w-4 h-4" />
                       </button>
                     )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleSendToPortalStudent(template, "template")}
+                        className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
+                        title="Send to Portal Student"
+                      >
+                        <UserGroupIcon className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setSendItem(template)
@@ -518,7 +643,7 @@ export default function TemplatesLibrary({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`grid gap-4 ${fullWidth ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
           {filteredMessages.length === 0 ? (
             <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
               No quick messages found. {isAdmin && "Click 'Add Template' to create one."}
@@ -552,6 +677,15 @@ export default function TemplatesLibrary({
                   >
                     <ClipboardDocumentIcon className="w-4 h-4" />
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleSendToPortalStudent(msg, "message")}
+                      className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded"
+                      title="Send to Portal Student"
+                    >
+                      <UserGroupIcon className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setSendItem(msg)
@@ -603,7 +737,7 @@ export default function TemplatesLibrary({
         </div>
       )}
 
-      {/* Send Modal */}
+      {/* Send Modal (for leads) */}
       {sendItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md">
@@ -671,6 +805,155 @@ export default function TemplatesLibrary({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Portal Student Selection Modal */}
+      {showStudentSelectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Send to Portal Student</h3>
+                <p className="text-sm text-gray-500">
+                  {studentSendType === "template"
+                    ? (studentSendItem as Template)?.name
+                    : (studentSendItem as QuickMessage)?.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowStudentSelectModal(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!selectedStudent ? (
+              <>
+                {/* Student Search */}
+                <div className="p-4 border-b dark:border-gray-700">
+                  <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search students by name, email, or country..."
+                      value={studentSearchTerm}
+                      onChange={(e) => setStudentSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Student List */}
+                <div className="p-4 max-h-[400px] overflow-y-auto">
+                  {loadingStudents ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : filteredStudents.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No students found</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredStudents.map((student) => (
+                        <button
+                          key={student.id}
+                          onClick={() => setSelectedStudent(student)}
+                          className="w-full p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 transition"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {student.full_name || "No name"}
+                              </p>
+                              <p className="text-sm text-gray-500">{student.email}</p>
+                            </div>
+                            <div className="text-right">
+                              {student.country_of_origin && (
+                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">
+                                  {student.country_of_origin}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Email Customization */}
+                <div className="p-4 space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <strong>Sending to:</strong> {selectedStudent.full_name || selectedStudent.email}
+                    </p>
+                    <p className="text-sm text-blue-600 dark:text-blue-300">{selectedStudent.email}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email Subject
+                    </label>
+                    <input
+                      type="text"
+                      value={customSubject}
+                      onChange={(e) => setCustomSubject(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Message (optional)
+                    </label>
+                    <textarea
+                      value={customMessage}
+                      onChange={(e) => setCustomMessage(e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Add a personal message..."
+                    />
+                  </div>
+
+                  {studentSendType === "template" && (studentSendItem as Template)?.file_url && (
+                    <p className="text-sm text-gray-500">
+                      Document link will be included: {(studentSendItem as Template).file_url}
+                    </p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="p-4 border-t dark:border-gray-700 flex gap-3">
+                  <button
+                    onClick={() => setSelectedStudent(null)}
+                    className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleSendToStudent}
+                    disabled={sendingToStudent}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {sendingToStudent ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <EnvelopeIcon className="w-4 h-4" />
+                        Send Email
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -795,19 +1078,36 @@ export default function TemplatesLibrary({
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Version
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.version}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, version: e.target.value }))
-                      }
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="1.0"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Version
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.version}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, version: e.target.value }))
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Visibility
+                      </label>
+                      <select
+                        value={formData.visibility}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, visibility: e.target.value }))
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="all">All</option>
+                        <option value="internal">Internal</option>
+                        <option value="student">Student</option>
+                      </select>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -823,13 +1123,13 @@ export default function TemplatesLibrary({
                         setFormData((prev) => ({ ...prev, title: e.target.value }))
                       }
                       className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="e.g., Visa Process Introduction"
+                      placeholder="e.g., Welcome Message"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Message Content *
+                      Content *
                     </label>
                     <textarea
                       value={formData.content}
@@ -837,8 +1137,8 @@ export default function TemplatesLibrary({
                         setFormData((prev) => ({ ...prev, content: e.target.value }))
                       }
                       className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      rows={4}
-                      placeholder="Enter the message text..."
+                      rows={6}
+                      placeholder="Message content..."
                     />
                   </div>
                 </>
@@ -847,18 +1147,13 @@ export default function TemplatesLibrary({
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={
-                    addType === "template"
-                      ? !formData.name || !formData.file_url
-                      : !formData.title || !formData.content
-                  }
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Create
                 </button>

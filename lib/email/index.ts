@@ -21,6 +21,7 @@ export async function sendWelcomeEmail({ to, studentName, temporaryPassword }: W
   try {
     const portalUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://studywithpride.com'
     const loginUrl = `${portalUrl}/login`
+    const whatsappUrl = 'https://wa.me/34694293321'
 
     const { data, error } = await resend.emails.send({
       from: 'Study With Pride <noreply@studywithpride.com>',
@@ -64,7 +65,6 @@ export async function sendWelcomeEmail({ to, studentName, temporaryPassword }: W
 
               <ul style="color: #4b5563; line-height: 1.8; margin: 0 0 25px 0; padding-left: 20px; font-size: 15px;">
                 <li>Upload required documents</li>
-                <li>Schedule interviews</li>
                 <li>Track your application status</li>
                 <li>Access visa assistance tools</li>
                 <li>Communicate with your recruiter</li>
@@ -103,8 +103,18 @@ export async function sendWelcomeEmail({ to, studentName, temporaryPassword }: W
               </table>
 
               <p style="color: #6b7280; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px;">
-                If you have any questions, please don't hesitate to reach out to your recruiter or our support team.
+                If you have any questions, please don't hesitate to reach out to us on WhatsApp:
               </p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${whatsappUrl}" style="display: inline-block; background: #25D366; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                      Contact Us on WhatsApp
+                    </a>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -131,7 +141,6 @@ Great news! Your student portal account has been created.
 
 You now have access to our student portal where you can:
 - Upload required documents
-- Schedule interviews
 - Track your application status
 - Access visa assistance tools
 - Communicate with your recruiter
@@ -146,7 +155,7 @@ Please change your password after your first login.
 
 Access the Student Portal: ${loginUrl}
 
-If you have any questions, please don't hesitate to reach out to your recruiter or our support team.
+If you have any questions, please don't hesitate to reach out to us on WhatsApp: ${whatsappUrl}
 
 Study With Pride
 studywithpride.com

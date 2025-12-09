@@ -35,9 +35,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if application already exists for this user and university
+    const { data: existing, error: checkError } = await supabase
+      .from('application_states')
+      .select('id, university_name')
+      .eq('user_id', user.id)
+      .eq('university_name', university_name)
+      .maybeSingle()
+
+    if (existing) {
+      // Application already exists, return it instead of creating new
+      return NextResponse.json({
+        success: true,
+        data: existing,
+        message: 'Application already exists for this university',
+        existing: true
+      })
+    }
+
     // Create new application entry with proper UUID
     const newApplication = {
-      id: randomUUID(), // Generate a proper UUID for the application
+      id: randomUUID(),
       user_id: user.id,
       university_name,
       program_name: program_name || '',
@@ -58,6 +76,27 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating application:', error)
+      
+      // Check for duplicate key error
+      if (error.message?.includes('duplicate key') || error.code === '23505') {
+        // Fetch the existing application
+        const { data: existingApp } = await supabase
+          .from('application_states')
+          .select('id, university_name')
+          .eq('user_id', user.id)
+          .eq('university_name', university_name)
+          .single()
+        
+        if (existingApp) {
+          return NextResponse.json({
+            success: true,
+            data: existingApp,
+            message: 'Application already exists for this university',
+            existing: true
+          })
+        }
+      }
+      
       return NextResponse.json(
         { success: false, error: 'Failed to create application' },
         { status: 500 }

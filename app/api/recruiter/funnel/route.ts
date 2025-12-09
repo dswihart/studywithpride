@@ -286,7 +286,8 @@ export async function POST(request: NextRequest) {
         preferred_language: "en",
         crm_lead_id: lead_id,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        must_change_password: true
       })
 
     if (profileError) {

@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Log the send action
+    // Log the send action - NOTE: email_sent column doesn't exist, so we skip it
     const { data, error } = await supabaseAdmin
       .from("template_send_logs")
       .insert({
@@ -208,8 +208,7 @@ export async function POST(request: NextRequest) {
         send_method,
         recipient_email,
         recipient_phone,
-        notes,
-        email_sent: emailSent,
+        notes: notes ? `${notes}${emailSent ? ' [Email sent]' : ''}` : (emailSent ? '[Email sent]' : null),
       })
       .select()
       .single()

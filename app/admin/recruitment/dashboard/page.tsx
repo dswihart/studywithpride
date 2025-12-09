@@ -80,7 +80,7 @@ interface Task {
   } | null
 }
 
-type DashboardTab = 'dashboard' | 'leads' | 'tasks' | 'admin' 
+type DashboardTab = 'dashboard' | 'leads' | 'tasks' | 'users' | 'admin' 
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -127,7 +127,7 @@ function RecruiterDashboardContent() {
     const leadId = searchParams.get('leadId')
     const tab = searchParams.get('tab') as DashboardTab | null
 
-    if (tab && ['dashboard', 'leads', 'tasks', 'admin'].includes(tab)) {
+    if (tab && ['dashboard', 'leads', 'tasks', 'users', 'admin'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -577,6 +577,7 @@ function RecruiterDashboardContent() {
                 Tasks
               </span>
             </button>
+<button              onClick={() => setActiveTab('users')}              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${                activeTab === 'users'                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'              }`}            >              <span className="flex items-center gap-2">                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />                </svg>                Users              </span>            </button>
             <button
               onClick={() => setActiveTab('admin')}
               className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
@@ -744,42 +745,26 @@ function RecruiterDashboardContent() {
           </div>
         )}
 
+{/* USERS TAB - User management */}        {activeTab === 'users' && (          <div className="space-y-6">            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20">                <h3 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />                  </svg>                  User Management                </h3>              </div>              <UserManagementPanel onOpenLead={handleViewLeadById} />            </div>          </div>        )}
                 {/* ADMIN TAB - Administrative functions */}
-        {activeTab === 'admin' && (
+        {activeTab === "admin" && (
           <div className="space-y-6">
-            {/* Admin Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Users Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20">
-                  <h3 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    User Management
-                  </h3>
-                </div>
-                <UserManagementPanel />
+            {/* Templates Section - Full Width */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-teal-50 dark:bg-teal-900/20">
+                <h3 className="font-semibold text-teal-900 dark:text-teal-100 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Message Templates
+                </h3>
               </div>
-
-              {/* Templates Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-teal-50 dark:bg-teal-900/20">
-                  <h3 className="font-semibold text-teal-900 dark:text-teal-100 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Message Templates
-                  </h3>
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  <TemplatesLibrary
-                    isAdmin={true}
-                    selectedLead={viewingLead}
-                    onSendComplete={() => {}}
-                  />
-                </div>
-              </div>
+              <TemplatesLibrary
+                isAdmin={true}
+                selectedLead={viewingLead}
+                onSendComplete={() => {}}
+                fullWidth={true}
+              />
             </div>
 
             {/* Statistics Section */}
@@ -798,8 +783,6 @@ function RecruiterDashboardContent() {
                 <InsightsPanel />
               </div>
             </div>
-
-
           </div>
         )}
 
@@ -818,6 +801,7 @@ function RecruiterDashboardContent() {
           onSuccess={handleAddLeadSuccess}
           editLead={editingLead}
         />
+
 
         <SendWhatsAppModal
           isOpen={isWhatsAppModalOpen}
