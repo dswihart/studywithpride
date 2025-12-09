@@ -20,7 +20,7 @@ import AddLeadModal from '@/components/Recruiter/AddLeadModal'
 import ViewLeadModal from '@/components/Recruiter/ViewLeadModal'
 import BulkSendWhatsAppModal from '@/components/Recruiter/BulkSendWhatsAppModal'
 import LeadActivityTimeline from '@/components/Recruiter/LeadActivityTimeline'
-import QuickContactLogger from '@/components/Recruiter/QuickContactLogger'
+import SmartContactLogger from '@/components/Recruiter/SmartContactLogger'
 import QuickContact from '@/components/Recruiter/QuickContact'
 import TaskList from '@/components/Recruiter/TaskList'
 import AddTaskModal from '@/components/Recruiter/AddTaskModal'
@@ -840,7 +840,7 @@ function RecruiterDashboardContent() {
 
         {/* Quick Contact Logger */}
         {showContactLogger && contactLoggerLead && (
-          <QuickContactLogger
+          <SmartContactLogger
             lead={contactLoggerLead}
             onClose={() => {
               setShowContactLogger(false)

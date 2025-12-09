@@ -451,22 +451,6 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                 )}
               </div>
 
-              {/* Flag for Follow-up */}
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={flagForFollowup} 
-                    onChange={(e) => setFlagForFollowup(e.target.checked)} 
-                    className="w-5 h-5 rounded text-amber-600 focus:ring-amber-500" 
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Flag for Follow-up</span>
-                    <p className="text-xs text-amber-600 dark:text-amber-400">Mark this lead as needing a follow-up call</p>
-                  </div>
-                </label>
-              </div>
-
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -618,6 +602,19 @@ export default function QuickContactLogger({ lead, onClose, onSuccess, onCreateT
                     <div>
                       <span className="font-medium text-green-800 dark:text-green-300">Create follow-up task</span>
                       <p className="text-xs text-green-600 dark:text-green-400">Automatically create a task for this follow-up action</p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Flag for Follow-up via API - only show for tomorrow or custom days */}
+              {(followUpTime === "tomorrow" || followUpTime === "custom") && (
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={flagForFollowup} onChange={(e) => setFlagForFollowup(e.target.checked)} className="w-5 h-5 rounded border-amber-400 text-amber-600 focus:ring-amber-500" />
+                    <div>
+                      <span className="font-medium text-amber-800 dark:text-amber-300">Flag for Follow-up via API</span>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">Mark this lead for automated follow-up</p>
                     </div>
                   </label>
                 </div>
