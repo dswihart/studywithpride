@@ -73,9 +73,6 @@ export async function POST(request: NextRequest) {
     const elapsedTime = Date.now() - startTime
     console.log(`[leads-delete] Deleted ${count || 0} leads in ${elapsedTime}ms`)
 
-    if (elapsedTime > 150) {
-      console.warn(`[leads-delete] WARNING: Performance threshold exceeded (${elapsedTime}ms > 150ms)`)
-    }
 
     return NextResponse.json(
       {

@@ -87,9 +87,6 @@ export async function GET(request: NextRequest) {
     const elapsedTime = Date.now() - startTime
     console.log(`[leads-read] Completed in ${elapsedTime}ms`)
 
-    if (elapsedTime > 250) {
-      console.warn(`[leads-read] Performance threshold exceeded (${elapsedTime}ms > 250ms)`)
-    }
 
     // If search is provided, return simplified format for the AddContactLogModal
     if (search) {

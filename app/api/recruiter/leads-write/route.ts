@@ -178,9 +178,6 @@ export async function POST(request: NextRequest) {
     const elapsedTime = Date.now() - startTime
     console.log('[leads-write] Operation completed in ' + elapsedTime + 'ms')
 
-    if (elapsedTime > 150) {
-      console.warn('[leads-write] WARNING: Performance threshold exceeded (' + elapsedTime + 'ms > 150ms)')
-    }
 
     return NextResponse.json(
       {
