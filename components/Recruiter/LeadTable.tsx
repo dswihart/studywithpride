@@ -11,6 +11,7 @@ import { FunnelStageNumber } from "@/lib/funnel/types"
 import ActionButtons from "./ActionButtons"
 import ExpandedRowDetails from "./ExpandedRowDetails"
 import HiddenColumnsIndicator from "./HiddenColumnsIndicator"
+import { useDebounce } from "@/hooks/useDebounce"
 import { useResponsiveColumns } from "@/hooks/useResponsiveColumns"
 import { ColumnConfig, getColumnLabel } from "@/lib/responsive/columnConfig"
 
@@ -152,6 +153,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
   const [columnVisibility, setColumnVisibility] = useState<Record<ColumnKey, boolean>>(DEFAULT_COLUMN_VISIBILITY)
   const [showColumnMenu, setShowColumnMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearch = useDebounce(searchQuery, 300)
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [selectedBarcelonaTimeline, setSelectedBarcelonaTimeline] = useState("all")
@@ -323,8 +325,8 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     let filtered = leadsToFilter
 
     // Text search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim()
+    if (debouncedSearch.trim()) {
+      const query = debouncedSearch.toLowerCase().trim()
       // Normalize query for phone search (remove spaces, dashes, parentheses)
       const normalizedQuery = query.replace(/[\s\-\(\)]/g, "")
       filtered = filtered.filter((lead) => {
@@ -373,7 +375,7 @@ export default function LeadTable({ onLeadsChange, onEditLead, onViewLead, onSel
     }
 
     return filtered
-  }, [searchQuery, dateFrom, dateTo, selectedBarcelonaTimeline, selectedIntake])
+  }, [debouncedSearch, dateFrom, dateTo, selectedBarcelonaTimeline, selectedIntake])
 
   const getSortedLeads = (leadsToSort: Lead[]) => {
     if (!sortColumn || !sortDirection) return leadsToSort
