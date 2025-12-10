@@ -265,42 +265,7 @@ export default function RecruiterPerformanceDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Funnel Visualization */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recruitment Funnel</h3>
-          <div className="space-y-3">
-            {[
-              { label: "Referrals", value: data.funnel.referral_count, color: "bg-pink-500", isCount: true },
-              { label: "New → Contacted", value: data.funnel.new_to_contacted, color: "bg-blue-500" },
-              { label: "Contacted → Interested", value: data.funnel.contacted_to_interested, color: "bg-purple-500" },
-              { label: "Interested → Qualified", value: data.funnel.interested_to_qualified, color: "bg-amber-500" },
-              { label: "Qualified → Converted", value: data.funnel.qualified_to_converted, color: "bg-green-500" },
-            ].map((stage) => (
-              <div key={stage.label}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">{stage.label}</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{stage.isCount ? stage.value : stage.value + "%"}</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full ${stage.color}`}
-                    style={{ width: stage.isCount ? '100%' : `${Math.min(stage.value, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-            <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Overall Conversion</span>
-                <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {data.funnel.overall_conversion}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Trends */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Week over Week</h3>

@@ -153,7 +153,7 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
           <span className="font-medium text-gray-900 dark:text-white truncate">{lead.prospect_name || lead.prospect_email || "Unknown"}</span>
           <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{lead.country}</span>
         </div>
-        <div className="text-sm text-gray-500">{lead.phone || "No phone"} • {lead.intake || "No intake"} • Last: {formatLastContact(lead.last_contact_date)}</div>
+        <div className="flex items-center gap-3 text-sm"><span className="font-mono font-semibold text-blue-600 dark:text-blue-400 text-base">{lead.phone || "No phone"}</span><span className="text-gray-400">•</span><span className="text-gray-500">{lead.intake || "No intake"}</span><span className="text-gray-400">•</span><span className="text-gray-500">Last: {formatLastContact(lead.last_contact_date)}</span></div>
       </div>
       <div className="flex-shrink-0 flex gap-2">
         <button onClick={() => onViewLead(lead)} className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">View</button>
