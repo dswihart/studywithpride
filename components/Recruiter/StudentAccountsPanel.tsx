@@ -47,6 +47,7 @@ const COUNTRIES = [
   "Chile",
   "Peru",
   "Ecuador",
+  "Nigeria",
   "Other",
 ]
 

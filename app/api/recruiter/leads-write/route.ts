@@ -12,7 +12,7 @@ interface LeadWriteRequest {
   id?: string
   user_id?: string
   country?: string
-  contact_status: 'not_contacted' | 'referral' | 'contacted' | 'interested' | 'qualified' | 'converted' | 'unqualified' | 'notinterested' | 'wrongnumber' | 'archived_referral'
+  contact_status: 'not_contacted' | 'referral' | 'contacted' | 'interested' | 'qualified' | 'converted' | 'unqualified' | 'notinterested' | 'wrongnumber' | 'archived' | 'archived_referral'
   last_contact_date?: string
   notes?: string
   prospect_email?: string
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate contact_status enum
-    const validStatuses = ['not_contacted', 'referral', 'contacted', 'interested', 'qualified', 'converted', 'unqualified', 'notinterested', 'wrongnumber', 'archived_referral']
+    const validStatuses = ['not_contacted', 'referral', 'contacted', 'interested', 'qualified', 'converted', 'unqualified', 'notinterested', 'wrongnumber', 'archived', 'archived_referral']
     if (!validStatuses.includes(body.contact_status)) {
       return NextResponse.json(
         {

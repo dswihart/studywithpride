@@ -101,7 +101,7 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     'Cuba', 'Dominican Republic', 'Ecuador', 'El Salvador', 'Guatemala',
     'Honduras', 'Mexico', 'Nicaragua', 'Panama', 'Paraguay', 'Peru',
     'Puerto Rico', 'Uruguay', 'Venezuela',
-    'USA', 'Canada', 'Spain', 'UK', 'Germany', 'France', 'Italy',
+    'Nigeria', 'USA', 'Canada', 'Spain', 'UK', 'Germany', 'France', 'Italy',
     'Portugal', 'Netherlands', 'Other'
   ]
 

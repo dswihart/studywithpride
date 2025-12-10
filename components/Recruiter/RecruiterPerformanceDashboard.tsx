@@ -272,7 +272,6 @@ export default function RecruiterPerformanceDashboard() {
           <div className="space-y-3">
             {[
               { label: "Referrals", value: data.funnel.referral_count, color: "bg-pink-500", isCount: true },
-              { label: "Referral → Contacted", value: data.funnel.referral_to_contacted, color: "bg-pink-400" },
               { label: "New → Contacted", value: data.funnel.new_to_contacted, color: "bg-blue-500" },
               { label: "Contacted → Interested", value: data.funnel.contacted_to_interested, color: "bg-purple-500" },
               { label: "Interested → Qualified", value: data.funnel.interested_to_qualified, color: "bg-amber-500" },

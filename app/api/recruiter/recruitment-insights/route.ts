@@ -319,11 +319,10 @@ export async function GET(request: NextRequest) {
     // 5. READINESS CHECKLIST INSIGHTS
     // ==========================================
     const readinessFields = [
-      { field: "meets_education_level", label: "Meets Education Level" },
-      { field: "english_level_basic", label: "English Level Basic" },
-      { field: "has_valid_passport", label: "Has Valid Passport" },
-      { field: "confirmed_financial_support", label: "Confirmed Financial Support" },
-      { field: "ready_to_proceed", label: "Ready to Proceed" },
+      { field: "has_education_docs", altField: "meets_education_level", label: "Education Docs" },
+      { field: "has_valid_passport", altField: null, label: "Valid Passport" },
+      { field: "ready_to_proceed", altField: "english_level_basic", label: "English Level" },
+      { field: "has_funds", altField: "confirmed_financial_support", label: "Has Funds" },
     ]
 
     // Get the latest readiness assessment per lead
@@ -338,7 +337,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const readinessInsights: ReadinessInsight[] = readinessFields.map(({ field, label }) => {
+    const readinessInsights: ReadinessInsight[] = readinessFields.map(({ field, altField, label }) => {
       let totalAssessed = 0
       let positiveCount = 0
       let convertedWithPositive = 0
@@ -347,7 +346,7 @@ export async function GET(request: NextRequest) {
       let negativeLeads = 0
 
       for (const [leadId, readiness] of latestReadinessPerLead.entries()) {
-        const value = readiness[field]
+        const value = readiness[field] || (altField ? readiness[altField] : null)
         if (value !== null && value !== undefined) {
           totalAssessed++
           const leadStatus = leadStatusMap.get(leadId)
@@ -457,6 +456,79 @@ export async function GET(request: NextRequest) {
       .map(r => r.label)
 
     // ==========================================
+
+    // ==========================================
+    // 9. CONTACT TIME ANALYSIS
+    // ==========================================
+    const hourlyStats = new Map<number, { contacts: number, successful: number }>()
+    const dayStats = new Map<number, { contacts: number, successful: number }>()
+
+    // Initialize all hours and days
+    for (let h = 0; h < 24; h++) {
+      hourlyStats.set(h, { contacts: 0, successful: 0 })
+    }
+    for (let d = 0; d < 7; d++) {
+      dayStats.set(d, { contacts: 0, successful: 0 })
+    }
+
+    for (const contact of contactHistory || []) {
+      if (!contact.contacted_at) continue
+      const date = new Date(contact.contacted_at)
+      const hour = date.getHours()
+      const day = date.getDay()
+
+      const hourData = hourlyStats.get(hour)!
+      hourData.contacts++
+
+      const dayData = dayStats.get(day)!
+      dayData.contacts++
+
+      // Check if this contact led to interest/conversion
+      const leadStatus = leadStatusMap.get(contact.lead_id)
+      if (leadStatus === "interested" || leadStatus === "qualified" || leadStatus === "converted") {
+        hourData.successful++
+        dayData.successful++
+      }
+    }
+
+    const hourLabels = ["12am","1am","2am","3am","4am","5am","6am","7am","8am","9am","10am","11am","12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"]
+    const dayLabels = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+
+    const timeInsights = {
+      by_hour: Array.from(hourlyStats.entries()).map(([hour, data]) => ({
+        hour,
+        label: hourLabels[hour],
+        contacts: data.contacts,
+        successful: data.successful,
+        success_rate: data.contacts > 0 ? Math.round((data.successful / data.contacts) * 100) : 0
+      })),
+      by_day: Array.from(dayStats.entries()).map(([day, data]) => ({
+        day,
+        label: dayLabels[day],
+        contacts: data.contacts,
+        successful: data.successful,
+        success_rate: data.contacts > 0 ? Math.round((data.successful / data.contacts) * 100) : 0
+      })),
+      best_hours: Array.from(hourlyStats.entries())
+        .filter(([_, d]) => d.contacts >= 5)
+        .sort((a, b) => {
+          const rateA = a[1].contacts > 0 ? a[1].successful / a[1].contacts : 0
+          const rateB = b[1].contacts > 0 ? b[1].successful / b[1].contacts : 0
+          return rateB - rateA
+        })
+        .slice(0, 3)
+        .map(([hour, data]) => ({ hour, label: hourLabels[hour], success_rate: Math.round((data.successful / data.contacts) * 100) })),
+      best_days: Array.from(dayStats.entries())
+        .filter(([_, d]) => d.contacts >= 5)
+        .sort((a, b) => {
+          const rateA = a[1].contacts > 0 ? a[1].successful / a[1].contacts : 0
+          const rateB = b[1].contacts > 0 ? b[1].successful / b[1].contacts : 0
+          return rateB - rateA
+        })
+        .slice(0, 3)
+        .map(([day, data]) => ({ day, label: dayLabels[day], success_rate: Math.round((data.successful / data.contacts) * 100) }))
+    }
+
     // 8. SUMMARY STATS
     // ==========================================
     const totalLeads = leads?.length || 0
@@ -504,6 +576,7 @@ export async function GET(request: NextRequest) {
 
     if (highPotentialCountries.length > 0) {
       keyInsights.push(`Opportunity: ${highPotentialCountries.map(c => c.country).join(", ")} have high-quality leads but low conversion`)
+// Add time-based insights    if (timeInsights.best_hours.length > 0) {      keyInsights.push(`Best contact hours: ${timeInsights.best_hours.map(h => h.label).join(", ")}`)    }    if (timeInsights.best_days.length > 0) {      keyInsights.push(`Best contact days: ${timeInsights.best_days.map(d => d.label).join(", ")}`)    }
     }
 
     return NextResponse.json({
@@ -531,6 +604,7 @@ export async function GET(request: NextRequest) {
         source_insights: sourceInsights.slice(0, 15),
         readiness_insights: readinessInsights,
         intake_insights: intakeInsights.slice(0, 10),
+        time_insights: timeInsights,
         key_insights: keyInsights,
         generated_at: new Date().toISOString(),
       },

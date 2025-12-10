@@ -51,8 +51,8 @@ const ACTIONS: ActionOption[] = [
   { id: "shared_info", label: "Shared Info - Follow Up", icon: "📋", keywords: ["shared", "sent", "emailed", "gave info"], status: "contacted", followUp: "call", followUpDays: 2, category: "positive" },
 
   // Negative outcomes
-  { id: "not_interested", label: "Not Interested", icon: "👎", keywords: ["not interested", "no thanks", "decline", "refused"], status: "notinterested", followUp: "none", followUpDays: 0, category: "negative" },
-  { id: "unqualified", label: "Unqualified", icon: "⛔", keywords: ["unqualified", "doesnt qualify", "not eligible"], status: "unqualified", followUp: "none", followUpDays: 0, category: "negative" },
+  { id: "not_interested", label: "Not Interested", icon: "👎", keywords: ["not interested", "no thanks", "decline", "refused"], status: "archived", followUp: "none", followUpDays: 0, category: "negative" },
+  { id: "unqualified", label: "Unqualified", icon: "⛔", keywords: ["unqualified", "doesnt qualify", "not eligible"], status: "archived", followUp: "none", followUpDays: 0, category: "negative" },
 
   // Problems
   { id: "wrong_number", label: "Wrong Number", icon: "❌", keywords: ["wrong number", "wrong", "invalid", "disconnected"], status: "wrongnumber", followUp: "none", followUpDays: 0, category: "problem" },
@@ -63,7 +63,11 @@ const FOLLOW_UP_OPTIONS = [
   { value: 0, label: "Today" },
   { value: 1, label: "Tomorrow" },
   { value: 3, label: "3 Days" },
+  { value: -1, label: "Custom" },
 ]
+
+const HOUR_OPTIONS = [1, 2, 3, 4, 5]
+
 
 export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateTask }: SmartContactLoggerProps) {
   const [searchTerm, setSearchTerm] = useState("")
@@ -71,10 +75,14 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
   const [highlightedIndex, setHighlightedIndex] = useState(0)
   const [followUpDays, setFollowUpDays] = useState(1)
   const [notes, setNotes] = useState("")
-  const [createTask, setCreateTask] = useState(true)
+  const [showNotes, setShowNotes] = useState(false)
+  const [followUpHours, setFollowUpHours] = useState(1)
+  const [customDays, setCustomDays] = useState(7)
+  const [createTask, setCreateTask] = useState(false)
   const [flagFollowup, setFlagFollowup] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
+  const [recruitPriority, setRecruitPriority] = useState<number | null>(lead.recruit_priority || null)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -131,7 +139,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
   const selectAction = (action: ActionOption) => {
     setSelectedAction(action)
     setFollowUpDays(action.followUpDays)
-    setFlagFollowup(action.followUpDays > 0)
+    setFlagFollowup(false)
   }
 
   const handleSave = async () => {
@@ -159,7 +167,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
         throw new Error(err.error || "Failed to log contact")
       }
 
-      // Update lead status
+      // Update lead status and VIP priority
       const statusRes = await fetch("/api/recruiter/leads-write", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,6 +175,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
           id: lead.id,
           contact_status: selectedAction.status,
           last_contact_date: new Date().toISOString(),
+          recruit_priority: recruitPriority,
         }),
       })
 
@@ -211,6 +220,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
               <p className="text-blue-100 text-sm flex items-center gap-2">
                 <span>📞</span>
                 {lead.prospect_name || "Unknown"} {lead.phone && `• ${lead.phone}`}
+                {recruitPriority && <span className="text-yellow-300">★ VIP</span>}
               </p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition">
@@ -309,18 +319,39 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
               </button>
             </div>
 
+            {/* VIP Toggle */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Priority Status
+              </label>
+              <button
+                type="button"
+                onClick={() => setRecruitPriority(recruitPriority ? null : 1)}
+                className={`w-full p-3 rounded-lg border-2 transition flex items-center justify-center gap-2 ${
+                  recruitPriority
+                    ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
+                    : "border-gray-200 dark:border-gray-700 hover:border-yellow-300"
+                }`}
+              >
+                <span className={`text-xl ${recruitPriority ? "text-yellow-400" : "text-gray-300"}`}>★</span>
+                <span className={`text-sm font-medium ${recruitPriority ? "text-yellow-700 dark:text-yellow-300" : "text-gray-500 dark:text-gray-400"}`}>
+                  {recruitPriority ? "VIP Lead" : "Mark as VIP"}
+                </span>
+              </button>
+            </div>
+
             {/* Follow-up Options */}
             {selectedAction.followUp !== "none" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   ⏰ Follow-up in
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {FOLLOW_UP_OPTIONS.map(opt => (
                     <button
                       key={opt.value}
                       onClick={() => setFollowUpDays(opt.value)}
-                      className={`flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition ${
+                      className={`py-2 px-4 rounded-lg border-2 text-sm font-medium transition ${
                         followUpDays === opt.value
                           ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                           : "border-gray-200 dark:border-gray-600 hover:border-gray-300 text-gray-600 dark:text-gray-400"
@@ -330,23 +361,69 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
                     </button>
                   ))}
                 </div>
+                
+                {/* Hours picker for Today */}
+                {followUpDays === 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">In</span>
+                    <div className="flex gap-1">
+                      {HOUR_OPTIONS.map(h => (
+                        <button
+                          key={h}
+                          onClick={() => setFollowUpHours(h)}
+                          className={`w-10 py-1.5 rounded-lg border text-sm font-medium transition ${
+                            followUpHours === h
+                              ? "border-blue-500 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                              : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400"
+                          }`}
+                        >
+                          {h}h
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Custom days picker */}
+                {followUpDays === -1 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">In</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={customDays}
+                      onChange={e => setCustomDays(parseInt(e.target.value) || 1)}
+                      className="w-16 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">days</span>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Notes */}
+            {/* Notes - Collapsible */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <button
+                type="button"
+                onClick={() => setShowNotes(!showNotes)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              >
                 📝 Notes (optional)
-              </label>
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Any important details..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
-                rows={2}
-              />
+                <svg className={`w-4 h-4 transition-transform ${showNotes ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showNotes && (
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Any important details..."
+                  className="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                />
+              )}
             </div>
-
             {/* Options */}
             <div className="space-y-2">
               {followUpDays > 0 && onCreateTask && (

@@ -83,11 +83,12 @@ interface InsightsData {
   outcome_insights: OutcomeInsight[]
   readiness_insights: ReadinessInsight[]
   intake_insights: IntakeInsight[]
+  time_insights?: { by_hour: any[], by_day: any[], best_hours: any[], best_days: any[] }
   key_insights: string[]
 }
 
 type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'all'
-type SectionType = 'country' | 'method' | 'outcome' | 'readiness' | 'intake'
+type SectionType = 'country' | 'method' | 'outcome' | 'readiness' | 'intake' | 'time'
 
 interface InsightsPanelProps {
   className?: string
@@ -341,6 +342,7 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
         >
           By Outcome
         </button>
+<button          onClick={() => setActiveSection("time")}          className={`px-4 py-2 text-sm rounded-lg transition ${            activeSection === "time"              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300"              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"          }`}        >          Best Times        </button>
         
       </div>
 
@@ -600,6 +602,84 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
               No outcome data available yet
             </p>
           )}
+        </div>
+
+      )}
+      {/* Time Analysis Section */}
+      {activeSection === 'time' && data.time_insights && (
+        <div className="space-y-6">
+          {/* Best Times Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-3">Best Hours to Contact</h4>
+              {data.time_insights.best_hours.length > 0 ? (
+                <div className="space-y-2">
+                  {data.time_insights.best_hours.map((h: any, i: number) => (
+                    <div key={h.hour} className="flex items-center justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {h.label}</span>
+                      <span className="font-bold text-orange-600">{h.success_rate}% success</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">Not enough data yet</p>
+              )}
+            </div>
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3">Best Days to Contact</h4>
+              {data.time_insights.best_days.length > 0 ? (
+                <div className="space-y-2">
+                  {data.time_insights.best_days.map((d: any, i: number) => (
+                    <div key={d.day} className="flex items-center justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {d.label}</span>
+                      <span className="font-bold text-blue-600">{d.success_rate}% success</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">Not enough data yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Hourly Distribution */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Contact Success by Hour</h4>
+            <div className="grid grid-cols-12 gap-1">
+              {data.time_insights.by_hour.slice(6, 22).map((h: any) => (
+                <div key={h.hour} className="text-center">
+                  <div 
+                    className="mx-auto w-full rounded-t-sm bg-gradient-to-t from-orange-500 to-orange-300" 
+                    style={{ height: Math.max(4, h.success_rate * 1.5) + 'px' }}
+                    title={`${h.label}: ${h.contacts} contacts, ${h.success_rate}% success`}
+                  />
+                  <div className="text-xs text-gray-500 mt-1">{h.label.replace('am','').replace('pm','')}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">Hours shown: 6am - 10pm (height = success rate)</p>
+          </div>
+
+          {/* Daily Distribution */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Contact Success by Day</h4>
+            <div className="space-y-2">
+              {data.time_insights.by_day.map((d: any) => (
+                <div key={d.day} className="flex items-center gap-3">
+                  <span className="w-24 text-sm text-gray-600 dark:text-gray-400">{d.label}</span>
+                  <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full flex items-center justify-end pr-2"
+                      style={{ width: `${Math.max(5, d.success_rate)}%` }}
+                    >
+                      {d.success_rate >= 20 && <span className="text-xs text-white font-medium">{d.success_rate}%</span>}
+                    </div>
+                  </div>
+                  <span className="w-20 text-sm text-gray-500">{d.contacts} calls</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

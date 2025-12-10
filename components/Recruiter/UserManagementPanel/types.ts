@@ -46,6 +46,7 @@ export const COUNTRIES = [
   "Ecuador",
   "Spain",
   "United States",
+  "Nigeria",
   "Other",
 ]
 

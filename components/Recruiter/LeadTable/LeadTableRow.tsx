@@ -167,7 +167,6 @@ export function LeadTableRow({
         <ActionButtons
           lead={lead}
           onEdit={onEdit}
-          onWhatsApp={onWhatsApp}
           onMessageHistory={onMessageHistory}
           onLogContact={onLogContact}
           compact={isTablet}

@@ -71,7 +71,7 @@ export default function CallQueue({ onViewLead, onLogContact, refreshKey }: Call
 
         const eligible = allLeads.filter(lead => {
           const status = lead.contact_status
-          return !["converted", "unqualified", "notinterested", "wrongnumber", "archived"].includes(status)
+          return !["converted", "unqualified", "notinterested", "wrongnumber", "archived", "contacted", "interested"].includes(status)
         })
 
         // Sort by intake date (earlier first), then by contact status

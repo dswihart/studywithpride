@@ -204,6 +204,9 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEdit, onLogCont
       converted: "bg-purple-100 text-purple-800",
       unqualified: "bg-red-100 text-red-800",
       referral: "bg-cyan-100 text-cyan-800",
+      archived: "bg-slate-100 text-slate-600",
+      wrongnumber: "bg-gray-200 text-gray-600",
+      notinterested: "bg-orange-100 text-orange-800",
     }
     return colors[status] || "bg-gray-100 text-gray-800"
   }
