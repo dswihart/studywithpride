@@ -42,15 +42,18 @@ export class LeadService {
 
       let query = supabase.from("leads").select("*", { count: "exact" })
 
-      // Exclude archived unless requested
-      if (!includeArchived) {
+      // Search filter - check first if searching by UUID
+      const searchTerm = search?.trim()
+      const isIdSearch = searchTerm && isUUID(searchTerm)
+
+      // Exclude archived unless requested OR searching by ID (always show lead by ID)
+      if (!includeArchived && !isIdSearch) {
         query = query.not("contact_status", "in", "(archived,archived_referral,unqualified,notinterested,wrongnumber)")
       }
 
       // Search filter
-      if (search?.trim()) {
-        const searchTerm = search.trim()
-        if (isUUID(searchTerm)) {
+      if (searchTerm) {
+        if (isIdSearch) {
           query = query.eq("id", searchTerm)
         } else {
           query = query.or(

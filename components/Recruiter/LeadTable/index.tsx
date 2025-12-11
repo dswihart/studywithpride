@@ -11,6 +11,7 @@ import HiddenColumnsIndicator from "../HiddenColumnsIndicator"
 import { Lead, LeadTableProps, ColumnKey } from "./types"
 import { useLeadTable } from "./useLeadTable"
 import { LeadTableFilters } from "./LeadTableFilters"
+import { LeadTableControls } from "./LeadTableControls"
 import { LeadTableHeader } from "./LeadTableHeader"
 import { LeadTableRow } from "./LeadTableRow"
 import { LeadTablePagination } from "./LeadTablePagination"
@@ -217,6 +218,17 @@ export default function LeadTable({
         <HiddenColumnsIndicator hiddenColumns={hiddenColumns} breakpoint={breakpoint} />
       )}
 
+      {/* Table Controls */}
+      <LeadTableControls
+        columnVisibility={columnVisibility}
+        selectedCount={selectedLeads.size}
+        totalLeads={allLeads.length}
+        selectAllPages={selectAllPages}
+        onSelectAllPages={handleSelectAllPages}
+        onToggleColumn={toggleColumnVisibility}
+        onBulkEdit={() => setShowBulkEditModal(true)}
+      />
+
       {/* Error state */}
       {error && (
         <div className="p-4 text-center text-red-600 dark:text-red-400">{error}</div>
@@ -227,19 +239,12 @@ export default function LeadTable({
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <LeadTableHeader
             visibleColumns={tableVisibleColumns}
-            columnVisibility={columnVisibility}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             allSelected={allSelected}
             someSelected={someSelected}
-            selectedCount={selectedLeads.size}
-            totalLeads={allLeads.length}
-            selectAllPages={selectAllPages}
             onSelectAll={handleSelectAll}
-            onSelectAllPages={handleSelectAllPages}
             onSort={handleSort}
-            onToggleColumn={toggleColumnVisibility}
-            onBulkEdit={() => setShowBulkEditModal(true)}
           />
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {leads.length === 0 ? (

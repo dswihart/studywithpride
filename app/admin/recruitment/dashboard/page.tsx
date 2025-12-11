@@ -223,6 +223,7 @@ function RecruiterDashboardContent() {
 
 
   const handleViewLeadById = async (leadId: string) => {
+    console.log("[DEBUG] handleViewLeadById called with:", leadId)
     // First check if lead is already in our list
     const existingLead = leads.find(l => l.id === leadId)
     if (existingLead) {
@@ -234,6 +235,7 @@ function RecruiterDashboardContent() {
     try {
       const response = await fetch(`/api/recruiter/leads-read?search=${leadId}&limit=1`)
       const result = await response.json()
+      console.log("[DEBUG] API result:", result)
       if (result.success && result.data && result.data.length > 0) {
         setViewingLead(result.data[0])
         setIsViewLeadModalOpen(true)
