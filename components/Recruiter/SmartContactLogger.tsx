@@ -37,13 +37,14 @@ interface ActionOption {
   followUp: "call" | "whatsapp" | "email" | "none"
   followUpDays: number
   category: "common" | "positive" | "negative" | "problem"
+  removeVip?: boolean
   quickLog?: boolean
 }
 
 const ACTIONS: ActionOption[] = [
   // Most common
   { id: "no_answer_wa", label: "No Answer - Send WhatsApp", icon: "📵💬", keywords: ["no answer", "no response", "didn't answer", "voicemail", "na"], status: "contacted", followUp: "call", followUpDays: 1, category: "common" },
-  { id: "voicemail", label: "Called - Left Voicemail/No Answer", icon: "📞❌", keywords: ["voicemail", "left message", "no answer", "called", "vm", "didnt pick up"], status: "contacted", followUp: "none", followUpDays: 0, category: "common", quickLog: true },
+  { id: "voicemail", label: "Called - Left Voicemail/No Answer", icon: "📞❌", keywords: ["voicemail", "left message", "no answer", "called", "vm", "didnt pick up"], status: "contacted", followUp: "call", followUpDays: 1, category: "common" },
 
   // Positive outcomes
   { id: "interested_call", label: "Interested! (from call)", icon: "🎯", keywords: ["interested", "wants", "yes", "sign up", "enroll"], status: "interested", followUp: "email", followUpDays: 1, category: "positive" },
@@ -55,6 +56,7 @@ const ACTIONS: ActionOption[] = [
   // Negative outcomes
   { id: "not_interested", label: "Not Interested", icon: "👎", keywords: ["not interested", "no thanks", "decline", "refused"], status: "archived", followUp: "none", followUpDays: 0, category: "negative" },
   { id: "unqualified", label: "Unqualified", icon: "⛔", keywords: ["unqualified", "doesnt qualify", "not eligible"], status: "archived", followUp: "none", followUpDays: 0, category: "negative" },
+  { id: "cant_afford", label: "Can't Afford It", icon: "💸", keywords: ["cant afford", "no money", "expensive", "cost", "budget", "finance"], status: "archived", followUp: "none", followUpDays: 0, category: "negative", removeVip: true },
 
   // Problems
   { id: "wrong_number", label: "Wrong Number", icon: "❌", keywords: ["wrong number", "wrong", "invalid", "disconnected"], status: "wrongnumber", followUp: "none", followUpDays: 0, category: "problem" },
@@ -230,7 +232,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
           id: lead.id,
           contact_status: selectedAction.status,
           last_contact_date: new Date().toISOString(),
-          recruit_priority: recruitPriority,
+          recruit_priority: selectedAction.removeVip ? null : recruitPriority,
         }),
       })
 

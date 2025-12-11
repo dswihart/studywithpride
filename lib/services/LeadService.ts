@@ -44,7 +44,7 @@ export class LeadService {
 
       // Exclude archived unless requested
       if (!includeArchived) {
-        query = query.not("contact_status", "in", "(archived,archived_referral)")
+        query = query.not("contact_status", "in", "(archived,archived_referral,unqualified,notinterested,wrongnumber)")
       }
 
       // Search filter

@@ -83,7 +83,7 @@ interface InsightsData {
   outcome_insights: OutcomeInsight[]
   readiness_insights: ReadinessInsight[]
   intake_insights: IntakeInsight[]
-  time_insights?: { by_hour: any[], by_day: any[], best_hours: any[], best_days: any[] }
+  time_insights?: { by_hour: any[], by_day: any[], best_hours: any[], best_days: any[], total_contacts?: number, peak_hours?: any[], heatmap?: any[] }
   key_insights: string[]
 }
 
@@ -606,78 +606,145 @@ export default function InsightsPanel({ className = '' }: InsightsPanelProps) {
 
       )}
       {/* Time Analysis Section */}
-      {activeSection === 'time' && data.time_insights && (
+      {activeSection === "time" && data.time_insights && (
         <div className="space-y-6">
-          {/* Best Times Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-3">Best Hours to Contact</h4>
-              {data.time_insights.best_hours.length > 0 ? (
-                <div className="space-y-2">
-                  {data.time_insights.best_hours.map((h: any, i: number) => (
-                    <div key={h.hour} className="flex items-center justify-between">
-                      <span className="text-gray-700 dark:text-gray-300">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {h.label}</span>
-                      <span className="font-bold text-orange-600">{h.success_rate}% success</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">Not enough data yet</p>
-              )}
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{data.time_insights.total_contacts || 0}</div>
+              <div className="text-xs text-gray-500">Total Contacts</div>
             </div>
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3">Best Days to Contact</h4>
-              {data.time_insights.best_days.length > 0 ? (
-                <div className="space-y-2">
-                  {data.time_insights.best_days.map((d: any, i: number) => (
-                    <div key={d.day} className="flex items-center justify-between">
-                      <span className="text-gray-700 dark:text-gray-300">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {d.label}</span>
-                      <span className="font-bold text-blue-600">{d.success_rate}% success</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">Not enough data yet</p>
-              )}
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {data.time_insights?.by_hour?.reduce((sum: number, h: any) => sum + h.successful, 0) || 0}
+              </div>
+              <div className="text-xs text-gray-500">Successful</div>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {data.time_insights.peak_hours?.[0]?.label || "N/A"}
+              </div>
+              <div className="text-xs text-gray-500">Peak Hour</div>
+            </div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {data.time_insights.best_hours?.[0]?.label || "N/A"}
+              </div>
+              <div className="text-xs text-gray-500">Best Success</div>
             </div>
           </div>
 
-          {/* Hourly Distribution */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Contact Success by Hour</h4>
-            <div className="grid grid-cols-12 gap-1">
-              {data.time_insights.by_hour.slice(6, 22).map((h: any) => (
-                <div key={h.hour} className="text-center">
-                  <div 
-                    className="mx-auto w-full rounded-t-sm bg-gradient-to-t from-orange-500 to-orange-300" 
-                    style={{ height: Math.max(4, h.success_rate * 1.5) + 'px' }}
-                    title={`${h.label}: ${h.contacts} contacts, ${h.success_rate}% success`}
-                  />
-                  <div className="text-xs text-gray-500 mt-1">{h.label.replace('am','').replace('pm','')}</div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">Hours shown: 6am - 10pm (height = success rate)</p>
-          </div>
-
-          {/* Daily Distribution */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Contact Success by Day</h4>
-            <div className="space-y-2">
-              {data.time_insights.by_day.map((d: any) => (
-                <div key={d.day} className="flex items-center gap-3">
-                  <span className="w-24 text-sm text-gray-600 dark:text-gray-400">{d.label}</span>
-                  <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full flex items-center justify-end pr-2"
-                      style={{ width: `${Math.max(5, d.success_rate)}%` }}
-                    >
-                      {d.success_rate >= 20 && <span className="text-xs text-white font-medium">{d.success_rate}%</span>}
+          {/* Top Performers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4">
+              <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-3 flex items-center gap-2">
+                Best Hours for Success
+              </h4>
+              <div className="space-y-2">
+                {(data.time_insights.best_hours || []).slice(0, 5).map((h: any, i: number) => (
+                  <div key={h.hour} className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : (i+1)+"th"}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{h.label}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-green-600 dark:text-green-400 font-bold">{h.success_rate}%</span>
+                      <span className="text-xs text-gray-500 ml-2">({h.successful}/{h.contacts})</span>
                     </div>
                   </div>
-                  <span className="w-20 text-sm text-gray-500">{d.contacts} calls</span>
-                </div>
-              ))}
+                ))}
+                {(!data.time_insights.best_hours || data.time_insights.best_hours.length === 0) && (
+                  <p className="text-gray-500 text-sm">Need more data (min 3 contacts/hour)</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4">
+              <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2">
+                Best Days for Success
+              </h4>
+              <div className="space-y-2">
+                {(data.time_insights.best_days || []).map((d: any, i: number) => (
+                  <div key={d.day} className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{i === 0 ? "1st" : i === 1 ? "2nd" : "3rd"}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{d.label}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{d.success_rate}%</span>
+                      <span className="text-xs text-gray-500 ml-2">({d.successful}/{d.contacts})</span>
+                    </div>
+                  </div>
+                ))}
+                {(!data.time_insights.best_days || data.time_insights.best_days.length === 0) && (
+                  <p className="text-gray-500 text-sm">Need more data (min 3 contacts/day)</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Hourly Breakdown */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Hourly Breakdown (11am - 2am)</h4>
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-16 gap-1 min-w-[600px]">
+                {(data.time_insights?.by_hour || []).filter((h: any) => h.hour >= 11 || h.hour <= 2).sort((a: any, b: any) => { const orderA = a.hour >= 11 ? a.hour - 11 : a.hour + 13; const orderB = b.hour >= 11 ? b.hour - 11 : b.hour + 13; return orderA - orderB; }).map((h: any) => {
+                  const maxContacts = Math.max(...(data.time_insights?.by_hour || []).map((x: any) => x.contacts), 1)
+                  const barHeight = Math.max(8, (h.contacts / maxContacts) * 80)
+                  const successHeight = h.contacts > 0 ? (h.successful / h.contacts) * barHeight : 0
+                  return (
+                    <div key={h.hour} className="text-center">
+                      <div className="h-20 flex flex-col justify-end items-center relative group">
+                        <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
+                          {h.label}: {h.contacts} contacts, {h.successful} success ({h.success_rate}%)
+                        </div>
+                        <div
+                          className="w-full rounded-t"
+                          style={{
+                            height: barHeight + "px",
+                            background: "linear-gradient(to top, rgb(34 197 94) " + (successHeight/barHeight*100) + "%, rgb(209 213 219) " + (successHeight/barHeight*100) + "%)"
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 font-medium">{h.hour > 12 ? h.hour - 12 : h.hour || 12}{h.hour >= 12 ? "p" : "a"}</div>
+                      <div className="text-xs text-gray-400">{h.contacts}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-3 text-xs">
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500"></span> Successful</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-300"></span> Other</span>
+            </div>
+          </div>
+
+          {/* Daily Breakdown */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Daily Breakdown</h4>
+            <div className="space-y-3">
+              {(data.time_insights?.by_day || []).map((d: any) => {
+                const maxContacts = Math.max(...(data.time_insights?.by_day || []).map((x: any) => x.contacts), 1)
+                return (
+                  <div key={d.day} className="flex items-center gap-3">
+                    <span className="w-20 text-sm font-medium text-gray-600 dark:text-gray-400">{d.label.slice(0, 3)}</span>
+                    <div className="flex-1 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden relative">
+                      <div
+                        className="h-full bg-blue-200 dark:bg-blue-900/50 absolute left-0"
+                        style={{ width: (d.contacts / maxContacts * 100) + "%" }}
+                      />
+                      <div
+                        className="h-full bg-green-500 absolute left-0"
+                        style={{ width: (d.successful / maxContacts * 100) + "%" }}
+                      />
+                      <div className="absolute inset-0 flex items-center px-2 justify-between">
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{d.contacts} contacts</span>
+                        <span className="text-xs font-bold text-green-700 dark:text-green-300">{d.success_rate}% success</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

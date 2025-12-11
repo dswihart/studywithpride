@@ -458,17 +458,22 @@ export async function GET(request: NextRequest) {
     // ==========================================
 
     // ==========================================
-    // 9. CONTACT TIME ANALYSIS
     // ==========================================
-    const hourlyStats = new Map<number, { contacts: number, successful: number }>()
-    const dayStats = new Map<number, { contacts: number, successful: number }>()
+    // 9. ENHANCED CONTACT TIME ANALYSIS
+    // ==========================================
+    const hourlyStats = new Map<number, { contacts: number, successful: number, responses: number, voicemails: number }>()
+    const dayStats = new Map<number, { contacts: number, successful: number, responses: number }>()
+    const hourDayMatrix = new Map<string, { contacts: number, successful: number }>()
 
     // Initialize all hours and days
     for (let h = 0; h < 24; h++) {
-      hourlyStats.set(h, { contacts: 0, successful: 0 })
+      hourlyStats.set(h, { contacts: 0, successful: 0, responses: 0, voicemails: 0 })
     }
     for (let d = 0; d < 7; d++) {
-      dayStats.set(d, { contacts: 0, successful: 0 })
+      dayStats.set(d, { contacts: 0, successful: 0, responses: 0 })
+      for (let h = 0; h < 24; h++) {
+        hourDayMatrix.set(d + '-' + h, { contacts: 0, successful: 0 })
+      }
     }
 
     for (const contact of contactHistory || []) {
@@ -483,50 +488,102 @@ export async function GET(request: NextRequest) {
       const dayData = dayStats.get(day)!
       dayData.contacts++
 
+      const matrixKey = day + '-' + hour
+      const matrixData = hourDayMatrix.get(matrixKey)!
+      matrixData.contacts++
+
+      // Track responses (any non-voicemail outcome)
+      const outcome = contact.outcome?.toLowerCase() || ''
+      if (!outcome.includes('voicemail') && !outcome.includes('no answer')) {
+        hourData.responses++
+        dayData.responses++
+      } else {
+        hourData.voicemails++
+      }
+
       // Check if this contact led to interest/conversion
       const leadStatus = leadStatusMap.get(contact.lead_id)
-      if (leadStatus === "interested" || leadStatus === "qualified" || leadStatus === "converted") {
+      if (leadStatus === 'interested' || leadStatus === 'qualified' || leadStatus === 'converted') {
         hourData.successful++
         dayData.successful++
+        matrixData.successful++
       }
     }
 
-    const hourLabels = ["12am","1am","2am","3am","4am","5am","6am","7am","8am","9am","10am","11am","12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"]
-    const dayLabels = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+    const hourLabels = ['12am','1am','2am','3am','4am','5am','6am','7am','8am','9am','10am','11am','12pm','1pm','2pm','3pm','4pm','5pm','6pm','7pm','8pm','9pm','10pm','11pm']
+    const dayLabels = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+
+    // Calculate total contacts for percentage calculations
+    const totalContacts = Array.from(hourlyStats.values()).reduce((sum, h) => sum + h.contacts, 0)
 
     const timeInsights = {
+      total_contacts: totalContacts,
       by_hour: Array.from(hourlyStats.entries()).map(([hour, data]) => ({
         hour,
         label: hourLabels[hour],
         contacts: data.contacts,
         successful: data.successful,
-        success_rate: data.contacts > 0 ? Math.round((data.successful / data.contacts) * 100) : 0
+        responses: data.responses,
+        voicemails: data.voicemails,
+        success_rate: data.responses > 0 ? Math.round((data.successful / data.responses) * 100) : 0,
+        response_rate: data.contacts > 0 ? Math.round((data.responses / data.contacts) * 100) : 0,
+        volume_pct: totalContacts > 0 ? Math.round((data.contacts / totalContacts) * 100) : 0
       })),
       by_day: Array.from(dayStats.entries()).map(([day, data]) => ({
         day,
         label: dayLabels[day],
         contacts: data.contacts,
         successful: data.successful,
-        success_rate: data.contacts > 0 ? Math.round((data.successful / data.contacts) * 100) : 0
+        responses: data.responses,
+        success_rate: data.responses > 0 ? Math.round((data.successful / data.responses) * 100) : 0,
+        response_rate: data.contacts > 0 ? Math.round((data.responses / data.contacts) * 100) : 0,
+        volume_pct: totalContacts > 0 ? Math.round((data.contacts / totalContacts) * 100) : 0
       })),
+      heatmap: Array.from(hourDayMatrix.entries()).map(([key, data]) => {
+        const [day, hour] = key.split('-').map(Number)
+        return {
+          day,
+          hour,
+          contacts: data.contacts,
+          successful: data.successful,
+          success_rate: data.contacts > 0 ? Math.round((data.successful / data.contacts) * 100) : 0
+        }
+      }),
       best_hours: Array.from(hourlyStats.entries())
-        .filter(([_, d]) => d.contacts >= 5)
+        .filter(([_, d]) => d.responses >= 3)
         .sort((a, b) => {
-          const rateA = a[1].contacts > 0 ? a[1].successful / a[1].contacts : 0
-          const rateB = b[1].contacts > 0 ? b[1].successful / b[1].contacts : 0
+          const rateA = a[1].responses > 0 ? a[1].successful / a[1].responses : 0
+          const rateB = b[1].responses > 0 ? b[1].successful / b[1].responses : 0
           return rateB - rateA
         })
-        .slice(0, 3)
-        .map(([hour, data]) => ({ hour, label: hourLabels[hour], success_rate: Math.round((data.successful / data.contacts) * 100) })),
+        .slice(0, 5)
+        .map(([hour, data]) => ({ 
+          hour, 
+          label: hourLabels[hour], 
+          contacts: data.contacts,
+          successful: data.successful,
+          success_rate: data.responses > 0 ? Math.round((data.successful / data.responses) * 100) : 0 
+        })),
       best_days: Array.from(dayStats.entries())
-        .filter(([_, d]) => d.contacts >= 5)
+        .filter(([_, d]) => d.responses >= 3)
         .sort((a, b) => {
-          const rateA = a[1].contacts > 0 ? a[1].successful / a[1].contacts : 0
-          const rateB = b[1].contacts > 0 ? b[1].successful / b[1].contacts : 0
+          const rateA = a[1].responses > 0 ? a[1].successful / a[1].responses : 0
+          const rateB = b[1].responses > 0 ? b[1].successful / b[1].responses : 0
           return rateB - rateA
         })
         .slice(0, 3)
-        .map(([day, data]) => ({ day, label: dayLabels[day], success_rate: Math.round((data.successful / data.contacts) * 100) }))
+        .map(([day, data]) => ({ 
+          day, 
+          label: dayLabels[day], 
+          contacts: data.contacts,
+          successful: data.successful,
+          success_rate: data.responses > 0 ? Math.round((data.successful / data.responses) * 100) : 0 
+        })),
+      peak_hours: Array.from(hourlyStats.entries())
+        .filter(([_, d]) => d.responses >= 3)
+        .sort((a, b) => b[1].contacts - a[1].contacts)
+        .slice(0, 3)
+        .map(([hour, data]) => ({ hour, label: hourLabels[hour], contacts: data.contacts }))
     }
 
     // 8. SUMMARY STATS

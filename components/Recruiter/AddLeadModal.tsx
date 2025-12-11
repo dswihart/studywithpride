@@ -117,7 +117,13 @@ export default function AddLeadModal({ isOpen, onClose, onSuccess, editLead }: A
     { value: 'not_contacted', label: 'Not Contacted' },
     { value: 'referral', label: 'Referral' },
     { value: 'contacted', label: 'Contacted' },
-    { value: 'unqualified', label: 'Unqualified' }
+    { value: 'interested', label: 'Interested' },
+    { value: 'qualified', label: 'Qualified' },
+    { value: 'converted', label: 'Converted' },
+    { value: 'unqualified', label: 'Unqualified' },
+    { value: 'notinterested', label: 'Not Interested' },
+    { value: 'wrongnumber', label: 'Wrong Number' },
+    { value: 'archived', label: 'Archived' }
   ]
 
   const validStatusValues = statuses.map(s => s.value)

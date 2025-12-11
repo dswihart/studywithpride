@@ -73,7 +73,7 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('pending')
   const [filterPriority, setFilterPriority] = useState('all')
   const [showOverdue, setShowOverdue] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
