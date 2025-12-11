@@ -37,6 +37,7 @@ export interface LeadFilters {
   leadQuality?: string
   dateFrom?: string
   dateTo?: string
+  needsFollowup?: boolean
 }
 
 export interface Lead {

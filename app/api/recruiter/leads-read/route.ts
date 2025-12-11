@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     ? parseInt(searchParams.get("funnel_stage")!)
     : undefined
   const leadQuality = searchParams.get("lead_quality") || undefined
+  const needsFollowup = searchParams.get("needs_followup") === "true"
 
   // Delegate to service
   const result = await LeadService.getLeads(
@@ -52,7 +53,8 @@ export async function GET(request: NextRequest) {
       search,
       includeArchived,
       funnelStage,
-      leadQuality
+      leadQuality,
+      needsFollowup
     },
     { limit, offset }
   )

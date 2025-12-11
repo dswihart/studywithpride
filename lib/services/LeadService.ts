@@ -90,6 +90,11 @@ export class LeadService {
         query = query.lte("created_at", filters.dateTo)
       }
 
+      // Needs followup filter
+      if (filters.needsFollowup === true) {
+        query = query.eq("needs_followup", true)
+      }
+
       // Pagination and ordering
       query = query
         .range(offset, offset + limit - 1)

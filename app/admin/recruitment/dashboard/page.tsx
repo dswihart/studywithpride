@@ -81,7 +81,7 @@ interface Task {
   } | null
 }
 
-type DashboardTab = 'dashboard' | 'leads' | 'tasks' | 'users' | 'admin' 
+type DashboardTab = 'dashboard' | 'leads' | 'tasks' | 'callbacks' | 'users' | 'admin' 
 
 function RecruiterDashboardContent() {
   const [loading, setLoading] = useState(true)
@@ -128,7 +128,7 @@ function RecruiterDashboardContent() {
     const leadId = searchParams.get('leadId')
     const tab = searchParams.get('tab') as DashboardTab | null
 
-    if (tab && ['dashboard', 'leads', 'tasks', 'users', 'admin'].includes(tab)) {
+    if (tab && ['dashboard', 'leads', 'tasks', 'callbacks', 'users', 'admin'].includes(tab as DashboardTab)) {
       setActiveTab(tab)
     }
 
@@ -585,7 +585,23 @@ function RecruiterDashboardContent() {
                 Tasks
               </span>
             </button>
-<button              onClick={() => setActiveTab('users')}              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${                activeTab === 'users'                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'              }`}            >              <span className="flex items-center gap-2">                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />                </svg>                Users              </span>            </button>
+            <button
+              onClick={() => setActiveTab('callbacks')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
+                activeTab === 'callbacks'
+                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                Callbacks
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}              className={`py-4 px-2 border-b-2 font-medium text-sm transition ${                activeTab === 'users'                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'              }`}            >              <span className="flex items-center gap-2">                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />                </svg>                Users              </span>            </button>
             <button
               onClick={() => setActiveTab('admin')}
               className={`py-4 px-2 border-b-2 font-medium text-sm transition ${
@@ -638,12 +654,6 @@ function RecruiterDashboardContent() {
                   }}
                   refreshKey={taskListKey}
                 />
-                <div className="mt-4">
-                  <ApiFollowupWidget
-                    onViewLead={handleViewLeadById}
-                    refreshKey={taskListKey}
-                  />
-                </div>
               </div>
 
               {/* Recent Activity Summary */}
@@ -756,6 +766,24 @@ function RecruiterDashboardContent() {
               onAddTask={handleAddTask}
               onViewLead={handleViewLeadById}
             />
+          </div>
+        )}
+
+{/* CALLBACKS TAB - API follow-up queue */}
+        {activeTab === 'callbacks' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20">
+              <h3 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                API Callback Queue
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">Leads flagged for API follow-up callback</p>
+            </div>
+            <div className="p-4">
+              <ApiFollowupWidget onViewLead={handleViewLeadById} refreshKey={taskListKey} />
+            </div>
           </div>
         )}
 

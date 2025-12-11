@@ -35,7 +35,7 @@ export default function ApiFollowupWidget({ onViewLead, refreshKey }: Props) {
       const response = await fetch('/api/recruiter/leads-read?needs_followup=true&limit=50', { credentials: 'include' })
       const result = await response.json()
       if (result.success) {
-        const sorted = (result.data || []).sort((a: Lead, b: Lead) => {
+        const sorted = (result.data?.leads || result.data || []).sort((a: Lead, b: Lead) => {
           if (!a.last_contact_date) return -1
           if (!b.last_contact_date) return 1
           return new Date(a.last_contact_date).getTime() - new Date(b.last_contact_date).getTime()
