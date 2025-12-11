@@ -26,6 +26,7 @@ interface TaskData {
   task_type: string
   priority: string
   due_days: number
+  due_hours?: number
 }
 
 interface ActionOption {
@@ -241,7 +242,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
       }
 
       // Create task if enabled
-      if (createTask && getActualFollowUpDays() > 0 && onCreateTask) {
+      if (createTask && (getActualFollowUpDays() > 0 || followUpDays === 0) && onCreateTask) {
         const leadName = lead.prospect_name || lead.prospect_email || "Unknown"
         onCreateTask({
           lead_id: lead.id,
@@ -250,6 +251,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
           task_type: selectedAction.followUp,
           priority: selectedAction.category === "positive" ? "high" : "medium",
           due_days: getActualFollowUpDays(),
+          due_hours: followUpDays === 0 ? followUpHours : undefined,
         })
       }
 

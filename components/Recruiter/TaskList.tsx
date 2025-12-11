@@ -81,8 +81,8 @@ export default function TaskList({ leadId, onAddTask, onEditTask, onViewLead, co
   const [contactLogs, setContactLogs] = useState<any[]>([])
 
   // Sorting state
-  const [sortField, setSortField] = useState<SortField>('created_at')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [sortField, setSortField] = useState<SortField>('due_date')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   // Bulk selection state
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())

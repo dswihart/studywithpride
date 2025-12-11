@@ -26,6 +26,7 @@ import TaskList from '@/components/Recruiter/TaskList'
 import AddTaskModal from '@/components/Recruiter/AddTaskModal'
 import AddContactLogModal from '@/components/Recruiter/AddContactLogModal'
 import UpcomingTasksWidget from '@/components/Recruiter/UpcomingTasksWidget'
+import ApiFollowupWidget from '@/components/Recruiter/ApiFollowupWidget'
 import UserManagementPanel from '@/components/Recruiter/UserManagementPanel'
 import TemplatesLibrary from '@/components/Recruiter/TemplatesLibrary'
 import HeaderActions from "@/components/Recruiter/HeaderActions"
@@ -331,10 +332,15 @@ function RecruiterDashboardContent() {
     task_type: string
     priority: string
     due_days: number
+    due_hours?: number
   }) => {
     try {
       const dueDate = new Date()
-      dueDate.setDate(dueDate.getDate() + taskData.due_days)
+      if (taskData.due_hours !== undefined) {
+        dueDate.setHours(dueDate.getHours() + taskData.due_hours)
+      } else {
+        dueDate.setDate(dueDate.getDate() + taskData.due_days)
+      }
 
       await fetch('/api/recruiter/tasks', {
         method: 'POST',
@@ -632,6 +638,12 @@ function RecruiterDashboardContent() {
                   }}
                   refreshKey={taskListKey}
                 />
+                <div className="mt-4">
+                  <ApiFollowupWidget
+                    onViewLead={handleViewLeadById}
+                    refreshKey={taskListKey}
+                  />
+                </div>
               </div>
 
               {/* Recent Activity Summary */}
