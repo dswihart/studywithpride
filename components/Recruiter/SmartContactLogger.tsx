@@ -37,11 +37,13 @@ interface ActionOption {
   followUp: "call" | "whatsapp" | "email" | "none"
   followUpDays: number
   category: "common" | "positive" | "negative" | "problem"
+  quickLog?: boolean
 }
 
 const ACTIONS: ActionOption[] = [
   // Most common
   { id: "no_answer_wa", label: "No Answer - Send WhatsApp", icon: "📵💬", keywords: ["no answer", "no response", "didn't answer", "voicemail", "na"], status: "contacted", followUp: "call", followUpDays: 1, category: "common" },
+  { id: "voicemail", label: "Called - Left Voicemail/No Answer", icon: "📞❌", keywords: ["voicemail", "left message", "no answer", "called", "vm", "didnt pick up"], status: "contacted", followUp: "none", followUpDays: 0, category: "common", quickLog: true },
 
   // Positive outcomes
   { id: "interested_call", label: "Interested! (from call)", icon: "🎯", keywords: ["interested", "wants", "yes", "sign up", "enroll"], status: "interested", followUp: "email", followUpDays: 1, category: "positive" },
@@ -104,11 +106,6 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Focus input on mount
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
-
   // Filter actions based on search
   const filteredActions = searchTerm.trim()
     ? ACTIONS.filter(action =>
@@ -153,10 +150,47 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
     }
   }, [filteredActions, highlightedIndex, selectedAction, onClose])
 
-  const selectAction = (action: ActionOption) => {
+  const selectAction = async (action: ActionOption) => {
     setSelectedAction(action)
     setFollowUpDays(action.followUpDays)
     setFlagFollowup(false)
+    
+    // Quick log actions save immediately with API flag
+    if (action.quickLog) {
+      setSaving(true)
+      try {
+        const contactRes = await fetch("/api/recruiter/contact-log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lead_id: lead.id,
+            contact_type: "call",
+            outcome: action.label,
+            notes: null,
+            follow_up_action: "Flag for API callback",
+            flag_followup: true,
+          }),
+        })
+        if (!contactRes.ok) throw new Error("Failed to log contact")
+        
+        const statusRes = await fetch("/api/recruiter/leads-write", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: lead.id,
+            contact_status: action.status,
+          }),
+        })
+        if (!statusRes.ok) throw new Error("Failed to update status")
+        
+        onSuccess?.()
+        onClose()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save")
+        setSaving(false)
+      }
+      return
+    }
   }
 
   const handleSave = async () => {
@@ -362,7 +396,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
             </div>
 
             {/* Follow-up Options - Tablet Friendly */}
-            {selectedAction.followUp !== "none" && (
+            {!selectedAction.quickLog && selectedAction.followUp !== "none" && (
               <div className="space-y-4">
                 <label className="block text-base font-medium text-gray-700 dark:text-gray-300">
                   ⏰ Follow-up in
@@ -509,7 +543,7 @@ export default function SmartContactLogger({ lead, onClose, onSuccess, onCreateT
                 </label>
               )}
 
-              {(followUpDays >= 0 || followUpDays === -1) && (
+              {((followUpDays >= 0 || followUpDays === -1) || selectedAction?.quickLog) && (
                 <label className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer">
                   <input
                     type="checkbox"
